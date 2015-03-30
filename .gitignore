@@ -1,0 +1,12 @@
+# Object files
+*.o
+*.ko
+
+# Shared objects
+*.so
+
+# vim editing
+*~
+
+#Executables
+*.out
