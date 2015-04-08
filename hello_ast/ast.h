@@ -2,6 +2,8 @@
 #define <_AST_H>
 
 
+typedef enum (ast_program,ast_uselist,ast_stratlist,ast_strat,ast_actionlist,ast_order,ast_order_item) nodeEnum;
+
 typedef struct {
     ast_uselist * uselist;
     ast_stratlist * stratlist
@@ -41,16 +43,21 @@ typedef struct {
     int price;
 }ast_order_item;
 
-/*
+
 typedef struct nodeTypeTag {
     nodeEnum type;
+    
     union {
-        conNodeType con;
-        idNodeType id;
-        oprNodeType opr;
+        ast_program program;
+        ast_uselist uselist;
+        ast_stratlist stratlist;
+        ast_strat strat;
+        ast_actionlist actionlist;
+        ast_order order;
+        ast_order_item order_item;
     };
 } nodeType;
-*/
+
 
 
 struct ast_program *

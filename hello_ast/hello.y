@@ -20,14 +20,15 @@ extern int yylineno;
 %union {
    char str[32];
    int  int_val;
-   // to do
+   nodeType *nPtr;
 };
 
 %start program
 %token STRATEGY BUY SELL WHAT USE ACCOUNT EQTY AMOUNT PRICE
 %token <str> IDENTIFIER PRICEXP
 %token <int_val> NUMBER
-%type <>   // to do
+%type <int_val> order_type
+%type <nPtr> program use_list strategy_list strategy action_list order order_item// to do
 %%
 program : use_list strategy_list	{ $$ = create_node_program($1, $2); ex_ast($$);}
 	;
