@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <time.h>
-#include "hello.h"
+#include "ast.h"
 #include "y.tab.h"
 
 
@@ -11,8 +11,8 @@ int ex_ast (nodeType *p) {
 	}
 
 	switch (p->type) {
-	case typeOrder:
-		emit_order (p->order);
+	case ast_order_item_type:
+		//emit_order (p->order);
 		break;
 
 	default:
@@ -24,6 +24,7 @@ int ex_ast (nodeType *p) {
 	return 0;
 }
 
+#if 0
 void emit_order(Order *my_order)
 {
 	/*  Get local timestamp */
@@ -49,3 +50,4 @@ void emit_order(Order *my_order)
 	printf(" >>>>>> ORDER PLACED BY %s\n", "stratname");
 	printf("++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++\n\n");
 }
+#endif

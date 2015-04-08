@@ -19,7 +19,7 @@ LEXFLAGS = --yylineno
 YACCFLAGS = -d
 
 # all of the .o files that the program needs
-OBJECTS = y.tab.o lex.yy.o inter.o
+OBJECTS = y.tab.o lex.yy.o inter.o ast.o
 
 # Make strat.out
 ${PROGRAM} : ${OBJECTS}
@@ -41,6 +41,9 @@ lex.yy.o: lex.yy.c
 
 inter.o: inter.c
 	${CC} -g -c inter.c
+
+ast.o: ast.c
+	${CC} -g -c ast.c
 
 clean:
 	/bin/rm -f *.o *.out lex.yy.c y.tab.c y.tab.h core *~

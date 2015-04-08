@@ -1,12 +1,12 @@
 %{
 #include <stdlib.h>
 #include <string.h>
+#include "ast.h"
 #include "y.tab.h"
-#include "hello.h"
 void yyerror(char *);
 %}
 
-comment		\/\*[^\*]*\*+([^\/\*][^\*]*\*+)*\/     // to do
+comment		\/\*[^\*]*\*+([^\/\*][^\*]*\*+)*\/
 digit		[0-9]
 number		[0-9]+
 id		[a-zA-Z][_a-zA-Z0-9]*
