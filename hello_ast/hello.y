@@ -35,10 +35,14 @@ extern int yylineno;
 %token <str> IDENTIFIER PRICEXP
 %token <int_val> NUMBER
 %type <int_val> order_type
-%type <nPtr> strategy action_list order order_item
 %type <program> program
 %type <uselist> use_list
 %type <stratlist> strategy_list 
+%type <strat> strategy 
+%type <actionlist> action_list 
+%type <order> order
+%type <order_item> order_item
+
 %%
 program : use_list strategy_list	{ $$ = create_node_program($1, $2); ex_ast($$);}
 	;
@@ -64,7 +68,7 @@ order_type : BUY	{ $$ = 1; }
 
 order_item : EQTY '(' IDENTIFIER ')''.' AMOUNT '('NUMBER')' '.' PRICE '(' PRICEXP  ')'
 		{
-			$$ = create_node_order_item($<str>3, $8, $13);
+			$$ = create_node_order_item($<str>3, $<int_val>8, $<int_val>13);
 		} 
 	;
 
