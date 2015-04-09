@@ -44,7 +44,7 @@ extern int yylineno;
 %type <order_item> order_item
 
 %%
-program : use_list strategy_list	{ $$ = create_node_program($1, $2); ex_ast($$);}
+program : use_list strategy_list	{ $$ = create_node_program($1, $2); print_ast($$);ex_ast($$);}
 	;
 
 use_list : USE ACCOUNT IDENTIFIER	{ $$ = create_node_uselist($3);}
@@ -56,7 +56,8 @@ strategy_list : strategy		{  $$ = create_node_stratlist($1);}
 strategy : STRATEGY IDENTIFIER  '{' action_list '}'  { $$ = create_node_strat($2, $4);}
 	 ;
 
-action_list : order		{  $$ = create_node_actionlist($1);   }
+action_list : order		{ $$ = create_node_actionlist($1);	}
+	| action_list order	{ $$ = add_order($1, $2);		}
 	;
 
 order 	: order_type '{' WHAT ':' order_item ';' '}'  { $$ = create_node_order($1, $5); }
@@ -68,7 +69,7 @@ order_type : BUY	{ $$ = 1; }
 
 order_item : EQTY '(' IDENTIFIER ')''.' AMOUNT '('NUMBER')' '.' PRICE '(' PRICEXP  ')'
 		{
-			$$ = create_node_order_item($<str>3, $<int_val>8, $<int_val>13);
+			$$ = create_node_order_item($<str>3, $<int_val>8, $<str>13);
 		} 
 	;
 

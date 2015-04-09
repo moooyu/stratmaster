@@ -10,9 +10,9 @@ typedef struct {
 }ast_uselist;
 
 typedef struct {
-    char * equity_identifier;
+    char equity_identifier[16];
     int amount;
-    int price;
+    char price[16];
 }ast_order_item;
 
 typedef struct {
@@ -21,7 +21,8 @@ typedef struct {
 }ast_order;
 
 typedef struct {
-    ast_order * order;
+    ast_order ** order;
+    int num_of_orders;
 }ast_actionlist;
 
 typedef struct {
@@ -52,34 +53,30 @@ typedef struct nodeTypeTag {
     };
 } nodeType;
 
-
-
 ast_program *
 create_node_program(ast_uselist * uselist, ast_stratlist * stratlist);
-
 
 ast_uselist *
 create_node_uselist(char * name);
 
-
 ast_stratlist *
 create_node_stratlist(ast_strat * strat);
-
 
 ast_strat *
 create_node_strat(char * name, ast_actionlist * actionlist);
 
-
 ast_actionlist *
 create_node_actionlist(ast_order * order);
 
+ast_actionlist *
+add_order(ast_actionlist* list, ast_order * order);
 
 ast_order *
 create_node_order(int order_type, ast_order_item * order_item);
 
-
 ast_order_item *
-create_node_order_item(char * equity_identifier, int amount, int price);  // should be one more para(identifier)
+create_node_order_item(char * equity_identifier, int amount, char* price);  // should be one more para(identifier)
 
-
+void
+print_ast(ast_program* prog);
 #endif
