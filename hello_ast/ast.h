@@ -1,6 +1,6 @@
 #ifndef _AST_H
 #define _AST_H
-
+#include <stdarg.h>
 typedef enum {ast_program_type ,ast_uselist_type ,ast_stratlist_type \
 		,ast_strat_type ,ast_actionlist_type ,ast_order_type \
 		,ast_order_item_type} nodeEnum;
@@ -12,6 +12,7 @@ typedef struct {
 typedef struct {
     char equity_identifier[16];
     int amount;
+    int order_type;
     char price[16];
 }ast_order_item;
 
@@ -79,4 +80,19 @@ create_node_order_item(char * equity_identifier, int amount, char* price);  // s
 
 void
 print_ast(ast_program* prog);
+
+
+//#define DEBUG 1
+
+#ifdef DEBUG
+#define PRINT(x)  do { if (DEBUG) dbg_printf x; } while (0)
+#else
+#define PRINT(x) do {} while(0)
 #endif
+
+void dbg_printf(const char *fmt, ...);
+#endif
+
+
+
+

@@ -1,16 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
+
 #include "ast.h"
-
-//#define DEBUG 1
-
-#ifdef DEBUG
-#define PRINT(x)  do { if (DEBUG) dbg_printf x; } while (0)
-#else
-#define PRINT(x) do {} while(0)
-#endif
 
 void dbg_printf(const char *fmt, ...)
 {
@@ -289,3 +281,4 @@ print_ast(ast_program* prog)
 	print_stratlist(prog->stratlist, level);
 	PRINT(("%s end\n", __func__));
 }
+
