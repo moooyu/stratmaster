@@ -1,0 +1,6 @@
+Advice:
+1.long string is not supported
+2.EQTY can be AA_PL, this is not feasible. Amount should be at least 100.
+3.Two different account should pass, but here we don’t
+4.empty strategy should pass, we don’t 
+5.strategy name can be the same with account name. Add semantic check.

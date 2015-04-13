@@ -1,0 +1,60 @@
+//<case 7> comment
+USE ACCOUNT my_Account
+STRATEGY hello
+{/*hello from comment*/
+BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.00);  } 
+/*
+SELL{ WHAT: EQTY(AA).AMOUNT(85).PRICE(22.00);  } 
+*/
+}
+//<case 8> two account
+USE ACCOUNT myAccount
+USE ACCOUNT myhelloAccount
+STRATEGY hello
+{
+BUY { WHAT: EQTY(aapl).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
+}
+//<case 9> dot
+USE ACCOUNT myhello.Account
+USE STRATEGY hel.lo
+{
+BUY { WHAT: EQTY(a.apl).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
+}
+	
+//<case 10> empty strategy
+USE ACCOUNT myAccount
+STRATEGY hello
+{
+}
+//<case 11> keyword conflict
+USE ACCOUNT myAccount
+STRATEGY eBUY
+{
+BUY { WHAT: EQTY(EQTY).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(EQTY).AMOUNT(85).PRICE(22.44);  } 
+}
+//<case 12> strategy name == account name
+USE ACCOUNT myAccount
+STRATEGY myAccount
+{
+BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
+}
+//<case 13> should not pass arbitrary str in strategy
+USE ACCOUNT myAccount
+STRATEGY hello
+{
+DDDD
+BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
+}
+//<case 14> should not pass parentness
+USE ACCOUNT myAccount
+STRATEGY hello
+{
+BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
+{}
+SELL{ WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
+}
