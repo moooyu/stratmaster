@@ -1,0 +1,7 @@
+USE ACCOUNT myhello.Account
+USE STRATEGY hel.lo
+{
+BUY { WHAT: EQTY(a.apl).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
+}
+	
