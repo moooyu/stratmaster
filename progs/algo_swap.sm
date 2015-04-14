@@ -1,0 +1,30 @@
+/* StratMaster: A Swap Algorithm */
+
+USE ACCOUNT ac_master
+USE DATAFEED EQTY df_quotes
+USE DATABASE EQTY db_prices
+
+ALGORITHM al_Swap(DATAFEED quotes, PRICE #sell_price, PRICE #buy_price)
+{
+    SET  { buy_price  = Get_Curr_Price(db_prices, EQTY(ZBRA),
+           sell_price = quotes.NEXT.CURR_PRICE }
+    IF:
+    {
+         quotes.NEXT IS EQTY(INTC)
+         AND
+         Get_Curr_Price(db_prices, EQTY(INTC)) < 27.00
+    }
+}
+
+STRATEGY my_swap_strat
+{
+    PRICE zbra_price;
+    PRICE intc_price;
+
+    WHEN( al_Buy_Something(df_quotes, #intc_price, #zbra_price) IS TRUE )
+    {
+         BUY  { WHAT: EQTY(ZBRA).AMOUNT(1000).PRICE(zbra_price); }
+         SELL { WHAT: EQTY(INTC).AMOUNT(1000).PRICE(intc_price); } 
+    }
+
+}
