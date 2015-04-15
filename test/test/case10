@@ -1,0 +1,4 @@
+USE ACCOUNT myAccount
+STRATEGY hello
+{
+}

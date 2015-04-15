@@ -1,0 +1,6 @@
+USE ACCOUNT myAccount
+STRATEGY helloworld_to_all_of_my_team_this_is_really_a_long_name_zzzzzzzzzzzzzzz
+{
+BUY { WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
+}
