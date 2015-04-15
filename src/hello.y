@@ -4,6 +4,7 @@
 #include <string.h>
 #include <time.h>
 #include "ast.h"
+#include "symtab.h"
 
 /* Functions to interface with Lex */
 int yylex(void);
@@ -11,8 +12,8 @@ void yyerror (char *s);
 
 /* For debugging: print line numbers on error */
 extern int yylineno;
-
-
+struct symbol_table *top;
+struct symbol_table *parent;
 
 %}
 
@@ -44,16 +45,24 @@ extern int yylineno;
 %type <order_item> order_item
 
 %%
-program : use_list strategy_list	{ $$ = create_node_program($1, $2); print_ast($$);ex_ast($$);}
+program : 			{ parent = NULL;
+				top = symbol_table_create(parent); }			 
+	use_list strategy_list	{ $$ = create_node_program($2, $3);
+				print_ast($$);ex_ast($$);}
 	;
 
-use_list : USE ACCOUNT IDENTIFIER	{ $$ = create_node_uselist($3);}
+use_list : USE ACCOUNT IDENTIFIER	{$$ = create_node_uselist($3);
+					symbol_table_put_value(top, ACCT_SYM, $3, $$); }
 	;
 
 strategy_list : strategy		{  $$ = create_node_stratlist($1);}
 	;
 
-strategy : STRATEGY IDENTIFIER  '{' action_list '}'  { $$ = create_node_strat($2, $4);}
+strategy : STRATEGY IDENTIFIER  '{'	{ parent = top;
+					top = symbol_table_create(parent); }
+	action_list '}'			{ $$ = create_node_strat($2, $5);
+					top = parent;
+					symbol_table_put_value(top, STRAT_SYM, $2, $$); }
 	 ;
 
 action_list : order		{ $$ = create_node_actionlist($1);	}
