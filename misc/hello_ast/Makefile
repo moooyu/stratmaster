@@ -7,7 +7,7 @@ LEXFILE = hello.l
 #Name of yacc file
 YACCFILE = hello.y
 #Compiler flags
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall 
 #Compiler
 CC = gcc
 #Lexer and parser
