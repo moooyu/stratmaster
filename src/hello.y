@@ -44,7 +44,7 @@ extern int yylineno;
 %type <order_item> order_item
 
 %%
-program : use_list strategy_list	{ $$ = create_node_program($1, $2); print_ast($$);ex_ast($$);}
+program : use_list strategy_list	{ $$ = create_node_program($1, $2); print_ast($$);pre_ast($$);}
 	;
 
 use_list : USE ACCOUNT IDENTIFIER	{ $$ = create_node_uselist($3);}

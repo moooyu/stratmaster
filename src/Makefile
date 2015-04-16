@@ -14,12 +14,12 @@ CC = gcc
 LEXER = lex
 PARSER = yacc
 
-LDFLAGS = -ly
+LDFLAGS = -ly -pthread
 LEXFLAGS = --yylineno
 YACCFLAGS = -d
 
 # all of the .o files that the program needs
-OBJECTS = y.tab.o lex.yy.o inter.o ast.o
+OBJECTS = y.tab.o lex.yy.o inter.o ast.o rtfunc.o
 
 # Make strat.out
 ${PROGRAM} : ${OBJECTS}
@@ -44,6 +44,9 @@ inter.o: inter.c
 
 ast.o: ast.c
 	${CC} -g -c ast.c
+
+rtfunc.o: rtfunc.c
+	${CC} -g -c rtfunc.c 
 
 clean:
 	/bin/rm -f *.o *.out lex.yy.c y.tab.c y.tab.h core *~
