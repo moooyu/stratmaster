@@ -67,11 +67,11 @@ void *strategy_handler(void *arg)
 
 	/* Put orders into the order queue for execution */
 	queue_put_order(&order_queue, order_a, strat_name);
-	sleep(1);
+//	sleep(1);
 	queue_put_order(&order_queue, order_b, strat_name);
-	sleep(1);
+//	sleep(1);
 	queue_put_order(&order_queue, order_c, strat_name);
-	sleep(1);
+//	sleep(1);
 
 	fprintf(stderr, "[INFO] Exiting STRATEGY thread.\n");
 	return (void *)0;
@@ -101,8 +101,6 @@ void *order_handler(void *arg)
 		emit_order(next_order);
 
 		/* free order_item structures */
-		if( next_order->next != NULL )
-			free(next_order->next);
 		if( next_order->ord != NULL )
 			free(next_order->ord);
 		if( next_order != NULL )

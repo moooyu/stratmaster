@@ -413,6 +413,7 @@ static struct order_item *queue_get_order(struct queue *q)
 		q->length = 0;
 	}
 
+	next_order->next = NULL;
 	pthread_mutex_unlock(&q->mutex);	
 
 	return next_order;
