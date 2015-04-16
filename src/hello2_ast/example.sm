@@ -1,0 +1,9 @@
+/* StratMaster hello world test */
+
+USE ACCOUNT my_account
+
+STRATEGY hello 
+{ 
+   BUY { WHAT: EQTY(XYZ).AMOUNT(85).PRICE(129.99);  } 
+   SELL { WHAT: EQTY(JOJO).AMOUNT(432).PRICE(29.01); }
+}

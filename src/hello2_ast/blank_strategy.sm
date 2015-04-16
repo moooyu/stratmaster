@@ -1,0 +1,17 @@
+/* StratMaster hello world test */
+
+USE ACCOUNT ac_MASTER
+USE DATABASE some_dataBASE
+USE DATAFEED some_dataBASE
+ALGORITHM my_algo(DATAFEED some_data_feed)
+{
+	SET {id1 = id2}
+	SET {id1 = id2}
+     	SET {id1 = id2}
+     
+
+}
+
+
+
+
