@@ -1,11 +1,7 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <time.h>
 #include "ast.h"
 #include "y.tab.h"
-#include "symtab.h"
-
-struct symbol_table *sym_head = NULL;
 
 void ex_ast_order_item(ast_order_item * order_item)
 {
@@ -50,23 +46,10 @@ void ex_ast_stratlist(ast_stratlist * stratlist)
 void ex_ast_uselist(ast_uselist * uselist)
 {
 	////printf("<account: %s>\n", uselist->account);
-	struct symbol_value* sym;
-	sym = symbol_table_get_value(sym_head, uselist->account);
-	if (sym) {
-		printf("Duplicated Symbol: %s\n", uselist->account);
-		exit(EXIT_FAILURE);
-	}
-	symbol_table_put_value(sym_head, 1, uselist->account);
 }
 
 void ex_ast(ast_program * prog)
 {
-	sym_head = symbol_table_create();
-	if (!sym_head) {
-		printf("Fail to allocation memory for the symbol table\n");
-		return;
-	}
-
     printf("++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++\n");
     ex_ast_uselist(prog->uselist);
     ex_ast_stratlist(prog->stratlist);

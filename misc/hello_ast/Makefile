@@ -14,12 +14,12 @@ CC = gcc
 LEXER = lex
 PARSER = yacc
 
-LDFLAGS = -ly `pkg-config --cflags --libs glib-2.0`
+LDFLAGS = -ly
 LEXFLAGS = --yylineno
 YACCFLAGS = -d
 
 # all of the .o files that the program needs
-OBJECTS = y.tab.o lex.yy.o inter.o ast.o symtab.o
+OBJECTS = y.tab.o lex.yy.o inter.o ast.o
 
 # Make strat.out
 ${PROGRAM} : ${OBJECTS}
@@ -40,13 +40,10 @@ lex.yy.o: lex.yy.c
 	${CC} -g -c lex.yy.c
 
 inter.o: inter.c
-	${CC} -g -c inter.c ${LDFLAGS}
+	${CC} -g -c inter.c
 
 ast.o: ast.c
 	${CC} -g -c ast.c
-
-symtab.o: symtab.c
-	${CC} -g -c symtab.c ${LDFLAGS}
 
 clean:
 	/bin/rm -f *.o *.out lex.yy.c y.tab.c y.tab.h core *~
