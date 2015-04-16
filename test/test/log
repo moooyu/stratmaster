@@ -1,0 +1,72 @@
+for number in `seq 1 14` ; do \
+		echo case$number;\
+		./strat.out < case$number ; \
+	done
+case1
+++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++
+ >>>>>> ORDER PLACED BY hello
+[2015-04-13 12:15:04] YOU BUY: 85 SHARES OF AAPL AT USD 22.00
+
+[2015-04-13 12:15:04] YOU SELL: 85 SHARES OF AAPL AT USD 22.00
+
+++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++
+
+case2
+line 4: syntax error
+case3
+++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++
+ >>>>>> ORDER PLACED BY hello
+[2015-04-13 12:15:04] YOU BUY: 85 SHARES OF apple AT USD 22.44
+
+[2015-04-13 12:15:04] YOU SELL: 85 SHARES OF apple AT USD 22.44
+
+++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++
+
+case4
+/bin/sh: line 1: 10487 Abort trap: 6           ./strat.out < case$number
+case5
+++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++
+ >>>>>> ORDER PLACED BY helloworld
+[2015-04-13 12:15:04] YOU BUY: 85 SHARES OF AA_PL AT USD 22.44
+
+[2015-04-13 12:15:04] YOU SELL: 85 SHARES OF AA_PL AT USD 22.44
+
+++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++
+
+case6
+++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++
+ >>>>>> ORDER PLACED BY helloworld
+[2015-04-13 12:15:04] YOU BUY: 85 SHARES OF AAPL AT USD 22.44
+
+[2015-04-13 12:15:04] YOU SELL: 85 SHARES OF AAPL AT USD 22.44
+
+++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++
+
+case7
+++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++
+ >>>>>> ORDER PLACED BY hello
+[2015-04-13 12:15:04] YOU BUY: 85 SHARES OF AAPL AT USD 22.00
+
+++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++
+
+case8
+line 2: syntax error
+case9
+line 1: syntax error
+case10
+line 4: syntax error
+case11
+line 4: syntax error
+case12
+++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++
+ >>>>>> ORDER PLACED BY myAccount
+[2015-04-13 12:15:05] YOU BUY: 85 SHARES OF AAPL AT USD 22.44
+
+[2015-04-13 12:15:05] YOU SELL: 85 SHARES OF AAPL AT USD 22.44
+
+++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++
+
+case13
+line 4: syntax error
+case14
+line 5: syntax error

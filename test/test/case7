@@ -1,0 +1,8 @@
+USE ACCOUNT my_Account
+STRATEGY hello
+{/*hello from comment*/
+BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.00);  } 
+/*
+SELL{ WHAT: EQTY(AA).AMOUNT(85).PRICE(22.00);  } 
+*/
+}
