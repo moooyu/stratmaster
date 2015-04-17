@@ -147,15 +147,93 @@ typedef struct{
     ast_use_others * use_others;
 }ast_use_list;
 
+
+/*******strategy*******/
+
 typedef struct {
-    ast_use_list * use_list;
-    ast_decision_list * decision_list;
-}ast_program;
+    int type;
+}ast_security_type;
+
+typedef struct {
+    ast_security_type * security_type;
+    char * name;
+}ast_security;
+
+typedef struct {
+    ast_security *security;
+    int number;
+    char * price_name;
+}ast_order_item;
+
+typedef struct {
+    ast_order_item * order_item;
+}ast_constraint;
+
+typedef struct {
+    int num_of_constraints;
+    ast_constraint ** constraint;
+}ast_constraint_list;
+
+typedef struct {
+    int type;
+}ast_order_type;
+
+typedef struct {
+    ast_order_type *order_type;
+    ast_constraint_list *constraint_list;
+}ast_order;
+
+typedef struct {
+    int num_of_orders;
+    ast_order ** order;
+}ast_action_list;
+
+typedef struct {
+    int type;
+    ast_expression *expression;
+    ast_action_list *action_list;
+    ast_expression *expression2;
+}ast_process_statement;
+
+typedef struct {
+    int num_of_process_statement;
+    ast_process_statement **process_statement;
+}ast_process_statement_list;
+
+typedef struct {
+    int type;
+    ast_action_list * action_list;
+    ast_process_statement_list * process_statement_list;
+}ast_strategy_block;
+
+typedef struct {
+    ast_variable_declaration_list *variable_declaration_list;
+    ast_strategy_block *strategy_block;
+}ast_strategy_body;
+
+typedef struct {
+    char * name;
+    ast_strategy_body *strategy_body;
+}ast_strategy;
+
+typedef struct {
+    int num_of_strategies;
+    ast_strategy ** strategy;
+}ast_strategy_list;
+
 
 /*****************************************/
 
+typedef struct {
+    ast_use_list * use_list;
+    ast_decision_list * decision_list;
+    ast_strategy_list * strategy_list;
+}ast_program;
+
+
+
 ast_program *
-create_program(ast_use_list * use_list, ast_decision_list * decision_list);
+create_program(ast_use_list * use_list, ast_decision_list * decision_list, ast_strategy_list* strategy_list);
 
 ast_use_list *
 create_use_list(char* first_acc_name, ast_use_others * use_others);
@@ -228,7 +306,6 @@ create_argument_expression_list(ast_unary_expression *unary_expression,ast_logic
 ast_unary_expression *
 create_unary_expression(ast_postfix_expression *postfix_expression);
 
-
 ast_postfix_expression *
 create_postfix_expression(ast_primary_expression *primary_expression);
 
@@ -240,7 +317,6 @@ create_logical_OR_expression(ast_logical_AND_expression *logical_AND_expression)
 
 ast_logical_AND_expression *
 create_logical_AND_expression(ast_equality_expression *equality_expression);
-
 
 ast_equality_expression *
 create_equality_expression(ast_relation_expression *relation_expression);
@@ -263,169 +339,64 @@ create_expression(ast_assignment_expression * assignment_expression);
 ast_expression *
 add_expression(ast_expression * list, ast_assignment_expression * assignment_expression);
 
+ast_strategy_list *
+create_strategy_list(ast_strategy * strategy);
+
+ast_strategy_list *
+add_strategy_list(ast_strategy_list * list, ast_strategy * strategy);
+
+ast_strategy*
+create_strategy( char * name, ast_strategy_body *strategy_body);
+
+ast_strategy_body*
+create_strategy_body( ast_variable_declaration_list *variable_declaration_list, ast_strategy_block *strategy_block);
+
+ast_strategy_block*
+create_strategy_block( int type, ast_action_list * action_list, ast_process_statement_list * process_statement_list);
+
+ast_action_list *
+create_actionlist(ast_order * order);
+
+ast_action_list *
+add_action_list(ast_action_list* list, ast_order * order);
+
+ast_order*
+create_order( ast_order_type *order_type, ast_constraint_list *constraint_list);
+
+ast_order_type*
+create_order_type( int type);
+
+ast_constraint_list *
+create_constraint_list(ast_constraint * constraint);
+
+ast_constraint_list *
+add_constraint_list(ast_constraint_list * list, ast_constraint * constraint);
+
+ast_constraint *
+create_constraint(ast_order_item * order_item);
+
+ast_order_item *
+create_order_item(ast_security *security, int number, char * price_name);
+
+ast_security *
+create_security(ast_security_type * security_type, char * name);
+
+ast_security_type *
+create_security_type(int type);
+
+ast_process_statement_list *
+create_process_statement_list(ast_process_statement * process_statement);
+
+ast_process_statement_list *
+add_process_statement_list(ast_process_statement_list * list, ast_process_statement * process_statement);
+
+
+ast_process_statement *
+create_process_statement(int type, ast_expression *expression, ast_action_list *action_list, ast_expression *expression2);
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**********end here can't be more ***********/  /*
-typedef struct {
-}ast_strategy_list;
-
-typedef struct {
-}ast_strategy;
-
-typedef struct {
-}ast_strategy_body;
-
-typedef struct {
-}ast_strategy_block;
-
-typedef struct {
-}ast_action_list;
-
-typedef struct {
-}ast_order;
-
-typedef struct {
-}ast_order_type;
-
-typedef struct {
-}ast_constraint_list;
-
-typedef struct {
-}ast_constraint;
-
-typedef struct {
-}ast_order_item;
-
-typedef struct {
-}ast_security;
-
-typedef struct {
-}ast_security_type;
-
-typedef struct {
-}ast_process_statement_list;
-
-typedef struct {
-}ast_process_statement;
-
-
-ast_strategy_list *strategy_list;
-ast_strategy *strategy;
-ast_strategy_body *strategy_body;
-ast_strategy_block *strategy_block;
-ast_action_list *action_list;
-ast_order *order;
-ast_order_type *order_type;
-ast_constraint_list *constraint_list;
-ast_constraint *constraint;
-ast_order_item *order_item;
-ast_security *security;
-ast_security_type *security_type;
-ast_process_statement_list *process_statement_list;
-ast_process_statement *process_statement;
-
- %type <ast_strategy_list> strategy_list;
- %type <ast_strategy> strategy;
- %type <ast_strategy_body> strategy_body;
- %type <ast_strategy_block> strategy_block;
- %type <ast_action_list> action_list;
- %type <ast_order> order;
- %type <ast_order_type> order_type;
- %type <ast_constraint_list> constraint_list;
- %type <ast_constraint> constraint;
- %type <ast_order_item> order_item;
- %type <ast_security> security;
- %type <ast_security_type> security_type;
- %type <ast_process_statement_list> process_statement_list;
- %type <ast_process_statement> process_statement;
-
-
-strategy_list   : strategy_list strategy	{$$ = add_strategy_list($1, $2);}
- | strategy                  {$$ = create_strategy_list($1);}
- ;
- 
- strategy        : STRATEGY IDENTIFIER  '{' strategy_body '}' {$$ = create_strategy($2, $4);}
- ;
- 
- strategy_body   : variable_declaration_list strategy_block  {$$ = create_strategy_body($1, $2);}
- ;
- 
- strategy_block  : action_list process_statement_list  {$$ = create_strategy_block(0, $1, $2);}
- | action_list                         {$$ = create_strategy_block(1, $1);}
- | process_statement_list              {$$ = create_strategy_block(1, $1);}
- |
-;
-
-action_list     : action_list order     { $$ = add_action_list($1, $2);}
-| order                 { $$ = create__action_list($1);}
-;
-
-order           : order_type '{' constraint_list'}'  {$$ = create_order($1, $3);}
-;
-
-order_type      : BUY  { printf($$ = 0;}
-                                | SELL  { printf($$ = 1;}
-                                                 ;
-                                                 
-                                                 constraint_list : constraint_list constraint  {$$ = add_constraint_list($1, $2);}
-                                                 | constraint  {$$ = create_constraint_list($1);}
-                                                 ;
-                                                 
-                                                 constraint      : WHAT ':' order_item  {$$ = create_constraint($3);}
-                                                 ;
-                                                 
-                                                 order_item      : security '.'  AMOUNT '('NUMBER')' '.' PRICE '(' PRICEXP  ')' ';'  {$$ = create_order_item($1, $<int_val>5, $<str>8);}
-                                                 ;
-                                                 
-                                                 security        :security_type '(' IDENTIFIER ')'  {$$ = create_security($1, $3);}
-                                                 ;
-                                                 
-                                                 security_type   : EQTY {$$ = 0;}
-                                                 | BOND {$$ = 1;}
-                                                 ;
-                                                 
-                                                 process_statement_list  : process_statement_list process_statement {$$ = add_process_statement_list($1, $2);}
-                                                 | process_statement {$$ = create_process_statement_list($1);}
-                                                 ;
-                                                 
-                                                 process_statement   : WHEN '(' expression ')' '{' action_list '}' UNTIL '(' expression ')' {$$ = create_process_statement(0, $3, $6, $10);}
-                                                 | WHEN '(' expression ')' '{' action_list '}'      {$$ = create_process_statement(1, $3, $6);}
-                                                 ;*/
 
 
 #define DEBUG 1
