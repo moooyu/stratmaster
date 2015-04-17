@@ -48,6 +48,21 @@ extern int yylineno;
     ast_multiplicative_expression *multiplicative_expression;
     ast_expression *expression;
     ast_assignment_expression *assignment_expression;
+    
+    ast_strategy_list *strategy_list;
+    ast_strategy *strategy;
+    ast_strategy_body *strategy_body;
+    ast_strategy_block *strategy_block;
+    ast_action_list *action_list;
+    ast_order *order;
+    ast_order_type *order_type;
+    ast_constraint_list *constraint_list;
+    ast_constraint *constraint;
+    ast_order_item *order_item;
+    ast_security *security;
+    ast_security_type *security_type;
+    ast_process_statement_list *process_statement_list;
+    ast_process_statement *process_statement;
 
 };
 
@@ -89,20 +104,35 @@ extern int yylineno;
 %type <expression> expression;
 %type <assignment_expression> assignment_expression;
 
+%type <strategy_list> strategy_list;
+%type <strategy> strategy;
+%type <strategy_body> strategy_body;
+%type <strategy_block> strategy_block;
+%type <action_list> action_list;
+%type <order> order;
+%type <order_type> order_type;
+%type <constraint_list> constraint_list;
+%type <constraint> constraint;
+%type <order_item> order_item;
+%type <security> security;
+%type <security_type> security_type;
+%type <process_statement_list> process_statement_list;
+%type <process_statement> process_statement;
+
 
 
 %%
-program         : use_list decision_list 	{ $$ = create_program($1, $2);}
+program         : use_list decision_list strategy_list	{ $$ = create_program($1, $2, $3);}
                 ;
 
 use_list        : USE ACCOUNT IDENTIFIER use_others {$$ = create_use_list($<str>3, $4);}
                 ;
 
-use_others      : use_others USE ACCOUNT IDENTIFIER {printf("ACC\n");$$ = add_use_others($1, 1, $<str>4);}
-                | use_others USE DATAFEED IDENTIFIER{printf("DF\n");$$ = add_use_others($1, 2, $<str>4);}
-                | use_others USE DATABASE IDENTIFIER{printf("DB\n");$$ = add_use_others($1, 3, $<str>4);}
-                | use_others USE EXCHANGE IDENTIFIER{printf("EX\n");$$ = add_use_others($1, 4, $<str>4);}
-| /*NULL*/                          {$$ = create_use_others();}
+use_others      : use_others USE ACCOUNT IDENTIFIER {$$ = add_use_others($1, 1, $<str>4);}
+                | use_others USE DATAFEED IDENTIFIER{$$ = add_use_others($1, 2, $<str>4);}
+                | use_others USE DATABASE IDENTIFIER{$$ = add_use_others($1, 3, $<str>4);}
+                | use_others USE EXCHANGE IDENTIFIER{$$ = add_use_others($1, 4, $<str>4);}
+                | /*NULL*/                          {$$ = create_use_others();}
                 ;
 
 decision_list   : algorithm_list  {$$ = create_decision_list($1);}
@@ -118,7 +148,7 @@ algorithm_function  : algorithm_header '{' compound_statement '}'  {$$ = create_
 algorithm_header    : ALGORITHM IDENTIFIER '(' algorithm_parameter_list ')'  {$$ = create_algorithm_header($<str>2, $4);}
                     ;
 
-algorithm_parameter_list    :DATAFEED IDENTIFIER target_list  {$$ = create_algorithm_parameter_list($<str>2, $3);}
+algorithm_parameter_list    :DATAFEED IDENTIFIER target_list  { $$ = create_algorithm_parameter_list($<str>2, $3);}
                             ;
 
 target_list     : target_list type_specifier IDENTIFIER  {$$ = add_target_list($1, $2, $<str>3);}
@@ -190,16 +220,68 @@ assignment_expression   : logical_OR_expression                         {$$ = cr
                         | unary_expression '=' logical_OR_expression    {$$ = create_assignment_expression(1, $1, $3);}
                         ;
 
+strategy_list   : strategy_list strategy	{$$ = add_strategy_list($1, $2);}
+                | strategy                  {$$ = create_strategy_list($1);}
+                ;
+
+strategy    : STRATEGY IDENTIFIER  '{' strategy_body '}' {$$ = create_strategy($<str>2, $4);}
+            ;
+
+strategy_body   : variable_declaration_list strategy_block  {$$ = create_strategy_body($1, $2);}
+                ;
+
+strategy_block  : action_list process_statement_list  {$$ = create_strategy_block(0, $1, $2);}
+                | action_list                         {$$ = create_strategy_block(1, $1, NULL);}
+                | process_statement_list              {$$ = create_strategy_block(2, NULL, $1);}
+                |
+                ;
+
+action_list     : action_list order     { $$ = add_action_list($1, $2);}
+                | order                 { $$ = create_action_list($1);}
+                ;
+
+order           : order_type '{' constraint_list'}'  {$$ = create_order($1, $3);}
+                ;
+
+order_type      : BUY  { $$ = 0;}
+                | SELL  {$$ = 1;}
+                ;
+
+constraint_list : constraint_list constraint  {$$ = add_constraint_list($1, $2);}
+                | constraint  {$$ = create_constraint_list($1);}
+                ;
+
+constraint      : WHAT ':' order_item  {$$ = create_constraint($3);}
+                ;
+
+order_item      : security '.'  AMOUNT '('NUMBER')' '.' PRICE '(' PRICEXP  ')' ';'  {$$ = create_order_item($1, $<int_val>5, $<str>8);}
+                ;
+
+security        :security_type '(' IDENTIFIER ')'  {$$ = create_security($1, $<str>3);}
+                ;
+
+security_type   : EQTY {$$ = 0;}
+                | BOND {$$ = 1;}
+                ;
+
+process_statement_list  : process_statement_list process_statement {$$ = add_process_statement_list($1, $2);}
+                | process_statement {$$ = create_process_statement_list($1);}
+                ;
+
+process_statement   : WHEN '(' expression ')' '{' action_list '}' UNTIL '(' expression ')' {$$ = create_process_statement(0, $3, $6, $10);}
+                | WHEN '(' expression ')' '{' action_list '}'      {$$ = create_process_statement(1, $3, $6, NULL);}
+                ;
+
 
 
 %%
 
-void yyerror(char * s) 
+void yyerror(char * s)
 {
    fprintf(stderr, "line %d: %s\n", yylineno, s);
 }
 
-int main(void) 
+int main(void)
 {
    yyparse();
    return 0;

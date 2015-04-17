@@ -13,18 +13,19 @@ void dbg_printf(const char *fmt, ...)
 }
 
 ast_program *
-create_program(ast_use_list * use_list, ast_decision_list * decision_list)
+create_program(ast_use_list * use_list, ast_decision_list * decision_list,ast_strategy_list* strategy_list)
 {
 	ast_program * program;
 
 	program = malloc(sizeof(ast_program));
 	if (!program) {
-		yyerror("out of memory");
+		printf("out of memory in %s\n", __func__);
 		return NULL;
 	}
 
 	program->use_list = use_list;
     program->decision_list = decision_list;
+    program->strategy_list = strategy_list;
 
 	PRINT(("%s\n", __func__));
 	PRINT(("End of AST construction\n\n"));
@@ -41,7 +42,7 @@ create_use_list(char* first_acc_name, ast_use_others * use_others)
     
     use_list = malloc(sizeof(ast_use_list));
     if (!use_list) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -62,20 +63,22 @@ create_use_others()
     
     use_others = malloc(sizeof(ast_use_others));
     if (!use_others) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
     use_others->usedefine = malloc(sizeof(use_define*));
     if (!use_others->usedefine) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
-    use_define *usedefine = NULL;
-   // usedefine->type = -1;
-   // printf("hihi\n");
-   // usedefine->name = "00";
+    use_define *usedefine;
+    usedefine = malloc(sizeof(usedefine));
+    if (!usedefine) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
     
     use_others->usedefine[0] = usedefine;
     use_others->num_of_use_defines = 1;
@@ -94,11 +97,16 @@ add_use_others(ast_use_others *list, int type, char * name)
     
     list->usedefine = realloc(list->usedefine, num_of_use_defines*sizeof(use_define*));
     if (!list->usedefine) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
     use_define *usedefine;
+    usedefine = malloc(sizeof(usedefine));
+    if (!usedefine) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
     usedefine->type = type;
     usedefine->name = name;
     
@@ -117,7 +125,7 @@ create_decision_list(ast_algorithm_list * algorithm_list)
     
     decision_list = malloc(sizeof(ast_decision_list));
     if (!decision_list) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -135,17 +143,24 @@ create_algorithm_list()
     
     algorithm_list = malloc(sizeof(ast_algorithm_list));
     if (!algorithm_list) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
-    algorithm_list->algorithm_function = malloc(sizeof(ast_algorithm_list*));
+    algorithm_list->algorithm_function = malloc(sizeof(ast_algorithm_function*));
     if (!algorithm_list->algorithm_function) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
-//    algorithm_list->algorithm_function[0] = NULL;
+    ast_algorithm_function * algorithm_function;
+    algorithm_function = malloc(sizeof(ast_algorithm_function));
+    if (!algorithm_function) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
+    algorithm_list->algorithm_function[0] = algorithm_function;
     algorithm_list->num_of_algos = 1;
     
     PRINT(("%s\n", __func__));
@@ -162,7 +177,7 @@ add_algorithm_list(ast_algorithm_list *list, ast_algorithm_function * algorithm_
     
     list->algorithm_function = realloc(list->algorithm_function, num_of_algos*sizeof(ast_algorithm_function*));
     if (!list->algorithm_function) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -181,7 +196,7 @@ create_algorithm_function(ast_algorithm_header * algorithm_header,ast_compound_s
     
     algorithm_function = malloc(sizeof(ast_algorithm_function));
     if (!algorithm_function) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -201,7 +216,7 @@ create_algorithm_header(char * name, ast_algorithm_parameter_list * algorithm_pa
     
     algorithm_header = malloc(sizeof(ast_algorithm_header));
     if (!algorithm_header) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -221,7 +236,7 @@ create_algorithm_parameter_list(char* name, ast_target_list * target_list)
     
     algorithm_parameter_list = malloc(sizeof(ast_algorithm_parameter_list));
     if(!algorithm_parameter_list){
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -240,13 +255,13 @@ create_target_list()
     
     target_list = malloc(sizeof(ast_target_list));
     if (!target_list) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
     target_list->typespec = malloc(sizeof(type_spec*));
     if (!target_list->typespec) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -269,11 +284,17 @@ add_target_list(ast_target_list * list, ast_type_specifier *type_specifier, char
     
     list->typespec = realloc(list->typespec, num_of_type_specs*sizeof(type_spec*));
     if (!list->typespec) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
     type_spec *typespec;
+    typespec = malloc(sizeof(type_spec));
+    if (!typespec) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
     typespec->type_specifier = type_specifier;
     typespec->name = name;
     
@@ -292,7 +313,7 @@ create_compound_statement(ast_variable_declaration_list * variable_declaration_l
     
     compound_statement = malloc(sizeof(ast_compound_statement));
     if (!compound_statement) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -313,18 +334,25 @@ create_variable_declaration_list()
     
     variable_declaration_list = malloc(sizeof(ast_variable_declaration_list));
     if (!variable_declaration_list) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
     variable_declaration_list->variable_declaration = malloc(sizeof(ast_variable_declaration*));
     if (!variable_declaration_list->variable_declaration) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
-    printf("biu\n");
+    
+    ast_variable_declaration * variable_declaration;
+    variable_declaration = malloc(sizeof(ast_variable_declaration*));
+    if (!variable_declaration) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
     variable_declaration_list->num_of_variable_declaration = 0;
-    variable_declaration_list->variable_declaration[0] = NULL;
+    variable_declaration_list->variable_declaration[0] = variable_declaration;
     
     PRINT(("%s\n", __func__));
     
@@ -340,7 +368,7 @@ add_variable_declaration_list(ast_variable_declaration_list * list, ast_variable
     
     list->variable_declaration = realloc(list->variable_declaration, num_of_variable_declaration*sizeof(ast_variable_declaration*));
     if (!list->variable_declaration) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -358,7 +386,7 @@ create_variable_declaration(ast_type_specifier * type_specifier, char *name)
     
     variable_declaration = malloc(sizeof(ast_variable_declaration));
     if (!variable_declaration) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -378,7 +406,7 @@ create_type_specifier(ast_arithmetic_type * arithmetic_type)
     
     type_specifier = malloc(sizeof(ast_type_specifier));
     if (!type_specifier) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -397,7 +425,7 @@ create_arithmetic_type(int type)
     
     arithmetic_type = malloc(sizeof(ast_arithmetic_type));
     if (!arithmetic_type) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -416,7 +444,7 @@ create_statement_list()
     
     statement_list = malloc(sizeof(ast_statement_list));
     if (!statement_list) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -437,7 +465,7 @@ add_statement_list(ast_statement_list * list, ast_statement* statement)
     
     list->statement = realloc(list->statement, num_of_statement*sizeof(ast_statement*));
     if (!list->statement) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -456,7 +484,7 @@ create_statement(ast_set_statement * set_statement)
     
     statement = malloc(sizeof(ast_statement));
     if (!statement) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -475,7 +503,7 @@ create_set_statement(int this_type, ast_argument_expression_list *argument_expre
     
     set_statement = malloc(sizeof(ast_set_statement));
     if (!set_statement) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -496,7 +524,7 @@ create_argument_expression_list(ast_unary_expression *unary_expression,ast_logic
     
     argument_expression_list = malloc(sizeof(ast_argument_expression_list));
     if (!argument_expression_list) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -517,7 +545,7 @@ create_unary_expression(ast_postfix_expression *postfix_expression)
     
     unary_expression = malloc(sizeof(ast_unary_expression));
     if (!unary_expression) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -537,7 +565,7 @@ create_postfix_expression(ast_primary_expression *primary_expression)
     
     postfix_expression = malloc(sizeof(ast_postfix_expression));
     if (!postfix_expression) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -557,7 +585,7 @@ create_primary_expression(char * name)
     
     primary_expression = malloc(sizeof(ast_primary_expression));
     if (!primary_expression) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -577,7 +605,7 @@ create_logical_OR_expression(ast_logical_AND_expression *logical_AND_expression)
     
     logical_OR_expression = malloc(sizeof(ast_logical_OR_expression));
     if (!logical_OR_expression) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -596,7 +624,7 @@ create_logical_AND_expression(ast_equality_expression *equality_expression)
     
     logical_AND_expression = malloc(sizeof(ast_logical_AND_expression));
     if (!logical_AND_expression) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -616,7 +644,7 @@ create_equality_expression(ast_relation_expression *relation_expression)
     
     equality_expression = malloc(sizeof(ast_equality_expression));
     if (!equality_expression) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -636,7 +664,7 @@ create_relation_expression(ast_additive_expression *additive_expression)
     
     relation_expression = malloc(sizeof(ast_relation_expression));
     if (!relation_expression) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -656,7 +684,7 @@ create_additive_expression(ast_multiplicative_expression *multiplicative_express
     
     additive_expression = malloc(sizeof(ast_additive_expression));
     if (!additive_expression) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -676,7 +704,7 @@ create_multiplicative_expression(ast_unary_expression *unary_expression)
     
     multiplicative_expression = malloc(sizeof(ast_multiplicative_expression));
     if (!multiplicative_expression) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -695,7 +723,7 @@ create_assignment_expression(int this_type, ast_unary_expression * unary_express
     
     assignment_expression = malloc(sizeof(ast_assignment_expression));
     if (!assignment_expression) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -717,13 +745,13 @@ create_expression(ast_assignment_expression * assignment_expression)
     
     expression = malloc(sizeof(ast_expression));
     if (!expression) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
     expression->assignment_expression = malloc(sizeof(ast_assignment_expression*));
     if(!expression->assignment_expression) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     expression->assignment_expression[0] = assignment_expression;
@@ -742,7 +770,7 @@ add_expression(ast_expression * list, ast_assignment_expression * assignment_exp
     num_of_assignment_expressions = list->num_of_assignment_expressions +1;
     list->assignment_expression = realloc(list->assignment_expression, num_of_assignment_expressions*sizeof(ast_assignment_expression*));
     if(!list->assignment_expression) {
-        yyerror("out of memory");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
@@ -753,25 +781,381 @@ add_expression(ast_expression * list, ast_assignment_expression * assignment_exp
     return list;
 }
 
+/*************strategy part********************/
+ast_strategy_list *
+create_strategy_list(ast_strategy * strategy)
+{
+    ast_strategy_list * strategy_list;
+    
+    strategy_list = malloc(sizeof(ast_strategy_list));
+    if (!strategy_list) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
+    strategy_list->strategy = malloc(sizeof(ast_strategy*));
+    if(!strategy_list->strategy) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    strategy_list->strategy[0] = strategy;
+    strategy_list->num_of_strategies = 1;
+    
+    PRINT(("%s\n", __func__));
+    
+    return strategy_list;
+    
+}
+
+ast_strategy_list *
+add_strategy_list(ast_strategy_list * list, ast_strategy * strategy)
+{
+    int num_of_strategies;
+    num_of_strategies = list->num_of_strategies +1;
+    list->strategy = realloc(list->strategy, num_of_strategies*sizeof(ast_strategy*));
+    if(!list->strategy) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
+    list->strategy[num_of_strategies-1] = strategy;
+    list->num_of_strategies += 1;
+    
+    PRINT(("%s\n", __func__));
+    return list;
+}
+
+ast_strategy*
+create_strategy( char * name, ast_strategy_body *strategy_body)
+{
+    ast_strategy * strategy;
+    
+    strategy = malloc(sizeof(ast_strategy));
+    if (!strategy) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+
+    strategy->name = name;
+    strategy->strategy_body = strategy_body;
+    
+    PRINT(("%s\n", __func__));
+    
+    return strategy;
+    
+}
+
+ast_strategy_body*
+create_strategy_body( ast_variable_declaration_list *variable_declaration_list, ast_strategy_block *strategy_block)
+{
+    ast_strategy_body * strategy_body;
+    
+    strategy_body = malloc(sizeof(ast_strategy_body));
+    if (!strategy_body) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
+    strategy_body->variable_declaration_list = variable_declaration_list;
+    strategy_body->strategy_block = strategy_block;
+    
+    PRINT(("%s\n", __func__));
+    
+    return strategy_body;
+    
+}
 
 
+ast_strategy_block*
+create_strategy_block( int type, ast_action_list * action_list, ast_process_statement_list * process_statement_list)
+{
+    ast_strategy_block * strategy_block;
+    
+    strategy_block = malloc(sizeof(ast_strategy_block));
+    if (!strategy_block) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    strategy_block->type = type;
+    strategy_block->action_list = action_list;
+    strategy_block->process_statement_list = process_statement_list;
+    
+    PRINT(("%s\n", __func__));
+    
+    return strategy_block;
+    
+}
 
 
+ast_action_list *
+create_action_list(ast_order * order)
+{
+    ast_action_list * action_list;
+    
+    action_list = malloc(sizeof(ast_action_list));
+    if (!action_list) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
+    action_list->order = malloc(sizeof(ast_order*));
+    if (!action_list->order) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    action_list->order[0] = order;
+    action_list->num_of_orders = 1;
+    
+    PRINT(("%s\n", __func__));
+    
+    return action_list;
+}
 
+ast_action_list *
+add_action_list(ast_action_list* list, ast_order * order)
+{
+    PRINT(("add_actionlist************"));
+    int num_of_orders;
+    
+    num_of_orders = list->num_of_orders + 1;
+    list->order = realloc(list->order, num_of_orders*sizeof(ast_order*));
+    if (!list->order) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
+    list->order[num_of_orders-1] = order;
+    list->num_of_orders += 1;
+    
+    PRINT(("%s\n", __func__));
+    return list;
+}
 
+ast_order*
+create_order( ast_order_type *order_type, ast_constraint_list *constraint_list)
+{
+    ast_order * order;
+    
+    order = malloc(sizeof(ast_order));
+    if (!order) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
+    order->order_type = order_type;
+    order->constraint_list = constraint_list;
+    
+    PRINT(("%s\n", __func__));
+    
+    return order;
+    
+}
 
+ast_order_type*
+create_order_type( int type)
+{
+    ast_order_type * order_type;
+    
+    order_type = malloc(sizeof(ast_order_type));
+    if (!order_type) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
+    order_type->type = type;
+    
+    PRINT(("%s\n", __func__));
+    
+    return order_type;
+    
+}
 
+ast_constraint_list *
+create_constraint_list(ast_constraint * constraint)
+{
+    ast_constraint_list * constraint_list;
+    
+    constraint_list = malloc(sizeof(ast_constraint_list));
+    if (!constraint_list) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
+    constraint_list->constraint = malloc(sizeof(ast_constraint*));
+    if (!constraint_list->constraint) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    constraint_list->constraint[0] = constraint;
+    constraint_list->num_of_constraints = 1;
+    
+    PRINT(("%s\n", __func__));
+    
+    return constraint_list;
+}
 
+ast_constraint_list *
+add_constraint_list(ast_constraint_list * list, ast_constraint * constraint)
+{
+    int num_of_constraints;
+    
+    num_of_constraints = list->num_of_constraints + 1;
+    list->constraint = realloc(list->constraint, num_of_constraints*sizeof(ast_constraint*));
+    if (!list->constraint) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
+    list->constraint[num_of_constraints-1] = constraint;
+    list->num_of_constraints += 1;
+    
+    PRINT(("%s\n", __func__));
+    return list;
+}
 
+ast_constraint *
+create_constraint(ast_order_item * order_item)
+{
+    ast_constraint * constraint;
+    
+    constraint = malloc(sizeof(ast_constraint));
+    if (!constraint) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    constraint->order_item = order_item;
+    
+    PRINT(("%s\n", __func__));
+    
+    return constraint;
+    
+}
 
+ast_order_item *
+create_order_item(ast_security *security, int number, char * price_name)
+{
+    ast_order_item * order_item;
+    
+    order_item = malloc(sizeof(ast_order_item));
+    if (!order_item) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    order_item->security = security;
+    order_item->number = number;
+    order_item->price_name = price_name;
+    PRINT(("%s\n", __func__));
+    
+    return order_item;
+    
+}
 
+ast_security *
+create_security(ast_security_type * security_type, char * name)
+{
+    ast_security * security;
+    
+    security = malloc(sizeof(ast_security));
+    if (!security) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    security->security_type = security_type;
+    security->name = name;
 
+    PRINT(("%s\n", __func__));
+    
+    return security;
+    
+}
 
+ast_security_type *
+create_security_type(int type)
+{
+    ast_security_type * security_type;
+    
+    security_type = malloc(sizeof(ast_security_type));
+    if (!security_type) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    security_type->type = type;
+    
+    PRINT(("%s\n", __func__));
+    
+    return security_type;
+    
+}
 
+ast_process_statement_list *
+create_process_statement_list(ast_process_statement * process_statement)
+{
+    ast_process_statement_list * process_statement_list;
+    
+    process_statement_list = malloc(sizeof(ast_process_statement_list));
+    if(!process_statement_list)
+    {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
+    process_statement_list->process_statement = malloc(sizeof(ast_process_statement*));
+    if(!process_statement_list->process_statement)
+    {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
+    process_statement_list->process_statement[0] = process_statement;
+    process_statement_list->num_of_process_statement = 1;
+    
+    PRINT(("%s\n", __func__));
+    
+    return process_statement_list;
+}
 
+ast_process_statement_list *
+add_process_statement_list(ast_process_statement_list * list, ast_process_statement * process_statement)
+{
+    int num_of_process_statement;
+    
+    num_of_process_statement = list->num_of_process_statement + 1;
+    list->process_statement = realloc(list->process_statement, num_of_process_statement*sizeof(ast_process_statement*));
+    if(!list->process_statement)
+    {
+        yyerror("out of memory in create_process_statement_list");
+        return NULL;
+    }
+    
+    list->process_statement[num_of_process_statement-1] = process_statement;
+    list->num_of_process_statement = num_of_process_statement;
+    
+    PRINT(("%s\n", __func__));
+    
+    return list;
+    
+}
 
-
-
+ast_process_statement *
+create_process_statement(int type, ast_expression *expression, ast_action_list *action_list, ast_expression *expression2)
+{
+    ast_process_statement * process_statement;
+    
+    process_statement = malloc(sizeof(ast_process_statement));
+    if (!process_statement) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    process_statement->type = type;
+    process_statement->expression = expression;
+    process_statement->action_list = action_list;
+    process_statement->expression2 = expression2;
+    
+    PRINT(("%s\n", __func__));
+    
+    return process_statement;
+    
+}
 
 /*
 
@@ -783,7 +1167,7 @@ create_node_uselist(char * name)
 
 	uselist = malloc(sizeof(ast_uselist));
 	if (!uselist) {
-		yyerror("out of memory");
+		printf("out of memory in %s\n", __func__);
 		return NULL;
 	}
 	uselist->account = name;
@@ -801,7 +1185,7 @@ create_node_stratlist(ast_strat * strat)
 
 	stratlist = malloc(sizeof(ast_stratlist));
 	if (!stratlist) {
-		yyerror("out of memory");
+		printf("out of memory in %s\n", __func__);
 		return NULL;
 	}
 	stratlist->strat = strat;
@@ -819,7 +1203,7 @@ create_node_strat(char * name, ast_actionlist * actionlist)
 
 	strat = malloc(sizeof(ast_strat));
 	if (!strat) {
-		yyerror("out of memory");
+		printf("out of memory in %s\n", __func__);
 		return NULL;
 	}
 	strat->strategy_name = name;
@@ -837,13 +1221,13 @@ create_node_actionlist(ast_order * order)
 
 	actionlist = malloc(sizeof(ast_actionlist));
 	if (!actionlist) {
-		yyerror("out of memory");
+		printf("out of memory in %s\n", __func__);
 		return NULL;
 	}
 
 	actionlist->order = malloc(sizeof(ast_order*));
 	if (!actionlist->order) {
-		yyerror("out of memory");
+		printf("out of memory in %s\n", __func__);
 		return NULL;
 	}
 	actionlist->order[0] = order;
@@ -862,7 +1246,7 @@ add_order(ast_actionlist* list, ast_order * order)
 	num_of_orders = list->num_of_orders + 1;
 	list->order = realloc(list->order, num_of_orders*sizeof(ast_order*));
 	if (!list->order) {
-		yyerror("out of memory");
+		printf("out of memory in %s\n", __func__);
 		return NULL;
 	}
 
@@ -879,7 +1263,7 @@ create_node_order(int order_type, ast_order_item * order_item)
 
 	order = malloc(sizeof(ast_order));
 	if (!order) {
-		yyerror("out of memory");
+		printf("out of memory in %s\n", __func__);
 		return NULL;
 	}
 	order->order_type = order_type;
@@ -897,7 +1281,7 @@ create_node_order_item(char * equity_identifier, int amount, char *price)  // sh
 
 	order_item = malloc(sizeof(ast_order_item));
 	if (!order_item) {
-		yyerror("out of memory");
+		printf("out of memory in %s\n", __func__);
 		return NULL;
 	}
 	strcpy(order_item->equity_identifier, equity_identifier);
