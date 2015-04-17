@@ -4,6 +4,7 @@
 #include <string.h>
 #include <time.h>
 #include "ast.h"
+#include "symtab.h"
 
 /* Functions to interface with Lex */
 int yylex(void);
@@ -11,6 +12,8 @@ void yyerror (char *s);
 
 /* For debugging: print line numbers on error */
 extern int yylineno;
+struct symbol_table *top;
+struct symbol_table *parent;
 
 %}
 
@@ -122,15 +125,18 @@ extern int yylineno;
 
 
 %%
-program         : use_list decision_list strategy_list	{ $$ = create_program($1, $2, $3);}
+program         : 					{ parent = NULL;
+                                			top = symbol_table_create(parent); }
+		use_list decision_list strategy_list	{ $$ = create_program($2, $3, $4);}
                 ;
 
-use_list        : USE ACCOUNT IDENTIFIER use_others {$$ = create_use_list($<str>3, $4);}
+use_list        : USE ACCOUNT IDENTIFIER use_others	{$$ = create_use_list($<str>3, $4);
+							symbol_table_put_value(top, ACCT_SYM, $3, $$); }
                 ;
 
 use_others      : use_others USE ACCOUNT IDENTIFIER {$$ = add_use_others($1, 1, $<str>4);}
-                | use_others USE DATAFEED IDENTIFIER{$$ = add_use_others($1, 2, $<str>4);}
-                | use_others USE DATABASE IDENTIFIER{$$ = add_use_others($1, 3, $<str>4);}
+                | use_others USE DATAFEED EQTY IDENTIFIER{$$ = add_use_others($1, 2, $<str>4);}
+                | use_others USE DATABASE EQTY IDENTIFIER{$$ = add_use_others($1, 3, $<str>4);}
                 | use_others USE EXCHANGE IDENTIFIER{$$ = add_use_others($1, 4, $<str>4);}
                 | /*NULL*/                          {$$ = create_use_others();}
                 ;
@@ -224,7 +230,11 @@ strategy_list   : strategy_list strategy	{$$ = add_strategy_list($1, $2);}
                 | strategy                  {$$ = create_strategy_list($1);}
                 ;
 
-strategy    : STRATEGY IDENTIFIER  '{' strategy_body '}' {$$ = create_strategy($<str>2, $4);}
+strategy    : STRATEGY IDENTIFIER  '{' 		{ parent = top;
+                                        	top = symbol_table_create(parent); }
+		strategy_body '}' 		{$$ = create_strategy($<str>2, $5);
+		 				 top = parent;
+						 symbol_table_put_value(top, STRAT_SYM, $2, $$); }
             ;
 
 strategy_body   : variable_declaration_list strategy_block  {$$ = create_strategy_body($1, $2);}
