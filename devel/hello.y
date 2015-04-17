@@ -243,8 +243,8 @@ action_list     : action_list order     { $$ = add_action_list($1, $2);}
 order           : order_type '{' constraint_list'}'  {$$ = create_order($1, $3);}
                 ;
 
-order_type      : BUY  { $$ = 0;}
-                | SELL  {$$ = 1;}
+order_type      : BUY  { $$ = create_order_type(0);}
+                | SELL  {$$ = create_order_type(1);}
                 ;
 
 constraint_list : constraint_list constraint  {$$ = add_constraint_list($1, $2);}
@@ -260,8 +260,8 @@ order_item      : security '.'  AMOUNT '('NUMBER')' '.' PRICE '(' PRICEXP  ')' '
 security        :security_type '(' IDENTIFIER ')'  {$$ = create_security($1, $<str>3);}
                 ;
 
-security_type   : EQTY {$$ = 0;}
-                | BOND {$$ = 1;}
+security_type   : EQTY {$$ = create_security_type(0);}
+                | BOND {$$ = create_security_type(1);}
                 ;
 
 process_statement_list  : process_statement_list process_statement {$$ = add_process_statement_list($1, $2);}
