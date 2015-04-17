@@ -1,0 +1,11 @@
+ >>>>>> ORDER PLACED BY hello
+++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++
+[] YOU BOUGHT: 85 SHARES OF AAPL AT USD 22.00
+ >>>>>> ORDER PLACED BY test_a
+++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++
+
+++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++
+[] YOU SOLD: 85 SHARES OF AAPL AT USD 22.00
+ >>>>>> ORDER PLACED BY test_a
+++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++
+
