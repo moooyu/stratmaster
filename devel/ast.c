@@ -13,7 +13,7 @@ void dbg_printf(const char *fmt, ...)
 }
 
 ast_program *
-create_program(ast_use_list * use_list, ast_decision_list * decision_list,ast_strategy_list* strategy_list)
+create_program(ast_use_list * use_list, ast_decision_list * decision_list,ast_strategy_list* strategy_list, struct symbol_table* sym)
 {
 	ast_program * program;
 
@@ -26,6 +26,7 @@ create_program(ast_use_list * use_list, ast_decision_list * decision_list,ast_st
 	program->use_list = use_list;
     program->decision_list = decision_list;
     program->strategy_list = strategy_list;
+    program->sym = sym;
 
 	PRINT(("%s\n", __func__));
 	PRINT(("End of AST construction\n\n"));
@@ -102,7 +103,7 @@ add_use_others(ast_use_others *list, int type, char * name)
     }
     
     use_define *usedefine;
-    usedefine = malloc(sizeof(usedefine));
+    usedefine = malloc(sizeof(use_define));
     if (!usedefine) {
         printf("out of memory in %s\n", __func__);
         return NULL;
@@ -190,7 +191,7 @@ add_algorithm_list(ast_algorithm_list *list, ast_algorithm_function * algorithm_
 
 
 ast_algorithm_function *
-create_algorithm_function(ast_algorithm_header * algorithm_header,ast_compound_statement * compound_statement)
+create_algorithm_function(ast_algorithm_header * algorithm_header,ast_compound_statement * compound_statement, struct symbol_table* sym)
 {
     ast_algorithm_function * algorithm_function;
     
@@ -202,6 +203,7 @@ create_algorithm_function(ast_algorithm_header * algorithm_header,ast_compound_s
     
     algorithm_function->algorithm_header = algorithm_header;
     algorithm_function->compound_statement = compound_statement;
+    algorithm_function->sym = sym;
     
     PRINT(("%s\n", __func__));
     
@@ -826,7 +828,7 @@ add_strategy_list(ast_strategy_list * list, ast_strategy * strategy)
 }
 
 ast_strategy*
-create_strategy( char * name, ast_strategy_body *strategy_body)
+create_strategy( char * name, ast_strategy_body *strategy_body, struct symbol_table * sym)
 {
     ast_strategy * strategy;
     
@@ -838,6 +840,7 @@ create_strategy( char * name, ast_strategy_body *strategy_body)
 
     strategy->name = name;
     strategy->strategy_body = strategy_body;
+    strategy->sym = sym;
     
     PRINT(("%s\n", __func__));
     
