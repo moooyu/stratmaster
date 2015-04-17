@@ -2,72 +2,9 @@
 #include <time.h>
 #include "ast.h"
 #include "y.tab.h"
-#include "runtime.h"
-
-ast_strat * main_strat;
-/*****
-prescan and semantic checking
-****/
-void pre_ast_order_item(ast_order_item * order_item)
-{
-    char buf[64];
-    time_t local_t;
-    struct tm *tmp;
-    time(&local_t);
-    tmp = localtime(&local_t);
-    strftime(buf, 64, "%Y-%m-%d %T",tmp);
-    ////printf("[%s] YOU %s: %d SHARES OF %s AT USD %s\n\n", buf, order_item->order_type== 1 ? "BUY" : "SELL", order_item->amount,  order_item->equity_identifier, order_item->price);
-}
-
-void pre_ast_order(ast_order * order)
-{
-    /////printf("<ORDER: %s>\n", order->order_type== 1 ? "BUY" : "SELL");
-    (order->order_item)->order_type = order->order_type;
-    pre_ast_order_item(order->order_item);
-}
-
-void pre_ast_actionlist(ast_actionlist * actionlist)
-{
-    int i = 0;
-    ///printf("<Num of orders: %d>\n", actionlist->num_of_orders);
-    for (i = 0; i < actionlist->num_of_orders; i++)
-	{
-		pre_ast_order(actionlist->order[i]);
-	}
-}
-
-void pre_ast_strat(ast_strat * strat)
-{
-    ////printf("<strategy name is %s>\n", strat->strategy_name);
-    main_strat = strat;
-    ////printf(" >>>>>> ORDER PLACED BY %s\n", strat->strategy_name);
-    pre_ast_actionlist(strat->actionlist);
-}
-
-void pre_ast_stratlist(ast_stratlist * stratlist)
-{
-    pre_ast_strat(stratlist->strat);
-}
-
-void pre_ast_uselist(ast_uselist * uselist)
-{
-    ////printf("<account: %s>\n", uselist->account);
-}
-
-void pre_ast(ast_program * prog)
-{
-    /////printf("++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++\n");
-    pre_ast_uselist(prog->uselist);
-    pre_ast_stratlist(prog->stratlist);
-    /**pass strategy pointer to the main strategy thread**/
-    strat_start(main_strat);
-    /////printf("++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++\n\n");
-}
-
-
+/*
 void ex_ast_order_item(ast_order_item * order_item)
 {
-/*
     char buf[64];
     time_t local_t;
     struct tm *tmp;
@@ -75,8 +12,6 @@ void ex_ast_order_item(ast_order_item * order_item)
     tmp = localtime(&local_t);
     strftime(buf, 64, "%Y-%m-%d %T",tmp);
     printf("[%s] YOU %s: %d SHARES OF %s AT USD %s\n\n", buf, order_item->order_type== 1 ? "BUY" : "SELL", order_item->amount,  order_item->equity_identifier, order_item->price);
-*/
-   add_order_item(order_item);
 }
 
 void ex_ast_order(ast_order * order)
@@ -99,7 +34,6 @@ void ex_ast_actionlist(ast_actionlist * actionlist)
 void ex_ast_strat(ast_strat * strat)
 {
     ////printf("<strategy name is %s>\n", strat->strategy_name);
-    ////main_strat = strat;
     printf(" >>>>>> ORDER PLACED BY %s\n", strat->strategy_name);
     ex_ast_actionlist(strat->actionlist);
 }
@@ -121,10 +55,13 @@ void ex_ast(ast_program * prog)
     ex_ast_stratlist(prog->stratlist);
     printf("++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++\n\n");
 }
+
+*/
+/*
 #if 0
 void emit_order(Order *my_order)
 {
-	/*  Get local timestamp */
+
 	char buf[64];
 	time_t local_t;
 	struct tm *tmp;
@@ -132,7 +69,7 @@ void emit_order(Order *my_order)
 	tmp = localtime(&local_t);
 	strftime(buf, 64, "%Y-%m-%d %T",tmp);
 
-	/* Determine order type */
+
 	char *order_type = "";
 	switch(my_order->type)
 	{
@@ -141,11 +78,11 @@ void emit_order(Order *my_order)
 		default: order_type = "DID SOMETHING ELSE";
 	}
 
-	/* Print confirmation */
+
 	printf("++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++\n");
 	printf("[%s] YOU %s: %d SHARES OF %s AT USD %s\n", buf, order_type, my_order->amt, my_order->sym, my_order->price);
 	printf(" >>>>>> ORDER PLACED BY %s\n", "stratname");
 	printf("++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++\n\n");
 }
 #endif
-
+*/

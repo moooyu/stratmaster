@@ -150,8 +150,6 @@ void *order_handler(void *arg)
 		emit_order(next_order);
 
 		/* free order_item structures */
-		if( next_order->next != NULL )
-			free(next_order->next);
 		if( next_order->ord != NULL)
 			free(next_order->ord);
 		if( next_order != NULL)

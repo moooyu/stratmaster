@@ -4,7 +4,10 @@
  *   Demo: STRATEGY just issues orders 
  *         (i.e. HelloWorld)
  */
-
+#include <stdio.h>
+#include <time.h>
+#include "ast.h"
+#include "y.tab.h"
 #include "runtime.h"
 
 /*     Global Variables    */
@@ -18,65 +21,32 @@ static pthread_t order_handler_thread;
  */
 static struct account *ac_master;
 
-/**********  Thread handlers  **********/
-
-/*
- *  Handle the STRATEGY thread.
- *  EX: similar to HelloWorld, except
- *  we execute 3 orders in a row.
- */
-void *strategy_handler(void *arg)
+////combined with ex_ast_order_item
+void add_order_item(ast_order_item * order_item)
 {
-	fprintf(stderr, "[INFO] Starting STRATEGY thread.\n");
-	/*******************************
-	 *  STRATEGY BLOCK: action-list
-	 ******************************/
-	char *strat_name = "test_a";
-
-	/* Security A */
-	char *sym_a = "AAAA";
-	int type_a  = EQTY;
-	struct security *sec_a = create_security(sym_a, type_a);
-
-	/* Security B */
-	char *sym_b = "BBB";
-	int type_b  = EQTY;
-	struct security *sec_b = create_security(sym_b, type_b);	
-		
-	/* Security C */
-	char *sym_c = "CC";
-	int type_c  = EQTY;
-	struct security *sec_c = create_security(sym_c, type_c);
-
-
-	/* Create orders */
-	int amt_a = 1000;
-	char *pr_a = "19.99";
-	int t_a = BUY_ORDER;
-	struct order *order_a = create_order(sec_a, amt_a, pr_a, t_a);   
-	
-	int amt_b = 5000;
-	char *pr_b = "205.01";
-	int t_b = SELL_ORDER;
-	struct order *order_b = create_order(sec_b, amt_b, pr_b, t_b);
-
-	int amt_c = 200;
-	char *pr_c = "111.11";
-	int t_c = BUY_ORDER;
-	struct order *order_c = create_order(sec_c, amt_c, pr_c, t_c);
-
-	/* Put orders into the order queue for execution */
-	queue_put_order(&order_queue, order_a, strat_name);
-//	sleep(1);
-	queue_put_order(&order_queue, order_b, strat_name);
-//	sleep(1);
-	queue_put_order(&order_queue, order_c, strat_name);
-//	sleep(1);
-
-	fprintf(stderr, "[INFO] Exiting STRATEGY thread.\n");
-	return (void *)0;
+     ////a fake security
+     char *strat_name = "test_a";
+     char *sym_a = order_item->equity_identifier;
+     int type_a  = EQTY;
+     struct security *sec_a = create_security(sym_a, type_a);
+     ////////
+     int amt = order_item->amount;
+     char *pr = order_item->price;
+     int t = (order_item->order_type== 1 ? BUY_ORDER : SELL_ORDER);
+     struct order *order = create_order(sec_a, amt, pr, t);/////need sec
+     queue_put_order(&order_queue, order, strat_name);
+     ///sleep(1);
+     fprintf(stderr, "[INFO] Exiting STRATEGY thread.\n");
+     return;
 }
 
+/////start strategy from the ast_strat node
+void *strategy_handler(void *arg)
+{
+	ast_strat * strat = (ast_strat *)arg;
+        ex_ast_strat(strat);
+	return (void *)0;
+}
 
 /*
  *  Handle an order.
@@ -101,6 +71,7 @@ void *order_handler(void *arg)
 		emit_order(next_order);
 
 		/* free order_item structures */
+		
 		if( next_order->ord != NULL )
 			free(next_order->ord);
 		if( next_order != NULL )
@@ -111,10 +82,7 @@ void *order_handler(void *arg)
 
 
 
-/*
- *     Demo StratMaster program: HelloWorld with 3 orders.
- */
-int main(int argc, char *argv[])
+void strat_start(ast_strat * main_strat)
 {
 	fprintf(stderr, "[INFO] Starting program.\n");
 	/***************************
@@ -142,7 +110,7 @@ int main(int argc, char *argv[])
 	 *      STRATEGY-LIST 
 	 * *************************/
 	pthread_t my_strat;
-	if( pthread_create(&my_strat, NULL, strategy_handler, NULL ) != 0 )
+	if( pthread_create(&my_strat, NULL, strategy_handler, main_strat ) != 0 )
 		die("could not create strategy_handler");
 	if( pthread_join(my_strat, NULL) != 0 )
 		perror("strategy_handler join");
@@ -170,7 +138,36 @@ int main(int argc, char *argv[])
 	free(ac_master);
 
 	fprintf(stderr, "[INFO] Ending program.\n");
-	return 0;
+	
 }
 
 
+/*
+ *   Issue an order.
+ */
+void emit_order(struct order_item *my_order)
+{
+	/*  Get local timestamp */
+	char buf[64];
+	time_t local_t;
+	struct tm *tmp;
+	time(&local_t);
+	tmp = localtime(&local_t);
+	strftime(buf, 64, "%Y-%m-%d %T",tmp);
+
+	/* Determine order type */
+	char *order_type = "";
+	switch(my_order->ord->order_t)
+	{
+		case BUY_ORDER: order_type = "BOUGHT"; break; 
+		case SELL_ORDER: order_type = "SOLD"; break; 
+		default: order_type = "DID SOMETHING ELSE";
+	}
+
+	/* Print confirmation */
+	printf("++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++\n");
+	printf("[%s] YOU %s: %d SHARES OF %s AT USD %s\n", buf, order_type, my_order->ord->amt, 
+			my_order->ord->sec.sym, my_order->ord->pr.p);
+	printf(" >>>>>> ORDER PLACED BY %s\n", my_order->strat);
+	printf("++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++\n\n");
+}

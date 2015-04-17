@@ -1,0 +1,6 @@
+#!/bin/bash
+
+make clean
+make
+./strat.out <blank_strategy.sm
+

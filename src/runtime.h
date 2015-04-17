@@ -21,7 +21,7 @@
 
 /******** Enumerations **********/
 typedef enum { FALSE, TRUE } boolean;
-typedef enum { EQTY = 2, BOND } security_type;
+typedef enum { EQTY_V = 2, BOND } security_type;
 typedef enum { BUY_ORDER = 4, SELL_ORDER } order_type;
 typedef enum { DATAFEED = 6, DATABASE } data_type;
 
@@ -274,38 +274,6 @@ static struct algorithm *create_algorithm(struct data *data_src)
 
 
 /*
- *   Issue an order.
- */
-void emit_order(struct order_item *my_order)
-{
-	/*  Get local timestamp */
-	char buf[64];
-	time_t local_t;
-	struct tm *tmp;
-	time(&local_t);
-	tmp = localtime(&local_t);
-	strftime(buf, 64, "%Y-%m-%d %T",tmp);
-
-	/* Determine order type */
-	char *order_type = "";
-	switch(my_order->ord->order_t)
-	{
-		case BUY_ORDER: order_type = "BOUGHT"; break; 
-		case SELL_ORDER: order_type = "SOLD"; break; 
-		default: order_type = "DID SOMETHING ELSE";
-	}
-
-	/* Print confirmation */
-	printf("++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++\n");
-	printf("[%s] YOU %s: %d SHARES OF %s AT USD %s\n", buf, order_type, my_order->ord->amt, 
-			my_order->ord->sec.sym, my_order->ord->pr.p);
-	printf(" >>>>>> ORDER PLACED BY %s\n", my_order->strat);
-	printf("++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++\n\n");
-}
-
-
-
-/*
  *   Initialize members of the order queue.
  */
 static void order_queue_init(struct queue *q)
@@ -413,7 +381,6 @@ static struct order_item *queue_get_order(struct queue *q)
 		q->length = 0;
 	}
 
-	next_order->next = NULL;
 	pthread_mutex_unlock(&q->mutex);	
 
 	return next_order;
@@ -421,3 +388,4 @@ static struct order_item *queue_get_order(struct queue *q)
 
 
 #endif /*   _RUNTIME_H_  */
+

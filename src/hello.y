@@ -48,7 +48,7 @@ struct symbol_table *parent;
 program : 			{ parent = NULL;
 				top = symbol_table_create(parent); }			 
 	use_list strategy_list	{ $$ = create_node_program($2, $3);
-				print_ast($$);ex_ast($$);}
+				print_ast($$);pre_ast($$);}
 	;
 
 use_list : USE ACCOUNT IDENTIFIER	{$$ = create_node_uselist($3);
