@@ -355,7 +355,7 @@ ast_strategy_block*
 create_strategy_block( int type, ast_action_list * action_list, ast_process_statement_list * process_statement_list);
 
 ast_action_list *
-create_actionlist(ast_order * order);
+create_action_list(ast_order * order);
 
 ast_action_list *
 add_action_list(ast_action_list* list, ast_order * order);

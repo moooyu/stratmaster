@@ -1123,7 +1123,7 @@ add_process_statement_list(ast_process_statement_list * list, ast_process_statem
     list->process_statement = realloc(list->process_statement, num_of_process_statement*sizeof(ast_process_statement*));
     if(!list->process_statement)
     {
-        yyerror("out of memory in create_process_statement_list");
+        printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
