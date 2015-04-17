@@ -233,7 +233,6 @@ strategy_body   : variable_declaration_list strategy_block  {$$ = create_strateg
 strategy_block  : action_list process_statement_list  {$$ = create_strategy_block(0, $1, $2);}
                 | action_list                         {$$ = create_strategy_block(1, $1, NULL);}
                 | process_statement_list              {$$ = create_strategy_block(2, NULL, $1);}
-                |
                 ;
 
 action_list     : action_list order     { $$ = add_action_list($1, $2);}
