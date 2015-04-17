@@ -1,6 +1,7 @@
 #ifndef _AST_H
 #define _AST_H
 #include <stdarg.h>
+#include "symtab.h"
 /*typedef enum {ast_program_type ,ast_uselist_type ,ast_stratlist_type \
 		,ast_strat_type ,ast_actionlist_type ,ast_order_type \
 		,ast_order_item_type} nodeEnum;
@@ -126,6 +127,7 @@ typedef struct {
 typedef struct {
     ast_algorithm_header * algorithm_header;
     ast_compound_statement * compound_statement;
+    struct symbol_table * sym;
 }ast_algorithm_function;
 
 typedef struct {
@@ -214,6 +216,7 @@ typedef struct {
 typedef struct {
     char * name;
     ast_strategy_body *strategy_body;
+    struct symbol_table *sym;
 }ast_strategy;
 
 typedef struct {
@@ -228,12 +231,13 @@ typedef struct {
     ast_use_list * use_list;
     ast_decision_list * decision_list;
     ast_strategy_list * strategy_list;
+    struct symbol_table *sym;
 }ast_program;
 
 
 
 ast_program *
-create_program(ast_use_list * use_list, ast_decision_list * decision_list, ast_strategy_list* strategy_list);
+create_program(ast_use_list * use_list, ast_decision_list * decision_list, ast_strategy_list* strategy_list, struct symbol_table* sym);
 
 ast_use_list *
 create_use_list(char* first_acc_name, ast_use_others * use_others);
@@ -254,7 +258,7 @@ ast_algorithm_list *
 add_algorithm_list(ast_algorithm_list *list, ast_algorithm_function * algorithm_function);
 
 ast_algorithm_function *
-create_algorithm_function(ast_algorithm_header * algorithm_header,ast_compound_statement * compound_statement);
+create_algorithm_function(ast_algorithm_header * algorithm_header,ast_compound_statement * compound_statement, struct symbol_table* sym);
 
 ast_algorithm_header *
 create_algorithm_header(char * name, ast_algorithm_parameter_list * algorithm_parameter_list);
@@ -346,7 +350,7 @@ ast_strategy_list *
 add_strategy_list(ast_strategy_list * list, ast_strategy * strategy);
 
 ast_strategy*
-create_strategy( char * name, ast_strategy_body *strategy_body);
+create_strategy( char * name, ast_strategy_body *strategy_body, struct symbol_table * sym);
 
 ast_strategy_body*
 create_strategy_body( ast_variable_declaration_list *variable_declaration_list, ast_strategy_block *strategy_block);

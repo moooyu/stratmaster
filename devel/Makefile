@@ -36,13 +36,13 @@ parser.h: y.tab.h
 lex.yy.c : ${LEXFILE}
 	${LEXER} ${LEXFLAGS} ${LEXFILE}
 lex.yy.o: lex.yy.c
-	${CC} -g -c lex.yy.c
+	${CC} -g -c lex.yy.c ${LDFLAGS}
 
 inter.o: inter.c
-	${CC} -g -c inter.c
+	${CC} -g -c inter.c ${LDFLAGS}
 
 ast.o: ast.c
-	${CC} -g -c ast.c
+	${CC} -g -c ast.c ${LDFLAGS}
 
 symtab.o: symtab.c
 	${CC} -g -c symtab.c ${LDFLAGS}

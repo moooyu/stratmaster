@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-enum { ACCT_SYM = 1000, STRAT_SYM, ALGO_SYM, FUNC_SYM, PRICE_SYM};
+enum { ACCT_SYM = 1000, DTF_SYM, DTB_SYM, EXG_SYM, STRAT_SYM, ALGO_SYM, FUNC_SYM, PRICE_SYM};
 
 
 struct symbol_table {
