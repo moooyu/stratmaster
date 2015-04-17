@@ -2,7 +2,6 @@
 
 USE ACCOUNT ac_master
 USE DATAFEED EQTY df_quotes
-USE DATABASE EQTY db_prices
 
 ALGORITHM al_Buy_Something(DATAFEED quotes, PRICE #buy_price)
 {
@@ -11,7 +10,7 @@ ALGORITHM al_Buy_Something(DATAFEED quotes, PRICE #buy_price)
     {
          quotes.NEXT IS EQTY(ZBRA)
          AND
-         Get_Curr_Price(db_prices, EQTY(ZBRA)) < 27.00
+         quotes.NEXT.CURR_PRICE < 27.00
     }
 }
 
