@@ -25,29 +25,29 @@ void print_symtab(struct symbol_table* top)
 	}
 }
 
-struct symbol_table *
+	struct symbol_table *
 symbol_table_create(struct symbol_table* parent)
 {
-   struct symbol_table *symtab;
+	struct symbol_table *symtab;
 
-   symtab = calloc(1, sizeof(struct symbol_table *));
-   if (symtab == NULL) {
-      fprintf(stderr, "Memory allocation request failed.\n");
-      exit(EXIT_FAILURE);
-   }
+	symtab = calloc(1, sizeof(struct symbol_table *));
+	if (symtab == NULL) {
+		fprintf(stderr, "Memory allocation request failed.\n");
+		exit(EXIT_FAILURE);
+	}
 
-   symtab->ht_symbols = g_hash_table_new(g_str_hash, g_str_equal);
-   symtab->parent = parent;
-   return symtab;
+	symtab->ht_symbols = g_hash_table_new(g_str_hash, g_str_equal);
+	symtab->parent = parent;
+	return symtab;
 }
 
-void
+	void
 symbol_table_destroy(struct symbol_table *symtab)
 {
-   g_hash_table_destroy(symtab->ht_symbols);
+	g_hash_table_destroy(symtab->ht_symbols);
 }
 
-void
+	void
 symbol_table_put_value(struct symbol_table *symtab,
 		int type_specifier,
 		const char *identifier,
@@ -77,11 +77,11 @@ symbol_table_put_value(struct symbol_table *symtab,
 		exit (EXIT_FAILURE);
 	}
 	strcpy(id, identifier);
-	
+
 	g_hash_table_insert(symtab->ht_symbols, (gpointer) id, symval);
 }
 
-struct symbol_value*
+	struct symbol_value*
 symbol_table_get_value(struct symbol_table *symtab,
 		int type_specifier,
 		const char *identifier)
