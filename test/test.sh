@@ -1,15 +1,21 @@
 #!/bin/bash
-pushd ../
-pushd src
-make clean
-make
+pushd ../ > /dev/null
+pushd src > /dev/null
+make clean --quiet
+make --quiet
 cp strat.out ../test
-popd
-popd
+popd > /dev/null
+popd > /dev/null
 
 for number in `seq 1` ; do 
-	echo case$$number;
-	./strat.out < ./test/case$number > tmp
-	diff tmp ./test/case1_out
+	./strat.out < ./cases/case$number 2>/dev/null | grep YOU | awk '{ print $4, $5, $8, $11}' > tmp
+	diff tmp ./cases/case1_out
+	if [ "$?" = "0" ]; then
+		result="pass"
+	else
+		result="fail"
+	fi
 	rm tmp
+	echo "case $number is $result"
+
 done
