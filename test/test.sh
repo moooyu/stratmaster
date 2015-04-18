@@ -8,7 +8,7 @@ popd > /dev/null
 popd > /dev/null
 
 for number in `seq 1` ; do 
-	./strat.out < ./cases/case$number 2>/dev/null | grep YOU | awk '{ print $4, $5, $8, $11}' > tmp
+	./strat.out < ./cases/case$number 2>/dev/null | tee log | grep YOU | awk '{ print $4, $5, $8, $11}' > tmp
 	diff tmp ./cases/case1_out
 	if [ "$?" = "0" ]; then
 		result="pass"
