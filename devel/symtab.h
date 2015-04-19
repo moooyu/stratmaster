@@ -4,7 +4,7 @@
 #include <glib.h>
 
 enum { ACCT_SYM = 1000, DTF_SYM, DTB_SYM, EXG_SYM, STRAT_SYM, ALGO_SYM, FUNC_SYM, PRICE_SYM};
-
+enum { INT_T = 100, LONG_T, DOUBLE_T, BOOLEAN_T, SECURITY_T, PRICE_T, VOID_T, ACCOUNT_T, DATAFEED_T, DATABASE_T, EXCHANGE_T }; 
 
 struct symbol_table {
    GHashTable *ht_symbols;

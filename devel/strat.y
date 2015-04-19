@@ -3,8 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
-
+#include "symtab.h"
 
 /* Functions to interface with Lex */
 int yylex(void);
@@ -26,23 +25,25 @@ struct symbol_table *parent;
 
 
 %start program
-%token STRATEGY ALGORITHM FUNCTION USE ACCOUNT DATAFEED DATABASE EXCHANGE
-%token BUY SELL WHAT AMOUNT PRICE EQTY SET IF WHERE WHEN UNTIL RETURNS
-%token INT LONG DOUBLE BOOLEAN SECURITY VOID CURRENCY POSITION IS ISNOT
-%token TRUE FALSE OR AND NOT WHILE
+%token STRATEGY ALGORITHM FUNCTION USE 
+%token BUY SELL WHAT AMOUNT EQTY SET IF WHERE WHEN UNTIL RETURNS
+%token POSITION IS ISNOT
+%token TRUE_S FALSE_S OR AND NOT WHILE
 %token USD EUR JPY POS SEC AMT PRC AVAIL_CASH NEXT
 %token <str> IDENTIFIER PRICEXP
 %token <int_val> INTEGER
+%token <int_val> INT LONG DOUBLE BOOLEAN SECURITY VOID CURRENCY PRICE ACCOUNT DATAFEED DATABASE EXCHANGE 
 %token <fp_val> FLOATPT
 
 
 
 %%
-program		: { fprintf(stdout, "STARTING PROGRAM\n"); } use_list process_list { fprintf(stdout, "ENDING PROGRAM\n");  }
+program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_table_create(parent); } 
+	 	  use_list process_list { fprintf(stdout, "ENDING PROGRAM\n"); print_symtab(top); }
 	 	;
 
-use_list	: USE  variable_declaration			{ fprintf(stdout, "USE statement\n"); }	
-		| use_list USE variable_declaration 		{ fprintf(stdout, "USE statement\n"); }
+use_list	: USE  variable_declaration		
+		| use_list USE variable_declaration 
 		;
 
 process_list	: strategy_list
@@ -117,13 +118,10 @@ constraint_list	: constraint
 		;
 
 constraint	: WHAT ':' order_item ';'
-	   	| WHERE ':' exchange_item ';'
+	   	| WHERE ':' IDENTIFIER ';'
 		;
 
 order_item	: security '.' AMOUNT '(' INTEGER ')''.' PRICE '(' price_expr ')' 	{ fprintf(stdout, "Order Item\n"); }
-		;
-
-exchange_item	: EXCHANGE IDENTIFIER
 		;
 
 price_expr	: PRICEXP
@@ -131,27 +129,27 @@ price_expr	: PRICEXP
 		| IDENTIFIER
 		;
 
-variable_declaration_list : variable_declaration
+variable_declaration_list : variable_declaration			 
 		| variable_declaration_list variable_declaration
 		;
 
-variable_declaration : type_specifier IDENTIFIER ';'
+variable_declaration : type_specifier IDENTIFIER ';'	{ symbol_table_put_value(top, $<int_val>1, $<str>2, NULL); }
 		;
 
-type_specifier	: INT
-		| LONG
-		| DOUBLE
-		| BOOLEAN
-		| SECURITY
-		| PRICE
-		| use_type
-		| VOID
+type_specifier	: INT					{ $<int_val>$ = $1; }
+		| LONG					{ $<int_val>$ = $1; }
+		| DOUBLE				{ $<int_val>$ = $1; }
+		| BOOLEAN				{ $<int_val>$ = $1; }
+		| SECURITY				{ $<int_val>$ = $1; }
+		| PRICE					{ $<int_val>$ = $1; }
+		| use_type				
+		| VOID					{ $<int_val>$ = $1; }
 		;
 
-use_type	: ACCOUNT
-		| DATAFEED
-		| DATABASE
-		| EXCHANGE
+use_type	: ACCOUNT				{ $<int_val>$ = $1; }
+		| DATAFEED				{ $<int_val>$ = $1; }
+		| DATABASE				{ $<int_val>$ = $1; }
+		| EXCHANGE				{ $<int_val>$ = $1; }
 		;
 
 security_type 	: EQTY
@@ -257,8 +255,8 @@ primary_expression : type_name
 		| security
 		| currency
 		| position
-		| TRUE
-		| FALSE
+		| TRUE_S
+		| FALSE_S
 		| '(' expression ')'
 		;
 

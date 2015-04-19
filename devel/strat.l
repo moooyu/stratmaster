@@ -1,8 +1,8 @@
 %{
 #include <stdlib.h>
 #include <string.h>
-
 #include "y.tab.h"
+#include "symtab.h"
 void yyerror(char *);
 %}
 
@@ -19,15 +19,15 @@ wsn		[ \t\n]
 \A\L\G\O\R\I\T\H\M  		{ return(ALGORITHM);}
 \F\U\N\C\T\I\O\N  		{ return(FUNCTION);}
 \U\S\E 				{ return(USE); }
-\A\C\C\O\U\N\T			{ return(ACCOUNT); }
-\D\A\T\A\F\E\E\D    		{ return(DATAFEED);}
-\D\A\T\A\B\A\S\E    		{ return(DATABASE);}
-\E\X\C\H\A\N\G\E    		{ return(EXCHANGE);}
+\A\C\C\O\U\N\T			{ yylval.int_val = ACCOUNT_T; return(ACCOUNT); }
+\D\A\T\A\F\E\E\D    		{ yylval.int_val = DATAFEED_T; return(DATAFEED);}
+\D\A\T\A\B\A\S\E    		{ yylval.int_val = DATABASE_T; return(DATABASE);}
+\E\X\C\H\A\N\G\E    		{ yylval.int_val = EXCHANGE_T; return(EXCHANGE);}
 \B\U\Y				{ return(BUY); }
 \S\E\L\L			{ return(SELL); }
 \W\H\A\T 			{ return(WHAT); }
 \A\M\O\U\N\T			{ return(AMOUNT); }
-\P\R\I\C\E			{ return(PRICE); }
+\P\R\I\C\E			{ yylval.int_val = PRICE_T; return(PRICE); }
 \E\Q\T\Y			{ return(EQTY); }
 \S\E\T             		{ return(SET);}
 \I\F                		{ return(IF);}
@@ -35,18 +35,18 @@ wsn		[ \t\n]
 \W\H\E\N           	 	{ return(WHEN);}
 \U\N\T\I\L          		{ return(UNTIL);}
 \R\E\T\U\R\N\S      		{ return(RETURNS);}
-\I\N\T				{ return(INT); }
-\L\O\N\G			{ return(LONG); }
-\D\O\U\B\L\E  			{ return(DOUBLE); }
-\B\O\O\L\E\A\N			{ return(BOOLEAN); }
-\S\E\C\U\R\I\T\Y		{ return(SECURITY); }
-\V\O\I\D			{ return(VOID); }
+\I\N\T				{ yylval.int_val = INT_T; return(INT); }
+\L\O\N\G			{ yylval.int_val = LONG_T; return(LONG); }
+\D\O\U\B\L\E  			{ yylval.int_val = DOUBLE_T; return(DOUBLE); }
+\B\O\O\L\E\A\N			{ yylval.int_val = BOOLEAN_T; return(BOOLEAN); }
+\S\E\C\U\R\I\T\Y		{ yylval.int_val = SECURITY_T; return(SECURITY); }
+\V\O\I\D			{ yylval.int_val = VOID_T; return(VOID); }
 \C\U\R\R\E\N\C\Y		{ return(CURRENCY); }
 \P\O\S\I\T\I\O\N		{ return(POSITION); }
 \I\S				{ return(IS); }
 \I\S\N\O\T			{ return(ISNOT); }
-\T\R\U\E			{ return(TRUE); }
-\F\A\L\S\E			{ return(FALSE); }
+\T\R\U\E			{ return(TRUE_S); }
+\F\A\L\S\E			{ return(FALSE_S); }
 \O\R				{ return(OR); }
 \A\N\D				{ return(AND); }
 \N\O\T				{ return(NOT); }
