@@ -222,7 +222,7 @@ create_algorithm_header(char * name, ast_algorithm_parameter_list * algorithm_pa
         return NULL;
     }
     
-    algorithm_header->name = name;
+    strcpy (algorithm_header->name, name);
     algorithm_header->algorithm_parameter_list = algorithm_parameter_list;
     
     PRINT(("%s\n", __func__));

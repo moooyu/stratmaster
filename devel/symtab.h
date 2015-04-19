@@ -3,6 +3,16 @@
 
 #include <glib.h>
 
+//#define DEBUGS 1
+
+#ifdef DEBUGS
+#define PRINTS(x)  do { if (DEBUGS) dbg_printf x; } while (0)
+#else
+#define PRINTS(x) do {} while(0)
+#endif
+
+void dbg_printf(const char *fmt, ...);
+
 enum { ACCT_SYM = 1000, DTF_SYM, DTB_SYM, EXG_SYM, STRAT_SYM, ALGO_SYM, FUNC_SYM, PRICE_SYM};
 
 

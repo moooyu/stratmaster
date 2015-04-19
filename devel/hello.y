@@ -163,10 +163,12 @@ algorithm_function  : algorithm_header '{' 	 {parent = top;
 algorithm_header    : ALGORITHM IDENTIFIER '(' algorithm_parameter_list ')'  {$$ = create_algorithm_header($<str>2, $4);}
                     ;
 
-algorithm_parameter_list    :DATAFEED IDENTIFIER target_list  { $$ = create_algorithm_parameter_list($<str>2, $3);}
+algorithm_parameter_list    :DATAFEED IDENTIFIER target_list  { $$ = create_algorithm_parameter_list($<str>2, $3);
+			                         	symbol_table_put_value(top, DTF_SYM, $2, $$); }
                             ;
 
-target_list     : target_list type_specifier IDENTIFIER  {$$ = add_target_list($1, $2, $<str>3);}
+target_list     : target_list type_specifier IDENTIFIER  {$$ = add_target_list($1, $2, $<str>3);
+			                         	symbol_table_put_value(top, PRICE_SYM, $3, $$); }
                 |/*NULL*/                                {$$ = create_target_list();}
                 ;
 
@@ -178,7 +180,7 @@ variable_declaration_list   : variable_declaration_list variable_declaration {$$
                             ;
 
 variable_declaration: type_specifier IDENTIFIER ';'{$$ = create_variable_declaration($1, $<str>2);
-							symbol_table_put_value(top,PRICE_SYM, $<str>2, $$); }
+							symbol_table_put_value(top,PRICE_SYM, $<str>2, $$);}
                     ;
 
 type_specifier  : arithmetic_type {$$ = create_type_specifier($1);}
@@ -232,8 +234,10 @@ expression  : assignment_expression                 {$$ = create_expression($1);
             | expression ',' assignment_expression  {$$ = add_expression($1, $3);}
             ;
 
-assignment_expression   : logical_OR_expression                         {$$ = create_assignment_expression(0, NULL, $1);}
-                        | unary_expression '=' logical_OR_expression    {$$ = create_assignment_expression(1, $1, $3);}
+assignment_expression   : logical_OR_expression                         
+					{$$ = create_assignment_expression(0, NULL, $1);}
+                        | unary_expression '=' logical_OR_expression    
+					{$$ = create_assignment_expression(1, $1, $3);}
                         ;
 
 strategy_list   : strategy_list strategy	{$$ = add_strategy_list($1, $2);}

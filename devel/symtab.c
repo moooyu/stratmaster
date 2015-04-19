@@ -78,6 +78,7 @@ symbol_table_put_value(struct symbol_table *symtab,
 	}
 	strcpy(id, identifier);
 
+	PRINTS(("Symbol %s is put\n", id));
 	g_hash_table_insert(symtab->ht_symbols, (gpointer) id, symval);
 }
 

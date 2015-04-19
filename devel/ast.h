@@ -120,7 +120,8 @@ typedef struct {
 }ast_algorithm_parameter_list;
 
 typedef struct {
-    char * name;
+    //char * name;
+    char name[32];
     ast_algorithm_parameter_list * algorithm_parameter_list;
 }ast_algorithm_header;
 
