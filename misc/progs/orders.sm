@@ -1,10 +1,10 @@
-/* StratMaster: Multiple orders
+/* StratMaster: Multiple orders */
 
-USE ACCOUNT ac_master
+USE ACCOUNT ac_master;
 
 STRATEGY my_orders
 {
-    BUY  { WHAT: EQTY(XYZ).AMOUNT(1000).PRICE(209.10); }
-    SELL { WHAT: EQTY(ABC).AMOUNT(500).PRICE(140.01); }
-    BUY  { WHAT: EQTY(QQQ).AMOUNT(10000).PRICE(14.17); }
+    BUY  { WHAT: EQTY(XYZ).AMOUNT(1000).PRICE(EUR(209.10)); }
+    SELL { WHAT: EQTY(ABC).AMOUNT(500).PRICE(USD(140.01)); }
+    BUY  { WHAT: EQTY(QQQ).AMOUNT(10000).PRICE(JPY(14.17)); }
 }

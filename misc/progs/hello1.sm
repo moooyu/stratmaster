@@ -1,6 +1,6 @@
 /* StratMaster HelloWorld */
 
-USE ACCOUNT ac_master
+USE ACCOUNT ac_master;
 
 STRATEGY hello
 {
