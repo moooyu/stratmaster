@@ -166,8 +166,7 @@ void emit_order(struct order_item *my_order)
 
 	/* Print confirmation */
 	printf("++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++\n");
-	printf("[%s] YOU %s: %d SHARES OF %s AT USD %s\n", buf, order_type, my_order->ord->amt, 
-			my_order->ord->sec.sym, my_order->ord->pr.p);
-	printf(" >>>>>> ORDER PLACED BY %s\n", my_order->strat);
+	printf("[%s] YOU %s %d SHARES OF %s AT USD %s in %s STRATEGY\n", buf, order_type, my_order->ord->amt, 
+			my_order->ord->sec.sym, my_order->ord->pr.p, my_order->strat);
 	printf("++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++\n\n");
 }

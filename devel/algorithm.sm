@@ -2,7 +2,7 @@
 
 USE ACCOUNT ac_MASTER
 USE DATABASE some_dataBASE
-USE DATAFEED some_dataBASE
+USE DATAFEED some_dataBASE1
 ALGORITHM my_algo(DATAFEED some_data_feed PRICE hi)
 {
 	PRICE hihi;
