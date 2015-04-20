@@ -21,7 +21,7 @@ YACCFLAGS = -d
 
 # all of the .o files that the program needs
 # OBJECTS = y.tab.o lex.yy.o inter.o ast.o symtab.o
-OBJECTS = y.tab.o lex.yy.o symtab.o
+OBJECTS = y.tab.o lex.yy.o ast.o symtab.o runtime.o
 # Make strat.out
 ${PROGRAM} : ${OBJECTS}
 	${CC} ${CFLAGS} ${OBJECTS} -o ${PROGRAM} ${LDFLAGS}
@@ -43,11 +43,15 @@ lex.yy.o: lex.yy.c
 #inter.o: inter.c
 #	${CC} -g -c inter.c ${LDFLAGS}
 
-#ast.o: ast.c
-#	${CC} -g -c ast.c ${LDFLAGS}
+runtime.o: runtime.c
+	${CC} -g -c runtime.c ${LDFLAGS}
+
+ast.o: ast.c 
+	${CC} -g -c ast.c ${LDFLAGS}
 
 symtab.o: symtab.c
 	${CC} -g -c symtab.c ${LDFLAGS}
+
 
 clean:
 	/bin/rm -f *.o *.out lex.yy.c y.tab.c y.tab.h core *~

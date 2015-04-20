@@ -20,7 +20,7 @@ struct symbol_value {
 struct symbol_table *symbol_table_create(struct symbol_table* parent);
 void symbol_table_destroy(struct symbol_table *);
 
-void
+int
 symbol_table_put_value(struct symbol_table *symtab,
 			int type_specifier,
 			const char *identifier,

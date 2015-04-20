@@ -4,13 +4,20 @@
 #include <string.h>
 #include <time.h>
 #include "symtab.h"
+#include "ast.h"
+#include "runtime.h"
 
 /* Functions to interface with Lex */
 int yylex(void);
 void yyerror (char *s);
 
+/* Other functions declarations */
+void strat_error_msg(char *msg, int error_t, int lineno);
+
 /* For debugging: print line numbers on error */
 extern int yylineno;
+
+/* Global Variables */
 struct symbol_table *top;
 struct symbol_table *parent;
 
@@ -35,7 +42,50 @@ struct symbol_table *parent;
 %token <int_val> INT LONG DOUBLE BOOLEAN SECURITY VOID CURRENCY PRICE ACCOUNT DATAFEED DATABASE EXCHANGE 
 %token <fp_val> FLOATPT
 
+%type <program> program;
+%type <use_list> use_list;
+%type <use_others> use_others;
+%type <decision_list> decision_list;
+%type <algorithm_list> algorithm_list;
+%type <algorithm_function> algorithm_function;
+%type <algorithm_header> algorithm_header;
+%type <algorithm_parameter_list> algorithm_parameter_list;
+%type <target_list> target_list;
+%type <compound_statement> compound_statement;
+%type <variable_declaration_list> variable_declaration_list;
+%type <variable_declaration> variable_declaration;
+%type <type_specifier> type_specifier;
+%type <arithmetic_type> arithmetic_type;
+%type <statement_list> statement_list;
+%type <statement> statement;
+%type <set_statement> set_statement;
+%type <argument_expression_list> argument_expression_list;
+%type <unary_expression> unary_expression;
+%type <postfix_expression> postfix_expression;
+%type <primary_expression> primary_expression;
+%type <logical_OR_expression> logical_OR_expression;
+%type <logical_AND_expression> logical_AND_expression;
+%type <equality_expression> equality_expression;
+%type <relation_expression> relation_expression;
+%type <additive_expression> additive_expression;
+%type <multiplicative_expression> multiplicative_expression;
+%type <expression> expression;
+%type <assignment_expression> assignment_expression;
 
+%type <strategy_list> strategy_list;
+%type <strategy> strategy;
+%type <strategy_body> strategy_body;
+%type <strategy_block> strategy_block;
+%type <action_list> action_list;
+%type <order> order;
+%type <order_type> order_type;
+%type <constraint_list> constraint_list;
+%type <constraint> constraint;
+%type <order_item> order_item;
+%type <security> security;
+%type <security_type> security_type;
+%type <process_statement_list> process_statement_list;
+%type <process_statement> process_statement;
 
 %%
 program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_table_create(parent); } 
@@ -133,7 +183,8 @@ variable_declaration_list : variable_declaration
 		| variable_declaration_list variable_declaration
 		;
 
-variable_declaration : type_specifier IDENTIFIER ';'	{ symbol_table_put_value(top, $<int_val>1, $<str>2, NULL); }
+variable_declaration : type_specifier IDENTIFIER ';'	{ if( install_symbol($<int_val>1, $<str>2, top) != 0 )
+		    						strat_error_msg("Duplicated Symbol", 1, yylineno); }
 		;
 
 type_specifier	: INT					{ $<int_val>$ = $1; }
@@ -288,6 +339,16 @@ void yyerror(char * s)
 {
    fprintf(stderr, "line %d: %s\n", yylineno, s);
 }
+
+void strat_error_msg(char *msg, int error_t, int lineno)
+{
+    if( error_t == 1 )
+    {	
+        fprintf(stderr, "ERROR: StratMaster: Duplicated variable name on line %d\n", lineno);
+        exit(EXIT_FAILURE);
+    }
+}
+
 
 int main(void)
 {
