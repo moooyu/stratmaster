@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "symtab.h"
+#include "runtime.h"
 
 void print_symtab(struct symbol_table* top)
 {
@@ -15,7 +16,22 @@ void print_symtab(struct symbol_table* top)
 	while (g_hash_table_iter_next (&iter, &key, &value))
 	{
 		printf("%s\n", (char*)key);
+		struct symbol_value *val = (struct symbol_value *)value;
 		// do something with key and value
+		fprintf(stdout, "%s %d\n", val->identifier, val->type_specifier); 
+		if( val->type_specifier == ACCOUNT_T )
+		{
+			struct account *ac = (struct account*)val->nodePtr;
+			fprintf(stdout, "Available cash = %s\n", ac->avail_cash.p);
+
+		}
+		if( val->type_specifier == DATAFEED_T )
+		{
+			struct data *data_src = (struct data*)val->nodePtr;
+			fprintf(stdout, "Data source = %s\n", data_src->df_filename);
+
+		}
+
 	}
 	printf("symtab end\n");
 
@@ -47,7 +63,7 @@ symbol_table_destroy(struct symbol_table *symtab)
 	g_hash_table_destroy(symtab->ht_symbols);
 }
 
-	void
+int
 symbol_table_put_value(struct symbol_table *symtab,
 		int type_specifier,
 		const char *identifier,
@@ -57,8 +73,9 @@ symbol_table_put_value(struct symbol_table *symtab,
 	char *id;
 	symval = g_hash_table_lookup(symtab->ht_symbols, identifier);
 	if (symval != NULL) {
-		fprintf(stderr, "Duplicated symbol %s\n", identifier);
-		exit (EXIT_FAILURE);
+		//fprintf(stderr, "Duplicated symbol %s\n", identifier);
+		//exit (EXIT_FAILURE);
+		return 1;
 	}
 
 	symval = malloc(sizeof(struct symbol_value));
@@ -80,6 +97,7 @@ symbol_table_put_value(struct symbol_table *symtab,
 
 	PRINTS(("Symbol %s is put\n", id));
 	g_hash_table_insert(symtab->ht_symbols, (gpointer) id, symval);
+	return 0;
 }
 
 	struct symbol_value*

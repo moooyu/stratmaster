@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "ast.h"
+#include "runtime.h"
 
 void dbg_printf(const char *fmt, ...)
 {
@@ -933,7 +933,7 @@ add_action_list(ast_action_list* list, ast_order * order)
     PRINT(("%s\n", __func__));
     return list;
 }
-
+/*
 ast_order*
 create_order( ast_order_type *order_type, ast_constraint_list *constraint_list)
 {
@@ -953,7 +953,7 @@ create_order( ast_order_type *order_type, ast_constraint_list *constraint_list)
     return order;
     
 }
-
+*/
 ast_order_type*
 create_order_type( int type)
 {
@@ -1052,7 +1052,7 @@ create_order_item(ast_security *security, int number, char * price_name)
     return order_item;
     
 }
-
+/*
 ast_security *
 create_security(ast_security_type * security_type, char * name)
 {
@@ -1071,7 +1071,7 @@ create_security(ast_security_type * security_type, char * name)
     return security;
     
 }
-
+*/
 ast_security_type *
 create_security_type(int type)
 {
@@ -1159,6 +1159,26 @@ create_process_statement(int type, ast_expression *expression, ast_action_list *
     return process_statement;
     
 }
+
+
+int install_symbol(int id_type, const char *id, struct symbol_table *symtab)
+{
+	switch( id_type )
+	{
+		case ACCOUNT_T:
+			return symbol_table_put_value(symtab, id_type, id, (void*)create_account());
+			break;
+		case DATAFEED_T:
+			symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id, id_type));
+			break;
+		case DATABASE_T:
+	  		symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id, id_type));
+			break;
+		default: /*TODO*/;
+	}
+}
+
+
 
 /*
 

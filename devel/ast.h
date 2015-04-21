@@ -2,6 +2,7 @@
 #define _AST_H
 #include <stdarg.h>
 #include "symtab.h"
+#define NAMEBUF    32      /* Max size of an identifier or name */
 /*typedef enum {ast_program_type ,ast_uselist_type ,ast_stratlist_type \
 		,ast_strat_type ,ast_actionlist_type ,ast_order_type \
 		,ast_order_item_type} nodeEnum;
@@ -126,6 +127,7 @@ typedef struct {
 }ast_algorithm_header;
 
 typedef struct {
+    char algo_id[NAMEBUF];
     ast_algorithm_header * algorithm_header;
     ast_compound_statement * compound_statement;
     struct symbol_table * sym;
@@ -364,10 +366,10 @@ create_action_list(ast_order * order);
 
 ast_action_list *
 add_action_list(ast_action_list* list, ast_order * order);
-
+/*
 ast_order*
 create_order( ast_order_type *order_type, ast_constraint_list *constraint_list);
-
+*/
 ast_order_type*
 create_order_type( int type);
 
@@ -382,10 +384,10 @@ create_constraint(ast_order_item * order_item);
 
 ast_order_item *
 create_order_item(ast_security *security, int number, char * price_name);
-
+/*
 ast_security *
 create_security(ast_security_type * security_type, char * name);
-
+*/
 ast_security_type *
 create_security_type(int type);
 
@@ -399,9 +401,7 @@ add_process_statement_list(ast_process_statement_list * list, ast_process_statem
 ast_process_statement *
 create_process_statement(int type, ast_expression *expression, ast_action_list *action_list, ast_expression *expression2);
 
-
-
-
+int install_symbol(int id_type, const char *id, struct symbol_table *symtab);
 
 
 #define DEBUG 1

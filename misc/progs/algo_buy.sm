@@ -1,16 +1,17 @@
 /* StratMaster: Simple Algorithm */
 
-USE ACCOUNT ac_master
-USE DATAFEED EQTY df_quotes
+USE ACCOUNT ac_master;
+USE DATAFEED df_quotes;
+USE DATAFEED df_quotes;
 
 ALGORITHM al_Buy_Something(DATAFEED quotes, PRICE #buy_price)
 {
-    SET  { buy_price = quotes.NEXT.CURR_PRICE }
+    SET  { buy_price = quotes.NEXT.PRC }
     IF:
     {
-         quotes.NEXT IS EQTY(ZBRA)
+         quotes.NEXT.SEC IS EQTY(ZBRA)
          AND
-         quotes.NEXT.CURR_PRICE < 27.00
+         quotes.NEXT.PRC < 27.00
     }
 }
 

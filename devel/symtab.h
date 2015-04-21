@@ -14,7 +14,7 @@
 void dbg_printf(const char *fmt, ...);
 
 enum { ACCT_SYM = 1000, DTF_SYM, DTB_SYM, EXG_SYM, STRAT_SYM, ALGO_SYM, FUNC_SYM, PRICE_SYM};
-
+enum { INT_T = 100, LONG_T, DOUBLE_T, BOOLEAN_T, SECURITY_T, PRICE_T, VOID_T, ACCOUNT_T, DATAFEED_T, DATABASE_T, EXCHANGE_T }; 
 
 struct symbol_table {
    GHashTable *ht_symbols;
@@ -30,7 +30,7 @@ struct symbol_value {
 struct symbol_table *symbol_table_create(struct symbol_table* parent);
 void symbol_table_destroy(struct symbol_table *);
 
-void
+int
 symbol_table_put_value(struct symbol_table *symtab,
 			int type_specifier,
 			const char *identifier,
