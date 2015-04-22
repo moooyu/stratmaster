@@ -52,6 +52,8 @@ ast_strategy_block *strategy_block;
 %token <int_val> INT LONG DOUBLE BOOLEAN SECURITY VOID CURRENCY PRICE ACCOUNT DATAFEED DATABASE EXCHANGE 
 %token <fp_val> FLOATPT
 
+
+%type <int_val> order_type;
 %type <use_list> use_list;
 %type <algorithm_list> algorithm_list;
 %type <algorithm_header> algorithm_header;
@@ -75,17 +77,16 @@ ast_strategy_block *strategy_block;
 %type <expression> expression;
 %type <assignment_expression> assignment_expression;
 
+%type <int_val> security_type;
 %type <strategy> strategy_definition
 %type <strategy_list> strategy_list;
 %type <strategy_block> strategy_body;
 %type <strategy_block> strategy_block;
 %type <action_list> action_list;
-%type <order_type> order_type;
 %type <order_item> constraint_list;
 %type <order_item> order_item;
 %type <order_item> constraint;
 %type <security> security;
-%type <security_type> security_type;
 %type <process_statement_list> process_statement_list;
 %type <process_statement> process_statement;
 %type <program> process_list
@@ -99,6 +100,9 @@ program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_
 		  			printf("num of order: %d \n", $$->strategy_list[0]->num_of_orders);
 		  			printf("amount: %d \n", $$->strategy_list[0]->order_list[0]->number);
 		  			printf("price: %s \n", $$->strategy_list[0]->order_list[0]->price_name);
+		  			printf("order type: %d \n", $$->strategy_list[0]->order_list[0]->type);
+					printf("security: is %s\n", $$->strategy_list[0]->order_list[0]->security_name);
+					printf("security typ: is %d\n", $$->strategy_list[0]->order_list[0]->security_type);
 					printf("-- AST info done -- \n");
 					fprintf(stdout, "ENDING PROGRAM\n"); print_symtab(top); }
 	 	;
@@ -172,7 +176,7 @@ process_body	: action_list
 		;
 
 action_list	: order_type '{' constraint_list '}'				{ fprintf(stdout, "Action List\n"); 
-										 $$ = create_action_list($3); }
+										 $$ = create_action_list($3); $3->type = $1;}
 		| action_list order_type '{' constraint_list '}'		{ fprintf(stdout, "Action List\n");}
 		;
 
@@ -186,8 +190,6 @@ constraint	: WHAT ':' order_item ';'					{ $$ = $3;}
 
 order_item	: security '.' AMOUNT '(' INTEGER ')''.' PRICE '(' price_expr ')' 	{ fprintf(stdout, "Order Item\n"); 
 											$$ = create_order_item($1, $<int_val>5, $<str>10);
-											printf("amount: is %d\n", $$->number);
-											printf("security: is %s\n", $$->security->name);
 											}
 		;
 
@@ -220,7 +222,7 @@ use_type	: ACCOUNT				{ $<int_val>$ = $1; }
 		| EXCHANGE				{ $<int_val>$ = $1; }
 		;
 
-security_type 	: EQTY					{$$ = create_security_type(0);}
+security_type 	: EQTY					{$$ = 0;}
 		;
 
 currency_type	: USD
@@ -228,8 +230,8 @@ currency_type	: USD
 		| JPY
 		;
 
-order_type	: BUY
-		| SELL
+order_type	: BUY					{ $$ = 0;}
+		| SELL					{ $$ = 1;}
 		;
 
 statement	: expression_statement

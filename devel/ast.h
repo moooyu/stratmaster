@@ -160,15 +160,16 @@ typedef struct {
 }ast_security_type;
 
 typedef struct {
-    ast_security_type * security_type;
+    int type;
     char  name[32];
 }ast_security;
 
 typedef struct {
-    ast_security *security;
+    int security_type;
+    char security_name[32];
     int number;
     char * price_name;
-    /* int type;*/
+    int type;
 }ast_order_item;
 
 typedef struct {
@@ -387,10 +388,8 @@ create_constraint(ast_order_item * order_item);
 
 ast_order_item *
 create_order_item(ast_security *security, int number, char * price_name);
-/*
 ast_security *
-create_security(ast_security_type * security_type, char * name);
-*/
+create_security(int security_type, char * name);
 ast_security_type *
 create_security_type(int type);
 

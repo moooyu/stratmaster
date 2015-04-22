@@ -1055,9 +1055,10 @@ create_order_item(ast_security *security, int number, char * price_name)
         printf("out of memory in %s\n", __func__);
         return NULL;
     }
-    order_item->security = security;
     order_item->number = number;
     order_item->price_name = price_name;
+    order_item->security_type = security->type;
+    strcpy( order_item->security_name, security->name);
     free(security);
     PRINT(("%s\n", __func__));
     
@@ -1066,7 +1067,7 @@ create_order_item(ast_security *security, int number, char * price_name)
 }
 
 ast_security *
-create_security(ast_security_type * security_type, char * name)
+create_security(int security_type, char * name)
 {
     ast_security * security;
     
@@ -1075,7 +1076,7 @@ create_security(ast_security_type * security_type, char * name)
         printf("out of memory in %s\n", __func__);
         return NULL;
     }
-    security->security_type = security_type;
+    security->type = security_type;
     strcpy(security->name,  name);
 
     PRINT(("%s\n", __func__));
