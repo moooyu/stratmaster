@@ -1046,7 +1046,7 @@ create_constraint(ast_order_item * order_item)
 }
 
 ast_order_item *
-create_order_item(ast_security *security, int number, char * price_name)
+create_order_item(ast_security *security, int number, char * price)
 {
     ast_order_item * order_item;
     
@@ -1056,7 +1056,7 @@ create_order_item(ast_security *security, int number, char * price_name)
         return NULL;
     }
     order_item->number = number;
-    order_item->price_name = price_name;
+    strcpy( order_item->price,  price);
     order_item->security_type = security->type;
     strcpy( order_item->security_name, security->name);
     free(security);

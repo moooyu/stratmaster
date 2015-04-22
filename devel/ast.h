@@ -168,7 +168,7 @@ typedef struct {
     int security_type;
     char security_name[32];
     int number;
-    char * price_name;
+    char price[32];
     int type;
 }ast_order_item;
 

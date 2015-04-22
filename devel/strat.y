@@ -99,7 +99,7 @@ program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_
 		  			printf("num of strategies: %d\n", $$->num_of_strategies);
 		  			printf("num of order: %d \n", $$->strategy_list[0]->num_of_orders);
 		  			printf("amount: %d \n", $$->strategy_list[0]->order_list[0]->number);
-		  			printf("price: %s \n", $$->strategy_list[0]->order_list[0]->price_name);
+		  			printf("price: %s \n", $$->strategy_list[0]->order_list[0]->price);
 		  			printf("order type: %d \n", $$->strategy_list[0]->order_list[0]->type);
 					printf("security: is %s\n", $$->strategy_list[0]->order_list[0]->security_name);
 					printf("security typ: is %d\n", $$->strategy_list[0]->order_list[0]->security_type);
