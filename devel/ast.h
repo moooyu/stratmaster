@@ -161,13 +161,14 @@ typedef struct {
 
 typedef struct {
     ast_security_type * security_type;
-    char * name;
+    char  name[32];
 }ast_security;
 
 typedef struct {
     ast_security *security;
     int number;
     char * price_name;
+    /* int type;*/
 }ast_order_item;
 
 typedef struct {
@@ -190,7 +191,7 @@ typedef struct {
 
 typedef struct {
     int num_of_orders;
-    ast_order ** order;
+    ast_order_item ** order;
 }ast_action_list;
 
 typedef struct {
@@ -207,18 +208,17 @@ typedef struct {
 
 typedef struct {
     int type;
-    ast_action_list * action_list;
+    int num_of_orders;
+    ast_order_item ** order_list;
     ast_process_statement_list * process_statement_list;
 }ast_strategy_block;
 
 typedef struct {
-    ast_variable_declaration_list *variable_declaration_list;
-    ast_strategy_block *strategy_block;
-}ast_strategy_body;
-
-typedef struct {
-    char * name;
-    ast_strategy_body *strategy_body;
+    char name[32];
+    int num_of_orders;
+    ast_order_item ** order_list;
+    int num_of_stmt;
+    ast_process_statement **process_statement;
     struct symbol_table *sym;
 }ast_strategy;
 
@@ -233,7 +233,8 @@ typedef struct {
 typedef struct {
     ast_use_list * use_list;
     ast_decision_list * decision_list;
-    ast_strategy_list * strategy_list;
+    int num_of_strategies;
+    ast_strategy ** strategy_list;
     struct symbol_table *sym;
 }ast_program;
 
@@ -353,19 +354,21 @@ ast_strategy_list *
 add_strategy_list(ast_strategy_list * list, ast_strategy * strategy);
 
 ast_strategy*
-create_strategy( char * name, ast_strategy_body *strategy_body, struct symbol_table * sym);
+create_strategy( char * name, ast_strategy_block *strategy_body, struct symbol_table * sym);
 
+/*
 ast_strategy_body*
 create_strategy_body( ast_variable_declaration_list *variable_declaration_list, ast_strategy_block *strategy_block);
+*/
 
 ast_strategy_block*
 create_strategy_block( int type, ast_action_list * action_list, ast_process_statement_list * process_statement_list);
 
 ast_action_list *
-create_action_list(ast_order * order);
+create_action_list(ast_order_item * order);
 
 ast_action_list *
-add_action_list(ast_action_list* list, ast_order * order);
+add_action_list(ast_action_list* list, ast_order_item * order);
 /*
 ast_order*
 create_order( ast_order_type *order_type, ast_constraint_list *constraint_list);

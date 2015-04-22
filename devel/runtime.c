@@ -116,6 +116,7 @@ struct data *create_data_source(const char *dfname, int data_type)
 /*
  *   Create a new security object.
  */
+ /*
 struct security *create_security(const char *ticker, int type)
 {
 	struct security *new_sec = (struct security *)malloc(sizeof(struct security));
@@ -126,6 +127,7 @@ struct security *create_security(const char *ticker, int type)
 
 	return new_sec;
 }
+*/
 
 /*
  *   Create a new order.

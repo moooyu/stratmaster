@@ -99,7 +99,7 @@ long price_to_long(const char *pr);
 struct algorithm *create_algorithm(struct data *data_src);
 struct account *create_account();
 struct data *create_data_source(const char *fname, int data_type);
-struct security *create_security(const char *ticker, int type);
+//struct security *create_security(const char *ticker, int type);
 struct order *create_order(struct security *sec, int amount, const char *price, int order_type);
 void emit_order(struct order_item *my_order);
 /*  Order queue functions */

@@ -1,0 +1,8 @@
+/* StratMaster HelloWorld */
+
+USE ACCOUNT ac_master;
+
+STRATEGY hello
+{
+    BUY { WHAT: EQTY(HELLO).AMOUNT(100).PRICE(29.99); }
+}
