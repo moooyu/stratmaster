@@ -3,7 +3,12 @@
  *               STRATMASTER
  *             Runtime manager.
  */
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include "symtab.h"
+#include "ast.h"
 #include "runtime.h"
 
 /***************** Utility Functions ***************************/
@@ -116,8 +121,8 @@ struct data *create_data_source(const char *dfname, int data_type)
 /*
  *   Create a new security object.
  */
- /*
-struct security *create_security(const char *ticker, int type)
+
+struct security *create_new_security(const char *ticker, int type)
 {
 	struct security *new_sec = (struct security *)malloc(sizeof(struct security));
 	if( new_sec == NULL )
@@ -127,12 +132,12 @@ struct security *create_security(const char *ticker, int type)
 
 	return new_sec;
 }
-*/
+
 
 /*
  *   Create a new order.
  */
-struct order *create_order(struct security *sec, int amount, const char *price, int order_type)
+struct order *create_new_order(struct security *sec, int amount, const char *price, int order_type)
 {
 	struct order *new_order = (struct order *)malloc(sizeof(struct order));
 	if( new_order == NULL )

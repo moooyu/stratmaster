@@ -2,87 +2,194 @@
 #include <time.h>
 #include "ast.h"
 #include "y.tab.h"
+#include "runtime.h"
+
+/*     Global Variables    */
+static struct queue order_queue;
+static pthread_t order_handler_thread;
+static struct account *ac_master;
+///static struct data *df1;
+static char *strat_name;
+
+void run_interp(ast_program * program)
+{
+    fprintf(stderr, "[INFO] Starting program.\n");
+    /***************************
+     *    INITIALIZATION
+     **************************/ 
+     int retval;
+     void *result;
+
+     /* initialize the order queue */
+     order_queue_init(&order_queue);
+
+     /* create the order handler thread */
+     if( pthread_create(&order_handler_thread, NULL, order_handler, NULL ) != 0 )
+         die("could not create order_handler_thread");
+
+     fprintf(stderr, "[INFO] Initialization complete.\n");
+     /* ************************
+      *        USE-LIST 
+      * *************************/
+     /* Create account */
+     ac_master = create_account(); 
+
+     /* Create data source */
+     /*char *df_name = "df_ZBRA";
+     if( (df1 = create_data_source(df_name, DATAFEED)) == NULL )
+         die("error creating data source");*/
+
+
+    /////start execute startegy_list node
+    int tmp =0;
+    while (tmp < program->num_of_strategies)
+    {
+         strat_name = (program->strategy_list[tmp])->name;
+         ex_strategy(program->strategy_list[tmp]);
+         tmp += 1;
+    }
+    /* ************************
+     *  TEAR DOWN THREAD & CLEAN UP 
+     * *************************/
+    fprintf(stderr, "[INFO] Cleaning up.\n");
+    /* Tear down threads */
+    sleep(1);
+    if( pthread_cancel(order_handler_thread) != 0 )
+        perror("order_handler_thread cancellation");
+
+    retval = pthread_join(order_handler_thread, &result);
+    if( retval != 0 )
+        perror("order_handler_thread join");
+
+    if( result != PTHREAD_CANCELED )
+        perror("order_handler_thread was not canceled");
+
+    queue_destroy(&order_queue);	
+
+    /* free account */
+    if( ac_master != NULL)
+	free(ac_master);
+    /*if( df1 != NULL )
+	free(df1);*/
+
+    fprintf(stderr, "[INFO] Ending program.\n");
+
+}
+
+
+void ex_strategy(ast_strategy * strategy)
+{
+    ////start strategy thread
+    pthread_t my_strat;
+    if( pthread_create(&my_strat, NULL, strategy_handler, strategy) != 0 )
+	die("could not create strategy_handler");
+    if( pthread_join(my_strat, NULL) != 0 )
+	perror("strategy_handler join");
+   ////
+}
+
+//////called in ex_strategy
+void *strategy_handler(void *arg)
+{
+    fprintf(stderr, "[INFO] Starting STRATEGY thread.\n");
+    ast_strategy * strategy = (ast_strategy *)arg;
+    ////iterating over orders
+    int tmp = 0;
+    while (tmp < strategy->num_of_orders)
+    {
+        /////execute order
+        ex_order_item(strategy->order_list[tmp]);
+        tmp += 1;
+    }
+}
+
+void ex_order_item(ast_order_item * order_item)
+{
+     char *sym = order_item->security_name;
+     int type  = order_item->security_type;
+     struct security *sec = create_new_security(sym, type);
+     ////////
+     int amt = order_item->number;
+     char *pr = order_item->price;
+     int t = order_item->type;
+     struct order *order = create_new_order(sec, amt, pr, t);/////need sec
+     queue_put_order(&order_queue, order, strat_name);
+}
+
 /*
-void ex_ast_order_item(ast_order_item * order_item)
+ *  Handle an order.
+ *  This is the handler function for the order handler thread.
+ *
+ *  Thread waits on a condition variable to acquire a lock
+ *  on the order queue in order to retrieve the next order
+ *  that needs to be emitted.
+ *
+ */
+void *order_handler(void *arg)
 {
-    char buf[64];
-    time_t local_t;
-    struct tm *tmp;
-    time(&local_t);
-    tmp = localtime(&local_t);
-    strftime(buf, 64, "%Y-%m-%d %T",tmp);
-    printf("[%s] YOU %s: %d SHARES OF %s AT USD %s\n\n", buf, order_item->order_type== 1 ? "BUY" : "SELL", order_item->amount,  order_item->equity_identifier, order_item->price);
-}
+	struct order_item *next_order;
 
-void ex_ast_order(ast_order * order)
-{
-    /////printf("<ORDER: %s>\n", order->order_type== 1 ? "BUY" : "SELL");
-    (order->order_item)->order_type = order->order_type;
-    ex_ast_order_item(order->order_item);
-}
-
-void ex_ast_actionlist(ast_actionlist * actionlist)
-{
-    int i = 0;
-    ///printf("<Num of orders: %d>\n", actionlist->num_of_orders);
-    for (i = 0; i < actionlist->num_of_orders; i++)
+	while(1)
 	{
-		ex_ast_order(actionlist->order[i]);
+		/* Wait for order */
+		next_order = queue_get_order(&order_queue);
+
+		/* Issue the order */
+		fprintf(stderr, "[INFO] ISSUING ORDER.\n");
+		emit_order(next_order);
+
+		/* free order_item structures */
+		
+		if( next_order->ord != NULL )
+			free(next_order->ord);
+		if( next_order != NULL )
+			free(next_order);	
 	}
+	return (void *)0;
 }
 
-void ex_ast_strat(ast_strat * strat)
-{
-    ////printf("<strategy name is %s>\n", strat->strategy_name);
-    printf(" >>>>>> ORDER PLACED BY %s\n", strat->strategy_name);
-    ex_ast_actionlist(strat->actionlist);
-}
-
-void ex_ast_stratlist(ast_stratlist * stratlist)
-{
-    ex_ast_strat(stratlist->strat);
-}
-
-void ex_ast_uselist(ast_uselist * uselist)
-{
-    ////printf("<account: %s>\n", uselist->account);
-}
-
-void ex_ast(ast_program * prog)
-{
-    printf("++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++\n");
-    ex_ast_uselist(prog->uselist);
-    ex_ast_stratlist(prog->stratlist);
-    printf("++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++\n\n");
-}
-
-*/
-/*
-#if 0
-void emit_order(Order *my_order)
-{
-
-	char buf[64];
-	time_t local_t;
-	struct tm *tmp;
-	time(&local_t);
-	tmp = localtime(&local_t);
-	strftime(buf, 64, "%Y-%m-%d %T",tmp);
 
 
-	char *order_type = "";
-	switch(my_order->type)
-	{
-		case BUY_ORDER: order_type = "BOUGHT"; break;
-		case SELL_ORDER: order_type = "SOLD"; break;
-		default: order_type = "DID SOMETHING ELSE";
-	}
 
 
-	printf("++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++\n");
-	printf("[%s] YOU %s: %d SHARES OF %s AT USD %s\n", buf, order_type, my_order->amt, my_order->sym, my_order->price);
-	printf(" >>>>>> ORDER PLACED BY %s\n", "stratname");
-	printf("++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++\n\n");
-}
-#endif
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

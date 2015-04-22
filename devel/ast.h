@@ -406,6 +406,14 @@ create_process_statement(int type, ast_expression *expression, ast_action_list *
 int install_symbol(int id_type, const char *id, struct symbol_table *symtab);
 
 
+
+void run_interp(ast_program * program);
+void ex_strategy(ast_strategy * strategy);
+void *strategy_handler(void *arg);
+void ex_order_item(ast_order_item * order_item);
+void *order_handler(void *arg);
+
+
 #define DEBUG 1
 
 #ifdef DEBUG

@@ -20,6 +20,7 @@ extern int yylineno;
 /* Global Variables */
 struct symbol_table *top;
 struct symbol_table *parent;
+ast_program * root;
 
 %}
 
@@ -104,7 +105,7 @@ program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_
 					printf("security: is %s\n", $$->strategy_list[0]->order_list[0]->security_name);
 					printf("security typ: is %d\n", $$->strategy_list[0]->order_list[0]->security_type);
 					printf("-- AST info done -- \n");
-					fprintf(stdout, "ENDING PROGRAM\n"); print_symtab(top); }
+					fprintf(stdout, "ENDING PROGRAM\n"); print_symtab(top); root = $$;}
 	 	;
 
 use_list	: USE  variable_declaration		
@@ -372,6 +373,7 @@ void strat_error_msg(char *msg, int error_t, int lineno)
 int main(void)
 {
    yyparse();
+   run_interp(root);
    return 0;
 }
 

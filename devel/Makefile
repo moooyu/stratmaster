@@ -21,7 +21,7 @@ YACCFLAGS = -d
 
 # all of the .o files that the program needs
 # OBJECTS = y.tab.o lex.yy.o inter.o ast.o symtab.o
-OBJECTS = y.tab.o lex.yy.o ast.o symtab.o runtime.o
+OBJECTS = y.tab.o lex.yy.o inter.o ast.o symtab.o runtime.o
 # Make strat.out
 ${PROGRAM} : ${OBJECTS}
 	${CC} ${CFLAGS} ${OBJECTS} -o ${PROGRAM} ${LDFLAGS}
@@ -40,8 +40,8 @@ lex.yy.c : ${LEXFILE}
 lex.yy.o: lex.yy.c
 	${CC} -g -c lex.yy.c ${LDFLAGS}
 
-#inter.o: inter.c
-#	${CC} -g -c inter.c ${LDFLAGS}
+inter.o: inter.c
+	${CC} -g -c inter.c ${LDFLAGS}
 
 runtime.o: runtime.c
 	${CC} -g -c runtime.c ${LDFLAGS}
