@@ -222,7 +222,7 @@ use_type	: ACCOUNT				{ $<int_val>$ = $1; }
 		| EXCHANGE				{ $<int_val>$ = $1; }
 		;
 
-security_type 	: EQTY					{$$ = 0;}
+security_type 	: EQTY					{$$ = EQTY_T;}
 		;
 
 currency_type	: USD
