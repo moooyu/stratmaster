@@ -122,7 +122,7 @@ typedef struct {
 
 typedef struct {
     //char * name;
-    char name[32];
+    char name[NAMEBUF];
     ast_algorithm_parameter_list * algorithm_parameter_list;
 }ast_algorithm_header;
 
@@ -161,14 +161,14 @@ typedef struct {
 
 typedef struct {
     int type;
-    char  name[32];
+    char  name[NAMEBUF];
 }ast_security;
 
 typedef struct {
     int security_type;
-    char security_name[32];
+    char security_name[NAMEBUF];
     int number;
-    char price[32];
+    char price[NAMEBUF];
     int type;
 }ast_order_item;
 
@@ -215,7 +215,7 @@ typedef struct {
 }ast_strategy_block;
 
 typedef struct {
-    char name[32];
+    char name[NAMEBUF];
     int num_of_orders;
     ast_order_item ** order_list;
     int num_of_stmt;

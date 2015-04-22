@@ -230,8 +230,8 @@ currency_type	: USD
 		| JPY
 		;
 
-order_type	: BUY					{ $$ = 0;}
-		| SELL					{ $$ = 1;}
+order_type	: BUY					{ $$ = BUY_ORDER;}
+		| SELL					{ $$ = SELL_ORDER;}
 		;
 
 statement	: expression_statement
