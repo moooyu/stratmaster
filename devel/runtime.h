@@ -25,7 +25,7 @@ typedef enum { EQTY_T = 2, BOND_T } security_type;
 typedef enum { BUY_ORDER = 4, SELL_ORDER } order_type;
 //typedef enum { DATAFEED = 6, DATABASE } data_type;
 typedef enum { USD_T = 8, EUR_T, JPY_T } curr_type;
-typedef enum { OP_IS = 256, OP_ISNOT } oper_type;
+typedef enum { OP_IS = 256, OP_ISNOT, OP_FUNC } oper_type;
 
 /****** Structures ****************/
 struct price {

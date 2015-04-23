@@ -79,6 +79,7 @@ ast_strategy_block *strategy_block;
 %type <exp> expression;
 %type <exp> assignment_expression;
 %type <exp> expression_statement;
+%type <exp> type_name;
 
 %type <int_val> security_type;
 %type <strategy> strategy_definition
@@ -166,9 +167,9 @@ strategy_body	: variable_declaration_list statement_list strategy_block
 
 strategy_block	:  action_list			{ $$ = create_strategy_block(1, $1, NULL);}
 		|  process_statement_list
-		/*|  expression_statement { 
-					printf("now we are at strategy_block. opr info. operator: %d, %d, %d, %s\n",
-					$1->type, $1->oper.oper, $1->oper.op1->con.value, $1->oper.op2->key.value);
+	/*	|  expression_statement { 
+					printf("opr info. operator: %d, %d, %d, %s, %s\n",
+					$1->type, $1->oper.oper, $1->oper.op1->oper.oper, $1->oper.op1->oper.op1->id.value, $1->oper.op2->key.value);
 					; } */
 		;
 
@@ -320,7 +321,7 @@ unary_operator 	: '-'
 		;
 
 postfix_expression : primary_expression 			{ $$ = $1; }
-	        | postfix_expression '(' ')'
+	        | postfix_expression '(' ')'			{ $$ = create_opr(OP_FUNC, 1, $1, NULL);}
        		| postfix_expression '(' argument_expression_list ')'
 		;
 
@@ -328,7 +329,7 @@ argument_expression_list : assignment_expression
 		| argument_expression_list ',' assignment_expression
 		;
 
-primary_expression : type_name
+primary_expression : type_name		{ $$ = $1;}
 		| INTEGER		{ $$ = create_const($1);}
 		| PRICEXP
 		| security
@@ -339,7 +340,7 @@ primary_expression : type_name
 		| '(' expression ')'
 		;
 
-type_name	: IDENTIFIER
+type_name	: IDENTIFIER		{ $$ = create_id($1);}
 	  	| type_name '.' IDENTIFIER
 		| type_name '.' attribute
 		;

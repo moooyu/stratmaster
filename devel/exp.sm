@@ -4,5 +4,5 @@ USE ACCOUNT ac_master;
 
 STRATEGY hello
 {
-	1 IS TRUE;
+	funn() IS TRUE;
 }

@@ -1217,6 +1217,24 @@ create_opr(int oper, int nops, ast_exp* op1, ast_exp* op2) {
 }
 
 ast_exp *
+create_id(char* value)
+{
+	ast_exp *p;
+	p = malloc(sizeof(ast_exp));
+	if (!p) {
+		printf("out of memory in %s\n", __func__);
+		return NULL;
+	}
+
+	p->type = typeID;
+	strcpy (p->id.value, value);
+
+    	PRINT(("%s\n", __func__));
+	return p;
+}
+
+
+ast_exp *
 create_keyword(char* value)
 {
 	ast_exp *p;
