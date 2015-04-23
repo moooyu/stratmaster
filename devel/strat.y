@@ -82,6 +82,7 @@ ast_strategy_block *strategy_block;
 %type <exp> expression;
 %type <exp> assignment_expression;
 %type <exp> expression_statement;
+%type <exp> type_name;
 
 %type <int_val> security_type;
 %type <strategy> strategy_definition
@@ -173,7 +174,10 @@ strategy_body	: variable_declaration_list statement_list strategy_block
 
 strategy_block	:  action_list			{ $$ = create_strategy_block(0, $1, NULL); }
 		|  process_statement_list	{ $$ = create_strategy_block(1, NULL, $1); printf("in strategy_block, num of process statements: %d\n", $$->num_of_process_statement);printf("in strategy_block, num of orders: %d\n", $$->num_of_orders);}
-	/*	| expression_statement { printf("now we are at strategy_block. opr info. operator: %d, %c, %d, %d\n", $1->type, $1->oper.oper, $1->oper.op1->con.value, $1->oper.op2->con.value);}  */
+	/*	|  expression_statement { 
+					printf("opr info. operator: %d, %d, %d, %s, %s\n",
+					$1->type, $1->oper.oper, $1->oper.op1->oper.oper, $1->oper.op1->oper.op1->id.value, $1->oper.op2->key.value);
+					; } */
 		;
 
 process_statement_list : process_statement   { $$ = create_process_statement_list($1);}
@@ -295,7 +299,7 @@ logical_AND_expression : equality_expression 				{ $$ = $1;}
 		;
 
 equality_expression : relation_expression 				{ $$ = $1;}
-		| equality_expression IS relation_expression
+		| equality_expression IS relation_expression		{ $$ = create_opr(OP_IS, 2, $1, $3);}
 		| equality_expression ISNOT relation_expression
 		;
 
@@ -307,7 +311,7 @@ relation_expression :  additive_expression 				{ $$ = $1;}
 		;
 
 additive_expression : multiplicative_expression
-        	| additive_expression '+' multiplicative_expression { $$= create_opr('+', 2, $1, $3); printf("We are at +\n");}
+        	| additive_expression '+' multiplicative_expression { $$= create_opr('+', 2, $1, $3);}
 	        | additive_expression '-' multiplicative_expression
 		;
 
@@ -326,7 +330,7 @@ unary_operator 	: '-'
 		;
 
 postfix_expression : primary_expression 			{ $$ = $1; }
-	        | postfix_expression '(' ')'
+	        | postfix_expression '(' ')'			{ $$ = create_opr(OP_FUNC, 1, $1, NULL);}
        		| postfix_expression '(' argument_expression_list ')'
 		;
 
@@ -334,18 +338,18 @@ argument_expression_list : assignment_expression
 		| argument_expression_list ',' assignment_expression
 		;
 
-primary_expression : type_name
-		| INTEGER		{ $$ = create_const($1);printf("%d\n", $1);}
+primary_expression : type_name		{ $$ = $1;}
+		| INTEGER		{ $$ = create_const($1);}
 		| PRICEXP
 		| security
 		| currency
 		| position
-		| TRUE_S
+		| TRUE_S		{ $$ = create_keyword("TRUE");}
 		| FALSE_S
 		| '(' expression ')'
 		;
 
-type_name	: IDENTIFIER
+type_name	: IDENTIFIER		{ $$ = create_id($1);}
 	  	| type_name '.' IDENTIFIER
 		| type_name '.' attribute
 		;
