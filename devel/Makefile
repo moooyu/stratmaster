@@ -17,7 +17,7 @@ LEXER = lex
 PARSER = yacc
 LDFLAGS = -ly -pthread `pkg-config --cflags --libs glib-2.0`
 LEXFLAGS = --yylineno
-YACCFLAGS = -d
+YACCFLAGS = -d --verbose
 
 # all of the .o files that the program needs
 # OBJECTS = y.tab.o lex.yy.o inter.o ast.o symtab.o

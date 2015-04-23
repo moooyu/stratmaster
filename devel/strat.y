@@ -166,7 +166,10 @@ strategy_body	: variable_declaration_list statement_list strategy_block
 
 strategy_block	:  action_list			{ $$ = create_strategy_block(1, $1, NULL);}
 		|  process_statement_list
-	/*	| expression_statement { printf("now we are at strategy_block. opr info. operator: %d, %c, %d, %d\n", $1->type, $1->oper.oper, $1->oper.op1->con.value, $1->oper.op2->con.value);} */
+		/*|  expression_statement { 
+					printf("now we are at strategy_block. opr info. operator: %d, %d, %d, %s\n",
+					$1->type, $1->oper.oper, $1->oper.op1->con.value, $1->oper.op2->key.value);
+					; } */
 		;
 
 process_statement_list : process_statement
@@ -286,7 +289,7 @@ logical_AND_expression : equality_expression 				{ $$ = $1;}
 		;
 
 equality_expression : relation_expression 				{ $$ = $1;}
-		| equality_expression IS relation_expression
+		| equality_expression IS relation_expression		{ $$ = create_opr(OP_IS, 2, $1, $3);}
 		| equality_expression ISNOT relation_expression
 		;
 
@@ -298,7 +301,7 @@ relation_expression :  additive_expression 				{ $$ = $1;}
 		;
 
 additive_expression : multiplicative_expression
-        	| additive_expression '+' multiplicative_expression { $$= create_opr('+', 2, $1, $3); printf("We are at +\n");}
+        	| additive_expression '+' multiplicative_expression { $$= create_opr('+', 2, $1, $3);}
 	        | additive_expression '-' multiplicative_expression
 		;
 
@@ -326,12 +329,12 @@ argument_expression_list : assignment_expression
 		;
 
 primary_expression : type_name
-		| INTEGER		{ $$ = create_const($1);printf("%d\n", $1);}
+		| INTEGER		{ $$ = create_const($1);}
 		| PRICEXP
 		| security
 		| currency
 		| position
-		| TRUE_S
+		| TRUE_S		{ $$ = create_keyword("TRUE");}
 		| FALSE_S
 		| '(' expression ')'
 		;
