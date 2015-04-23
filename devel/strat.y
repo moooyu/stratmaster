@@ -34,11 +34,14 @@ ast_program * root;
 	ast_order_item *order_item;
 	ast_order_item *constraint;
 	ast_order_item * constraint_list;
+	ast_action_list *process_body;
 	ast_action_list *action_list;
 	ast_strategy *strategy;
 	ast_strategy_list *strategy_list;
 	ast_program *program;
 	ast_exp *exp;
+	ast_process_statement * process_statement;
+	ast_process_statement_list * process_statement_list;	
 ast_strategy_block *strategy_block;
 };
 
@@ -85,12 +88,13 @@ ast_strategy_block *strategy_block;
 %type <strategy_list> strategy_list;
 %type <strategy_block> strategy_body;
 %type <strategy_block> strategy_block;
+%type <action_list> process_body
 %type <action_list> action_list;
 %type <order_item> constraint_list;
 %type <order_item> order_item;
 %type <order_item> constraint;
 %type <security> security;
-%type <process_statement_list> process_statement_list;
+%type <process_statement_list> process_statement_list; 
 %type <process_statement> process_statement;
 %type <program> process_list
 %type <program> program
@@ -98,17 +102,20 @@ ast_strategy_block *strategy_block;
 %%
 program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_table_create(parent); } 
 	 	  use_list process_list { $$=$3;
-		  /*
+		  
 		  			printf("-- AST info -- \n");
 		  			printf("num of strategies: %d\n", $$->num_of_strategies);
-		  			printf("num of order: %d \n", $$->strategy_list[0]->num_of_orders);
+					printf("num of order: %d \n", $$->strategy_list[0]->num_of_orders);
+					printf("num_of_process_statement: %d \n", $$->strategy_list[0]->num_of_process_statement);
+					printf("num_of_orders_in_the_first_process_statement: %d \n", $$->strategy_list[0]->process_statement[0]->action_list->num_of_orders);
+		  			/*
 		  			printf("amount: %d \n", $$->strategy_list[0]->order_list[0]->number);
 		  			printf("price: %s \n", $$->strategy_list[0]->order_list[0]->price);
 		  			printf("order type: %d \n", $$->strategy_list[0]->order_list[0]->type);
 					printf("security: is %s\n", $$->strategy_list[0]->order_list[0]->security_name);
-					printf("security typ: is %d\n", $$->strategy_list[0]->order_list[0]->security_type);
+					printf("security typ: is %d\n", $$->strategy_list[0]->order_list[0]->security_type);*/
 					printf("-- AST info done -- \n");
-					*/
+					
 					fprintf(stdout, "ENDING PROGRAM\n"); print_symtab(top); root = $$;}
 	 	;
 
@@ -164,20 +171,21 @@ strategy_body	: variable_declaration_list statement_list strategy_block
 		| /* empty */
 		;
 
-strategy_block	:  action_list			{ $$ = create_strategy_block(1, $1, NULL);}
-		|  process_statement_list
-	/*	| expression_statement { printf("now we are at strategy_block. opr info. operator: %d, %c, %d, %d\n", $1->type, $1->oper.oper, $1->oper.op1->con.value, $1->oper.op2->con.value);} */
+strategy_block	:  action_list			{ $$ = create_strategy_block(0, $1, NULL); }
+		|  process_statement_list	{ $$ = create_strategy_block(1, NULL, $1); printf("in strategy_block, num of process statements: %d\n", $$->num_of_process_statement);printf("in strategy_block, num of orders: %d\n", $$->num_of_orders);}
+	/*	| expression_statement { printf("now we are at strategy_block. opr info. operator: %d, %c, %d, %d\n", $1->type, $1->oper.oper, $1->oper.op1->con.value, $1->oper.op2->con.value);}  */
 		;
 
-process_statement_list : process_statement
+process_statement_list : process_statement   { $$ = create_process_statement_list($1);}
 		| process_statement_list process_statement
 		;
 
 process_statement : WHEN '(' expression ')' '{' process_body '}' UNTIL '(' expression ')' { fprintf(stdout, "Process statement\n"); } 
-		| WHEN '(' expression ')' '{' process_body '}'				{ fprintf(stdout, "Process statement\n"); }
+		| WHEN '(' expression ')' '{' process_body '}'				{ $$ = create_process_statement($3,$6);
+											fprintf(stdout, "Process statement\n");printf("in process_statement, num of orders: %d\n", $$->action_list->num_of_orders); }
 		;
 
-process_body	: action_list
+process_body	: action_list { $$ = $1; }
 	     	| action_list statement_list
 		;
 
@@ -198,6 +206,7 @@ order_item	: security '.' AMOUNT '(' INTEGER ')''.' PRICE '(' price_expr ')' 	{ 
 											$$ = create_order_item($1, $<int_val>5, $<str>10);
 											}
 		;
+
 
 price_expr	: PRICEXP
 		| currency

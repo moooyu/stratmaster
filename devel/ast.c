@@ -844,11 +844,15 @@ create_strategy( char * name, ast_strategy_block *strategy_body, struct symbol_t
 	}
 
 	strcpy(strategy->name, name);
-	if (strategy_body) {
+	if (strategy_body->order_list) {
 		strategy->num_of_orders = strategy_body->num_of_orders;
 		strategy->order_list = strategy_body->order_list;
-		free(strategy_body);
 	}
+	if (strategy_body->process_statement) {
+	    strategy->num_of_process_statement = strategy_body->num_of_process_statement;
+	    strategy->process_statement = strategy_body->process_statement;
+    	}
+	free(strategy_body);
 	strategy->sym = sym;
 
 	PRINT(("%s\n", __func__));
@@ -891,12 +895,17 @@ create_strategy_block( int type, ast_action_list * action_list, ast_process_stat
         return NULL;
     }
     strategy_block->type = type;
+
     if (action_list) {
 	    strategy_block->num_of_orders = action_list->num_of_orders;
 	    strategy_block->order_list = action_list->order;
 	    free(action_list);
     }
-    strategy_block->process_statement_list = process_statement_list;
+    if (process_statement_list) {
+	    strategy_block->num_of_process_statement = process_statement_list->num_of_process_statement;
+	    strategy_block->process_statement = process_statement_list->process_statement;
+	    free(process_statement_list);
+    }
 
     
     PRINT(("%s\n", __func__));
@@ -1158,7 +1167,7 @@ add_process_statement_list(ast_process_statement_list * list, ast_process_statem
     return list;
     
 }
-
+/*
 ast_process_statement *
 create_process_statement(int type, ast_expression *expression, ast_action_list *action_list, ast_expression *expression2)
 {
@@ -1178,8 +1187,28 @@ create_process_statement(int type, ast_expression *expression, ast_action_list *
     
     return process_statement;
     
-}
+}*/
 
+ast_process_statement *
+create_process_statement(ast_exp *expression, ast_action_list *action_list)
+{
+    ast_process_statement * process_statement;
+    
+    process_statement = malloc(sizeof(ast_process_statement));
+    if (!process_statement) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+   /* process_statement->type = type;*/
+    process_statement->expression = expression;
+    process_statement->action_list = action_list;
+  /*  process_statement->expression2 = expression2;  */
+    
+    PRINT(("%s\n", __func__));
+    
+    return process_statement;
+    
+}
 
 int install_symbol(int id_type, const char *id, struct symbol_table *symtab)
 {

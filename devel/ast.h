@@ -215,10 +215,10 @@ typedef struct {
 }ast_action_list;
 
 typedef struct {
-    int type;
-    ast_expression *expression;
+   /* int type;*/
+    ast_exp *expression;
     ast_action_list *action_list;
-    ast_expression *expression2;
+   /* ast_expression *expression2; */
 }ast_process_statement;
 
 typedef struct {
@@ -230,14 +230,15 @@ typedef struct {
     int type;
     int num_of_orders;
     ast_order_item ** order_list;
-    ast_process_statement_list * process_statement_list;
+    int num_of_process_statement;
+    ast_process_statement **process_statement;
 }ast_strategy_block;
 
 typedef struct {
     char name[NAMEBUF];
     int num_of_orders;
     ast_order_item ** order_list;
-    int num_of_stmt;
+    int num_of_process_statement;
     ast_process_statement **process_statement;
     struct symbol_table *sym;
 }ast_strategy;
@@ -423,8 +424,11 @@ ast_process_statement_list *
 add_process_statement_list(ast_process_statement_list * list, ast_process_statement * process_statement);
 
 
+/*ast_process_statement *
+create_process_statement(int type, ast_expression *expression, ast_action_list *action_list, ast_expression *expression2);*/
+
 ast_process_statement *
-create_process_statement(int type, ast_expression *expression, ast_action_list *action_list, ast_expression *expression2);
+create_process_statement(ast_exp *expression, ast_action_list *action_list);
 
 int install_symbol(int id_type, const char *id, struct symbol_table *symtab);
 

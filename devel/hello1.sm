@@ -4,5 +4,8 @@ USE ACCOUNT ac_master;
 
 STRATEGY hello
 {
-    BUY { WHAT: EQTY(WORLD).AMOUNT(105).PRICE(30.99); }
+	WHEN ( 1 ) 
+	{
+		 BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
+	}
 }
