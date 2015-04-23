@@ -24,12 +24,14 @@ create_program(ast_use_list * use_list, ast_decision_list * decision_list,ast_st
 	}
 
 	program->use_list = use_list;
-    program->decision_list = decision_list;
-    program->strategy_list = strategy_list->strategy;
-    program->num_of_strategies = strategy_list->num_of_strategies;
-    program->sym = sym;
+	program->decision_list = decision_list;
+	if (strategy_list) {
+		program->strategy_list = strategy_list->strategy;
+		program->num_of_strategies = strategy_list->num_of_strategies;
+		free(strategy_list);
+	}
+	program->sym = sym;
 
-    free(strategy_list);
 
 	PRINT(("%s\n", __func__));
 	PRINT(("End of AST construction\n\n"));
@@ -833,25 +835,26 @@ add_strategy_list(ast_strategy_list * list, ast_strategy * strategy)
 ast_strategy*
 create_strategy( char * name, ast_strategy_block *strategy_body, struct symbol_table * sym)
 {
-    ast_strategy * strategy;
-    
-    strategy = malloc(sizeof(ast_strategy));
-    if (!strategy) {
-        printf("out of memory in %s\n", __func__);
-        return NULL;
-    }
+	ast_strategy * strategy;
 
-    strcpy(strategy->name, name);
-    strategy->num_of_orders = strategy_body->num_of_orders;
-    strategy->order_list = strategy_body->order_list;
-    strategy->sym = sym;
+	strategy = malloc(sizeof(ast_strategy));
+	if (!strategy) {
+		printf("out of memory in %s\n", __func__);
+		return NULL;
+	}
 
-    free(strategy_body);
-    
-    PRINT(("%s\n", __func__));
-    
-    return strategy;
-    
+	strcpy(strategy->name, name);
+	if (strategy_body) {
+		strategy->num_of_orders = strategy_body->num_of_orders;
+		strategy->order_list = strategy_body->order_list;
+		free(strategy_body);
+	}
+	strategy->sym = sym;
+
+	PRINT(("%s\n", __func__));
+
+	return strategy;
+
 }
 
 /*
@@ -888,11 +891,13 @@ create_strategy_block( int type, ast_action_list * action_list, ast_process_stat
         return NULL;
     }
     strategy_block->type = type;
-    strategy_block->num_of_orders = action_list->num_of_orders;
-    strategy_block->order_list = action_list->order;
+    if (action_list) {
+	    strategy_block->num_of_orders = action_list->num_of_orders;
+	    strategy_block->order_list = action_list->order;
+	    free(action_list);
+    }
     strategy_block->process_statement_list = process_statement_list;
 
-    free(action_list);
     
     PRINT(("%s\n", __func__));
     
@@ -1057,9 +1062,11 @@ create_order_item(ast_security *security, int number, char * price)
     }
     order_item->number = number;
     strcpy( order_item->price,  price);
-    order_item->security_type = security->type;
-    strcpy( order_item->security_name, security->name);
-    free(security);
+    if (security) {
+	    order_item->security_type = security->type;
+	    strcpy( order_item->security_name, security->name);
+	    free(security);
+    }
     PRINT(("%s\n", __func__));
     
     return order_item;
@@ -1191,6 +1198,40 @@ int install_symbol(int id_type, const char *id, struct symbol_table *symtab)
 	}
 }
 
+ast_exp *
+create_opr(int oper, int nops, ast_exp* op1, ast_exp* op2) {
+	ast_exp *p;
+	p = malloc(sizeof(ast_exp));
+	if (!p) {
+		printf("out of memory in %s\n", __func__);
+		return NULL;
+	}
+
+	p->type = typeOper;
+	p->oper.oper = oper;
+	p->oper.op1 = op1;
+	p->oper.op2 = op2;
+
+    	PRINT(("%s\n", __func__));
+	return p;
+}
+
+ast_exp *
+create_const(int value)
+{
+	ast_exp *p;
+	p = malloc(sizeof(ast_exp));
+	if (!p) {
+		printf("out of memory in %s\n", __func__);
+		return NULL;
+	}
+
+	p->type = typeConst;
+	p->con.value = value;
+
+    	PRINT(("%s\n", __func__));
+	return p;
+}
 
 
 /*

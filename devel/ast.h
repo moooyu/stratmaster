@@ -3,11 +3,9 @@
 #include <stdarg.h>
 #include "symtab.h"
 #define NAMEBUF    32      /* Max size of an identifier or name */
-/*typedef enum {ast_program_type ,ast_uselist_type ,ast_stratlist_type \
-		,ast_strat_type ,ast_actionlist_type ,ast_order_type \
-		,ast_order_item_type} nodeEnum;
+typedef enum {typeConst, typeOper} nodeType;
 
-*/
+
 
 typedef struct{
     int type;  /*1ACCOUNT, 2DATAFEED, 3DATABASE, 4EXCHANGE*/
@@ -15,6 +13,27 @@ typedef struct{
 }use_define;
 
 /********************AST NODES***********************/
+
+struct ast_exp;
+typedef struct {
+	int value;
+} ast_const;
+
+typedef struct {
+	int oper;
+	int nops;
+	struct ast_exp *op1;
+	struct ast_exp *op2;
+} ast_oper;
+
+typedef struct ast_exp{
+	nodeType type;
+	union {
+		ast_const con;
+		ast_oper oper;
+	};
+} ast_exp;
+
 typedef struct {
     char * name;
 }ast_primary_expression;
@@ -239,7 +258,11 @@ typedef struct {
     struct symbol_table *sym;
 }ast_program;
 
+ast_exp *
+create_opr(int oper, int nops, ast_exp* op1, ast_exp* op2);
 
+ast_exp *
+create_const(int value);
 
 ast_program *
 create_program(ast_use_list * use_list, ast_decision_list * decision_list, ast_strategy_list* strategy_list, struct symbol_table* sym);

@@ -38,6 +38,7 @@ ast_program * root;
 	ast_strategy *strategy;
 	ast_strategy_list *strategy_list;
 	ast_program *program;
+	ast_exp *exp;
 ast_strategy_block *strategy_block;
 };
 
@@ -66,17 +67,18 @@ ast_strategy_block *strategy_block;
 %type <statement> statement;
 %type <set_statement> set_statement;
 %type <argument_expression_list> argument_expression_list;
-%type <unary_expression> unary_expression;
-%type <postfix_expression> postfix_expression;
-%type <primary_expression> primary_expression;
-%type <logical_OR_expression> logical_OR_expression;
-%type <logical_AND_expression> logical_AND_expression;
-%type <equality_expression> equality_expression;
-%type <relation_expression> relation_expression;
-%type <additive_expression> additive_expression;
-%type <multiplicative_expression> multiplicative_expression;
-%type <expression> expression;
-%type <assignment_expression> assignment_expression;
+%type <exp> unary_expression;
+%type <exp> postfix_expression;
+%type <exp> primary_expression;
+%type <exp> logical_OR_expression;
+%type <exp> logical_AND_expression;
+%type <exp> equality_expression;
+%type <exp> relation_expression;
+%type <exp> additive_expression;
+%type <exp> multiplicative_expression;
+%type <exp> expression;
+%type <exp> assignment_expression;
+%type <exp> expression_statement;
 
 %type <int_val> security_type;
 %type <strategy> strategy_definition
@@ -96,6 +98,7 @@ ast_strategy_block *strategy_block;
 %%
 program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_table_create(parent); } 
 	 	  use_list process_list { $$=$3;
+		  /*
 		  			printf("-- AST info -- \n");
 		  			printf("num of strategies: %d\n", $$->num_of_strategies);
 		  			printf("num of order: %d \n", $$->strategy_list[0]->num_of_orders);
@@ -105,6 +108,7 @@ program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_
 					printf("security: is %s\n", $$->strategy_list[0]->order_list[0]->security_name);
 					printf("security typ: is %d\n", $$->strategy_list[0]->order_list[0]->security_type);
 					printf("-- AST info done -- \n");
+					*/
 					fprintf(stdout, "ENDING PROGRAM\n"); print_symtab(top); root = $$;}
 	 	;
 
@@ -160,8 +164,9 @@ strategy_body	: variable_declaration_list statement_list strategy_block
 		| /* empty */
 		;
 
-strategy_block	: action_list			{ $$ = create_strategy_block(1, $1, NULL);}
-		| process_statement_list
+strategy_block	:  action_list			{ $$ = create_strategy_block(1, $1, NULL);}
+		|  process_statement_list
+	/*	| expression_statement { printf("now we are at strategy_block. opr info. operator: %d, %c, %d, %d\n", $1->type, $1->oper.oper, $1->oper.op1->con.value, $1->oper.op2->con.value);} */
 		;
 
 process_statement_list : process_statement
@@ -242,7 +247,7 @@ statement	: expression_statement
 		| set_statement
 		;
 
-expression_statement : expression ';'
+expression_statement : expression ';'			{ $$ = $1; }
 		| ';'
 		;
 
@@ -264,11 +269,11 @@ iteration_statement : WHILE '(' expression ')' statement
 set_statement 	: SET '{' argument_expression_list '}' IF ':' '{' expression '}'
 		;
 
-expression	: assignment_expression
+expression	: assignment_expression				{ $$ = $1; }
             	| expression ',' assignment_expression
 		;
 
-assignment_expression : logical_OR_expression
+assignment_expression : logical_OR_expression 			{ $$ = $1; }
             	| unary_expression '=' logical_OR_expression
 		;
 
@@ -276,16 +281,16 @@ logical_OR_expression :  logical_AND_expression
             	| logical_OR_expression OR logical_AND_expression
 		;
 
-logical_AND_expression : equality_expression
+logical_AND_expression : equality_expression 				{ $$ = $1;}
            	| logical_AND_expression AND equality_expression
 		;
 
-equality_expression : relation_expression 
+equality_expression : relation_expression 				{ $$ = $1;}
 		| equality_expression IS relation_expression
 		| equality_expression ISNOT relation_expression
 		;
 
-relation_expression :  additive_expression
+relation_expression :  additive_expression 				{ $$ = $1;}
 	        | relation_expression '<' additive_expression
        		| relation_expression '>' additive_expression
        		| relation_expression '<''=' additive_expression
@@ -293,16 +298,16 @@ relation_expression :  additive_expression
 		;
 
 additive_expression : multiplicative_expression
-        	| additive_expression '+' multiplicative_expression
+        	| additive_expression '+' multiplicative_expression { $$= create_opr('+', 2, $1, $3); printf("We are at +\n");}
 	        | additive_expression '-' multiplicative_expression
 		;
 
-multiplicative_expression : unary_expression
+multiplicative_expression : unary_expression { $$ = $1; }
 	        | multiplicative_expression '*' unary_expression
         	| multiplicative_expression '/' unary_expression
 		;
 	
-unary_expression : postfix_expression 
+unary_expression : postfix_expression { $$ = $1;}
 		| unary_operator unary_expression
 		;
 
@@ -311,7 +316,7 @@ unary_operator 	: '-'
 		| NOT
 		;
 
-postfix_expression : primary_expression
+postfix_expression : primary_expression 			{ $$ = $1; }
 	        | postfix_expression '(' ')'
        		| postfix_expression '(' argument_expression_list ')'
 		;
@@ -321,7 +326,7 @@ argument_expression_list : assignment_expression
 		;
 
 primary_expression : type_name
-		| INTEGER
+		| INTEGER		{ $$ = create_const($1);printf("%d\n", $1);}
 		| PRICEXP
 		| security
 		| currency
