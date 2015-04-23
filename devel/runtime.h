@@ -79,6 +79,7 @@ struct algorithm {
 	struct data *d;                /* the data source */
 	int  num_args;                 /* number of arguments */
 	void *args;                    /* list of arguments to ALGORITHM */
+        void *algo_Ptr;       /* Pointer to ast node*/
 };
 
 struct queue {

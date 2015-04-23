@@ -20,7 +20,7 @@ extern int yylineno;
 /* Global Variables */
 struct symbol_table *top;
 struct symbol_table *parent;
-ast_program * root;
+///ast_program * root;
 
 %}
 
