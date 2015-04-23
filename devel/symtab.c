@@ -15,7 +15,6 @@ void print_symtab(struct symbol_table* top)
 	printf("symtab start\n");
 	while (g_hash_table_iter_next (&iter, &key, &value))
 	{
-		printf("%s\n", (char*)key);
 		struct symbol_value *val = (struct symbol_value *)value;
 		// do something with key and value
 		fprintf(stdout, "%s %d\n", val->identifier, val->type_specifier); 

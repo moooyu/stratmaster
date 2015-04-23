@@ -160,7 +160,12 @@ function_header : FUNCTION IDENTIFIER '(' parameter_list ')' func_return	{ fprin
 func_return	: RETURNS type_specifier
 		;
 
-algorithm_definition : algorithm_header compound_statement		{ $$ = create_algorithm_ast($1, $2, top);}
+algorithm_definition : algorithm_header 		{ parent = top;
+							top = symbol_table_create(parent);     }
+			compound_statement		{ $$ = create_algorithm_ast($1, $3, top);
+							top = parent;
+							symbol_table_put_value(top, ALGO_SYM, $$->name, $$);
+							}
 		;
 
 algorithm_header : ALGORITHM IDENTIFIER '(' parameter_list ')'		{ 
@@ -174,7 +179,12 @@ parameter_list	: type_specifier IDENTIFIER				{ fprintf(stdout, "Param List\n");
 		| /* empty */
 		;
 
-strategy_definition : STRATEGY IDENTIFIER '{' strategy_body '}'	{$$ = create_strategy($<str>2, $4, top);}
+strategy_definition : STRATEGY IDENTIFIER '{' 	{ parent = top;
+						top = symbol_table_create(parent); }
+			strategy_body '}'	{$$ = create_strategy($<str>2, $5, top);
+						top = parent;
+						symbol_table_put_value(top, STRAT_SYM, $<str>2, $$);
+						}
 	  	;
 
 strategy_body	: variable_declaration_list statement_list strategy_block
