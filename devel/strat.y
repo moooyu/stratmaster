@@ -38,10 +38,14 @@ ast_program * root;
 	ast_action_list *action_list;
 	ast_strategy *strategy;
 	ast_strategy_list *strategy_list;
+	ast_algorithm_list *algorithm_list;
 	ast_program *program;
 	ast_exp *exp;
 	ast_process_statement * process_statement;
 	ast_process_statement_list * process_statement_list;	
+	ast_algorithm_header *algorithm_header;
+	ast_algorithm *algorithm_function;
+    	ast_compound_statement *compound_statement;
 ast_strategy_block *strategy_block;
 };
 
@@ -62,6 +66,7 @@ ast_strategy_block *strategy_block;
 %type <use_list> use_list;
 %type <algorithm_list> algorithm_list;
 %type <algorithm_header> algorithm_header;
+%type <algorithm_function> algorithm_definition;
 %type <compound_statement> compound_statement;
 %type <variable_declaration_list> variable_declaration_list;
 %type <variable_declaration> variable_declaration;
@@ -105,6 +110,8 @@ program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_
 	 	  use_list process_list { $$=$3;
 		  
 		  			printf("-- AST info -- \n");
+		  			printf("num of algos: %d\n", $$->num_of_algos);
+		  			printf("algos name: %s\n", $$->algo_list[0]->name);
 		  			printf("num of strategies: %d\n", $$->num_of_strategies);
 					printf("num of order: %d \n", $$->strategy_list[0]->num_of_orders);
 					printf("num_of_process_statement: %d \n", $$->strategy_list[0]->num_of_process_statement);
@@ -126,7 +133,7 @@ use_list	: USE  variable_declaration
 
 process_list	: strategy_list 			{$$ = create_program(NULL, NULL, $1, top);}
 	     	| function_list strategy_list
-		| algorithm_list strategy_list
+		| algorithm_list strategy_list 		{$$ = create_program(NULL, $1, $2, top);}
 		| function_list algorithm_list strategy_list
 		;	     	
 
@@ -134,7 +141,8 @@ function_list	: function_definition			{ fprintf(stdout, "Function\n"); }
 		| function_list function_definition	{ fprintf(stdout, "Function\n"); }
 		;
 
-algorithm_list 	: algorithm_definition			{ fprintf(stdout, "Algorithm\n"); }
+algorithm_list 	: algorithm_definition			{ fprintf(stdout, "Algorithm\n"); 
+							$$ = create_algorithm_list($1);}
 		| algorithm_list algorithm_definition	{ fprintf(stdout, "Algorithm\n"); }
 		;
 
@@ -152,10 +160,13 @@ function_header : FUNCTION IDENTIFIER '(' parameter_list ')' func_return	{ fprin
 func_return	: RETURNS type_specifier
 		;
 
-algorithm_definition : algorithm_header compound_statement
+algorithm_definition : algorithm_header compound_statement		{ $$ = create_algorithm_ast($1, $2, top);}
 		;
 
-algorithm_header : ALGORITHM IDENTIFIER '(' parameter_list ')'		{ fprintf(stdout, "Algo Hdr\n"); }
+algorithm_header : ALGORITHM IDENTIFIER '(' parameter_list ')'		{ 
+									fprintf(stdout, "Algo Hdr\n");
+									$$ = create_algorithm_header($<str>2, NULL); 
+									}
 
 parameter_list	: type_specifier IDENTIFIER				{ fprintf(stdout, "Param List\n"); }	
 	       	| type_specifier '#' IDENTIFIER				{ fprintf(stdout, "Param List\n"); }

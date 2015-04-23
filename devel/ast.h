@@ -144,21 +144,20 @@ typedef struct {
 }ast_algorithm_parameter_list;
 
 typedef struct {
-    //char * name;
     char name[NAMEBUF];
     ast_algorithm_parameter_list * algorithm_parameter_list;
 }ast_algorithm_header;
 
 typedef struct {
-    char algo_id[NAMEBUF];
-    ast_algorithm_header * algorithm_header;
+    char name[NAMEBUF];
+    ast_algorithm_parameter_list * algorithm_parameter_list;
     ast_compound_statement * compound_statement;
     struct symbol_table * sym;
-}ast_algorithm_function;
+}ast_algorithm;
 
 typedef struct {
     int num_of_algos;
-    ast_algorithm_function ** algorithm_function;
+    ast_algorithm ** algo_list;
 }ast_algorithm_list;
 
 typedef struct {
@@ -256,8 +255,8 @@ typedef struct {
 /*****************************************/
 
 typedef struct {
-    ast_use_list * use_list;
-    ast_decision_list * decision_list;
+    int num_of_algos;
+    ast_algorithm ** algo_list;
     int num_of_strategies;
     ast_strategy ** strategy_list;
     struct symbol_table *sym;
@@ -276,7 +275,7 @@ ast_exp *
 create_const(int value);
 
 ast_program *
-create_program(ast_use_list * use_list, ast_decision_list * decision_list, ast_strategy_list* strategy_list, struct symbol_table* sym);
+create_program(ast_use_list * use_list, ast_algorithm_list * algorithm_list,ast_strategy_list* strategy_list, struct symbol_table* sym);
 
 ast_use_list *
 create_use_list(char* first_acc_name, ast_use_others * use_others);
@@ -294,10 +293,10 @@ ast_algorithm_list *
 create_algorithm_list();
 
 ast_algorithm_list *
-add_algorithm_list(ast_algorithm_list *list, ast_algorithm_function * algorithm_function);
+add_algorithm_list(ast_algorithm_list *list, ast_algorithm * algorithm_function);
 
-ast_algorithm_function *
-create_algorithm_function(ast_algorithm_header * algorithm_header,ast_compound_statement * compound_statement, struct symbol_table* sym);
+ast_algorithm *
+create_algorithm_ast(ast_algorithm_header * algorithm_header,ast_compound_statement * compound_statement, struct symbol_table* sym);
 
 ast_algorithm_header *
 create_algorithm_header(char * name, ast_algorithm_parameter_list * algorithm_parameter_list);

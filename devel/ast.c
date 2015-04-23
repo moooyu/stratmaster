@@ -13,7 +13,7 @@ void dbg_printf(const char *fmt, ...)
 }
 
 ast_program *
-create_program(ast_use_list * use_list, ast_decision_list * decision_list,ast_strategy_list* strategy_list, struct symbol_table* sym)
+create_program(ast_use_list * use_list, ast_algorithm_list * algorithm_list,ast_strategy_list* strategy_list, struct symbol_table* sym)
 {
 	ast_program * program;
 
@@ -23,8 +23,11 @@ create_program(ast_use_list * use_list, ast_decision_list * decision_list,ast_st
 		return NULL;
 	}
 
-	program->use_list = use_list;
-	program->decision_list = decision_list;
+	if (algorithm_list) {
+		program->algo_list = algorithm_list->algo_list;
+		program->num_of_algos= algorithm_list->num_of_algos;
+		free(algorithm_list);
+	}
 	if (strategy_list) {
 		program->strategy_list = strategy_list->strategy;
 		program->num_of_strategies = strategy_list->num_of_strategies;
@@ -143,7 +146,7 @@ create_decision_list(ast_algorithm_list * algorithm_list)
 }
 
 ast_algorithm_list *
-create_algorithm_list()
+create_algorithm_list(ast_algorithm* algo)
 {
     ast_algorithm_list * algorithm_list;
     
@@ -153,20 +156,13 @@ create_algorithm_list()
         return NULL;
     }
     
-    algorithm_list->algorithm_function = malloc(sizeof(ast_algorithm_function*));
-    if (!algorithm_list->algorithm_function) {
+    algorithm_list->algo_list= malloc(sizeof(ast_algorithm*));
+    if (!algorithm_list->algo_list) {
         printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
-    ast_algorithm_function * algorithm_function;
-    algorithm_function = malloc(sizeof(ast_algorithm_function));
-    if (!algorithm_function) {
-        printf("out of memory in %s\n", __func__);
-        return NULL;
-    }
-    
-    algorithm_list->algorithm_function[0] = algorithm_function;
+    algorithm_list->algo_list[0] = algo;
     algorithm_list->num_of_algos = 1;
     
     PRINT(("%s\n", __func__));
@@ -176,18 +172,18 @@ create_algorithm_list()
 }
 
 ast_algorithm_list *
-add_algorithm_list(ast_algorithm_list *list, ast_algorithm_function * algorithm_function)
+add_algorithm_list(ast_algorithm_list *list, ast_algorithm * algo)
 {
     int num_of_algos;
     num_of_algos = list->num_of_algos + 1;
     
-    list->algorithm_function = realloc(list->algorithm_function, num_of_algos*sizeof(ast_algorithm_function*));
-    if (!list->algorithm_function) {
+    list->algo_list = realloc(list->algo_list, num_of_algos*sizeof(ast_algorithm*));
+    if (!list->algo_list) {
         printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
-    list->algorithm_function[num_of_algos-1] = algorithm_function;
+    list->algo_list[num_of_algos-1] = algo;
     list->num_of_algos += 1;
     
     PRINT(("%s\n", __func__));
@@ -195,24 +191,25 @@ add_algorithm_list(ast_algorithm_list *list, ast_algorithm_function * algorithm_
 }
 
 
-ast_algorithm_function *
-create_algorithm_function(ast_algorithm_header * algorithm_header,ast_compound_statement * compound_statement, struct symbol_table* sym)
+ast_algorithm *
+create_algorithm_ast(ast_algorithm_header * algorithm_header,ast_compound_statement * compound_statement, struct symbol_table* sym)
 {
-    ast_algorithm_function * algorithm_function;
+    ast_algorithm * algo;
     
-    algorithm_function = malloc(sizeof(ast_algorithm_function));
-    if (!algorithm_function) {
+    algo = malloc(sizeof(ast_algorithm));
+    if (!algo) {
         printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
-    algorithm_function->algorithm_header = algorithm_header;
-    algorithm_function->compound_statement = compound_statement;
-    algorithm_function->sym = sym;
+    strcpy (algo->name, algorithm_header->name);
+    /* TODO: param_list */
+    algo->compound_statement = compound_statement;
+    algo->sym = sym;
     
     PRINT(("%s\n", __func__));
     
-    return algorithm_function;
+    return algo;
     
 }
 

@@ -27,7 +27,7 @@ struct symbol_table *parent;
     ast_use_others *use_others;
     ast_decision_list *decision_list;
     ast_algorithm_list *algorithm_list;
-    ast_algorithm_function *algorithm_function;
+    ast_algorithm *algorithm_function;
     ast_algorithm_header *algorithm_header;
     ast_algorithm_parameter_list *algorithm_parameter_list;
     ast_target_list *target_list;
