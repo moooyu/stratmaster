@@ -8,3 +8,6 @@
 - Verification & Validation: Enrui Liao
 
 See `CONTRIBUTING.md` for guidelines on the github workflow. 
+
+See below spreatsheet for project status.
+https://docs.google.com/spreadsheets/d/1xaxyoI_-BGHko3RY85z6nDA2pyHHcfghksvc_plepuM/edit#gid=1203222631
