@@ -3,6 +3,8 @@
 #include <stdarg.h>
 #include "symtab.h"
 #define NAMEBUF    32      /* Max size of an identifier or name */
+/*typedef enum {BUY_ORDER, SELL_ORDER} basic_type;*/
+
 typedef enum {typeConst, typeOper, typeID, typeKeyword} nodeType;
 
 typedef struct{
@@ -191,7 +193,7 @@ typedef struct {
     char security_name[NAMEBUF];
     int number;
     char price[NAMEBUF];
-    int type;
+    int type; /*BUY SELL*/
 }ast_order_item;
 
 typedef struct {
@@ -399,10 +401,10 @@ ast_strategy_block*
 create_strategy_block( int type, ast_action_list * action_list, ast_process_statement_list * process_statement_list);
 
 ast_action_list *
-create_action_list(ast_order_item * order);
+create_action_list(int type, ast_order_item * order);
 
 ast_action_list *
-add_action_list(ast_action_list* list, ast_order_item * order);
+add_action_list(ast_action_list* list, int type, ast_order_item * order);
 /*
 ast_order*
 create_order( ast_order_type *order_type, ast_constraint_list *constraint_list);
@@ -438,6 +440,8 @@ create_process_statement(int type, ast_expression *expression, ast_action_list *
 
 ast_process_statement *
 create_process_statement(ast_exp *expression, ast_action_list *action_list);
+
+void print_ast(ast_program *program);
 
 int install_symbol(int id_type, const char *id, struct symbol_table *symtab);
 
