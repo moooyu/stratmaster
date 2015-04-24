@@ -1,0 +1,22 @@
+/* StratMaster HelloWorld */
+
+USE ACCOUNT ac_master;
+
+ALGORITHM al(PRICE #zbra_price)
+{
+	SET {zbra_price = 200 }
+	IF:
+	{
+		TRUE
+	}
+}
+
+STRATEGY hello
+{
+	PRICE zbra_price;
+
+	WHEN ( al(#zbra_price) IS TRUE ) 
+	{
+		 BUY { WHAT : EQTY(ZBRA).AMOUNT(100).PRICE(zbra_price); }
+	}
+}
