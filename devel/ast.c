@@ -913,7 +913,7 @@ create_strategy_block( int type, ast_action_list * action_list, ast_process_stat
 
 
 ast_action_list *
-create_action_list(ast_order_item * order)
+create_action_list(int type, ast_order_item * order)
 {
     ast_action_list * action_list;
     
@@ -928,6 +928,8 @@ create_action_list(ast_order_item * order)
         printf("out of memory in %s\n", __func__);
         return NULL;
     }
+
+    order->type = type;
     action_list->order[0] = order;
     action_list->num_of_orders = 1;
     
@@ -937,7 +939,7 @@ create_action_list(ast_order_item * order)
 }
 
 ast_action_list *
-add_action_list(ast_action_list* list, ast_order_item * order)
+add_action_list(ast_action_list* list, int type, ast_order_item * order)
 {
     PRINT(("add_actionlist************"));
     int num_of_orders;
@@ -948,7 +950,8 @@ add_action_list(ast_action_list* list, ast_order_item * order)
         printf("out of memory in %s\n", __func__);
         return NULL;
     }
-    
+
+    order->type = type;
     list->order[num_of_orders-1] = order;
     list->num_of_orders += 1;
     

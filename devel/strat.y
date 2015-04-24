@@ -108,7 +108,7 @@ ast_strategy_block *strategy_block;
 %%
 program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_table_create(parent); } 
 	 	  use_list process_list { $$=$3;
-		  
+		  /*
 		  			printf("-- AST info -- \n");
 		  			printf("num of algos: %d\n", $$->num_of_algos);
 		  			printf("algos name: %s\n", $$->algo_list[0]->name);
@@ -116,7 +116,8 @@ program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_
 					printf("num of order: %d \n", $$->strategy_list[0]->num_of_orders);
 					printf("num_of_process_statement: %d \n", $$->strategy_list[0]->num_of_process_statement);
 					printf("num_of_orders_in_the_first_process_statement: %d \n", $$->strategy_list[0]->process_statement[0]->action_list->num_of_orders);
-		  			/*
+					printf("type_of_the_first_order_in_the_first_process_statement: %d \n", $$->strategy_list[0]->process_statement[0]->action_list->order[0]->type);
+		  			
 		  			printf("amount: %d \n", $$->strategy_list[0]->order_list[0]->number);
 		  			printf("price: %s \n", $$->strategy_list[0]->order_list[0]->price);
 		  			printf("order type: %d \n", $$->strategy_list[0]->order_list[0]->type);
@@ -215,8 +216,9 @@ process_body	: action_list { $$ = $1; }
 		;
 
 action_list	: order_type '{' constraint_list '}'				{ fprintf(stdout, "Action List\n"); 
-										 $$ = create_action_list($3); $3->type = $1;}
-		| action_list order_type '{' constraint_list '}'		{ fprintf(stdout, "Action List\n");}
+										 $$ = create_action_list($1,$3);}
+		| action_list order_type '{' constraint_list '}'		{ fprintf(stdout, "Action List\n");
+										 $$ = add_action_list($1,$2,$4);}
 		;
 
 constraint_list	: constraint							{ $$ = $1;}
