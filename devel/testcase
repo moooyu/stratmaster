@@ -1,0 +1,120 @@
+/*<1>StratMaster HelloWorld*/
+USE ACCOUNT ac_master;
+ALGORITHM al()
+{
+}
+
+STRATEGY hello
+{
+	WHEN ( al() IS TRUE )
+	{
+		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
+	}
+}
+/*<>hello from comment*/
+USE ACCOUNT myAccount;
+STRATEGY hello
+{
+BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.00);  } 
+SELL{ WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.00);  } 
+}
+/*<case>hello from comment*/
+USE ACCOUNT myAccount;
+STRATEGY hello          
+{			
+BUY 	{ WHAT: EQTY(	apple)	.AMOUNT(	85	).PRICE(22.44);  } 
+SELL	{ WHAT: EQTY(	apple).AMOUNT(	85	)	.PRICE(22.44);  } 
+}			
+/*<case>hello from comment*/
+USE ACCOUNT myAccount;
+STRATEGY helloworld_to_all_of_my_team_this_is_really_a_long_name_zzzzzzzzzzzzzzz
+{
+BUY { WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
+}
+/*<case>hello from comment*/
+USE ACCOUNT myAccount;
+STRATEGY helloworld
+{
+BUY { WHAT: EQTY(AA_PL).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(AA_PL).AMOUNT(85).PRICE(22.44);  } 
+}
+/*<case>hello from comment*/
+USE ACCOUNT myAccount;
+STRATEGY helloworld{BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } SELL{ WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } }
+
+
+/*<case> comment*/
+USE ACCOUNT my_Account;
+STRATEGY hello
+{/*hello from comment*/
+BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.00);  } 
+/*
+SELL{ WHAT: EQTY(AA).AMOUNT(85).PRICE(22.00);  } 
+*/
+}
+/*<case> two account*/
+USE ACCOUNT myAccount;
+USE ACCOUNT myhelloAccount;
+STRATEGY hello
+{
+BUY { WHAT: EQTY(aapl).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
+}
+
+	
+/*<case> empty strategy*/
+USE ACCOUNT myAccount;
+STRATEGY hello
+{
+}
+/*<case> strategy name == account name*/
+USE ACCOUNT myAccount;
+STRATEGY myAccount
+{
+BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
+}
+/*<case> keyword conflict, */
+/*line 6: syntax error*/
+USE ACCOUNT myAccount;
+STRATEGY eBUY
+{
+BUY { WHAT: EQTY(EQTY).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(EQTY).AMOUNT(85).PRICE(22.44);  } 
+}
+
+/*<case> should not pass arbitrary str in strategy*/
+/*line 6: syntax error*/
+USE ACCOUNT myAccount;
+STRATEGY hello
+{
+DDDD
+BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
+}
+/*<case> should not pass parentness*/
+/*line 7: syntax error*/
+USE ACCOUNT myAccount;
+STRATEGY hello
+{
+BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
+{}
+SELL{ WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
+}
+/*<> This test is for testing abcd */
+/*line 6: syntax error*/
+USE ACCOUNT myAccount;
+STRATEGY hello
+{
+BUY { WHAT: EQTY(apple).AMOUNT(85.5322).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(apple).AMOUNT(85.5322).PRICE(22.44);  } 
+}
+/*<case> dot*/
+/*line 6: syntax error*/
+USE ACCOUNT myhello.Account;
+USE STRATEGY hel.lo
+{
+BUY { WHAT: EQTY(a.apl).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
+}
