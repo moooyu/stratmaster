@@ -1210,6 +1210,12 @@ create_process_statement(ast_exp *expression, ast_action_list *action_list)
     
 }
 
+void print_ast(ast_program *program)
+{
+	printf("****************************\nHere is print ast_tree.\n");
+	printf("End of print ast_tree\n****************************\n");
+}
+
 int install_symbol(int id_type, const char *id, struct symbol_table *symtab)
 {
 	switch( id_type )

@@ -441,16 +441,21 @@ create_process_statement(int type, ast_expression *expression, ast_action_list *
 ast_process_statement *
 create_process_statement(ast_exp *expression, ast_action_list *action_list);
 
+void print_ast(ast_program *program);
+
 int install_symbol(int id_type, const char *id, struct symbol_table *symtab);
 
-
+/////////root node for the program
+ast_program * root;
 
 void run_interp(ast_program * program);
 void ex_strategy(ast_strategy * strategy);
 void *strategy_handler(void *arg);
 void ex_order_item(ast_order_item * order_item);
 void *order_handler(void *arg);
-
+void ex_process_statement(ast_process_statement * process_statement);
+void *algorithm_handler(void *arg);
+void ex_action_list(ast_action_list * action_list);
 
 #define DEBUG 1
 
