@@ -69,7 +69,6 @@ ast_strategy_block *strategy_block;
 %type <algorithm_header> algorithm_header;
 %type <algorithm_function> algorithm_definition;
 %type <compound_statement> compound_statement;
-%type <variable_declaration_list> variable_declaration_list;
 %type <int_val> type_specifier;
 %type <statement_list> statement_list;
 %type <statement> statement;
@@ -178,8 +177,8 @@ strategy_definition : STRATEGY IDENTIFIER '{' 	{ parent = top;
 						}
 	  	;
 
-strategy_body	: variable_declaration_list statement_list strategy_block	{ }
-	      	| variable_declaration_list strategy_block 	{ }
+strategy_body	: variable_declaration_list statement_list strategy_block	{ $$ = $3; }
+	      	| variable_declaration_list strategy_block 	{ $$ = $2; }
 		| strategy_block		{ $$ = $1; }
 		| /* empty */			{ }
 		;
