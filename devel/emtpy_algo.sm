@@ -2,7 +2,7 @@
 
 USE ACCOUNT ac_master;
 
-ALGORITHM al(DATAFEED some_feed, PRICE # zbra_price,PRICE # cat_price, PRICE # rabbit_price)
+ALGORITHM al(/*DATAFEED some_feed, */PRICE # zbra_price,PRICE # cat_price, PRICE # rabbit_price)
 {
 }
 
