@@ -21,6 +21,7 @@ typedef struct {
 
 typedef struct {
 	char value[NAMEBUF];
+	struct symbol_table* sym;
 } ast_str;
 
 typedef struct {
@@ -265,7 +266,7 @@ typedef struct {
 }ast_program;
 
 ast_exp *
-create_id(char* value);
+create_id(char* value, struct symbol_table *top);
 
 ast_exp *
 create_keyword(char* value);

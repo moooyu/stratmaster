@@ -1230,7 +1230,9 @@ int install_symbol(int id_type, const char *id, struct symbol_table *symtab)
 	  		symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id, id_type));
 			break;
 		default: /*TODO*/;
+	  		symbol_table_put_value(symtab, id_type, id, 0);
 	}
+	return 0;
 }
 
 ast_exp *
@@ -1252,7 +1254,7 @@ create_opr(int oper, int nops, ast_exp* op1, ast_exp* op2) {
 }
 
 ast_exp *
-create_id(char* value)
+create_id(char* value, struct symbol_table *top)
 {
 	ast_exp *p;
 	p = malloc(sizeof(ast_exp));
@@ -1263,6 +1265,7 @@ create_id(char* value)
 
 	p->type = typeID;
 	strcpy (p->id.value, value);
+	p->id.sym = top;
 
     	PRINT(("%s\n", __func__));
 	return p;

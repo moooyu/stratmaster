@@ -171,17 +171,15 @@ strategy_definition : STRATEGY IDENTIFIER '{' 	{ parent = top;
 	  	;
 
 strategy_body	: variable_declaration_list statement_list strategy_block	{ }
-	      	| variable_declaration_list strategy_block 	{ }
+	      	| variable_declaration_list strategy_block 	{ $$ = $2;}
 		| strategy_block		{ $$ = $1; }
 		| /* empty */			{ }
 		;
 
 strategy_block	:  action_list			{ $$ = create_strategy_block(0, $1, NULL); }
-		|  process_statement_list	{ $$ = create_strategy_block(1, NULL, $1); printf("in strategy_block, num of process statements: %d\n", $$->num_of_process_statement);printf("in strategy_block, num of orders: %d\n", $$->num_of_orders);}
-	/*	|  expression_statement { 
-					printf("opr info. operator: %d, %d, %d, %s, %s\n",
-					$1->type, $1->oper.oper, $1->oper.op1->oper.oper, $1->oper.op1->oper.op1->id.value, $1->oper.op2->key.value);
-					; } */
+		|  process_statement_list	{ $$ = create_strategy_block(1, NULL, $1); 
+						printf("in strategy_block, num of process statements: %d\n", $$->num_of_process_statement);
+						printf("in strategy_block, num of orders: %d\n", $$->num_of_orders);}
 		;
 
 process_statement_list : process_statement   { $$ = create_process_statement_list($1);}
@@ -354,7 +352,7 @@ primary_expression : type_name		{ $$ = $1;}
 		| '(' expression ')'	{ }
 		;
 
-type_name	: IDENTIFIER		{ $$ = create_id($1);}
+type_name	: IDENTIFIER		{ $$ = create_id($1, top);}
 	  	| type_name '.' IDENTIFIER
 		| type_name '.' attribute
 		;
