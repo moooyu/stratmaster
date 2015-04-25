@@ -1,8 +1,7 @@
-/*<case> dot*/
-/*line 6: syntax error*/
-USE ACCOUNT myhello.Account;
-USE STRATEGY hel.lo
+/*<67>No Strat*/
+USE ACCOUNT ac_master;
+ALGORITHM al()
 {
-BUY { WHAT: EQTY(a.apl).AMOUNT(85).PRICE(22.44);  } 
-SELL{ WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
 }
+
+

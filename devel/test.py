@@ -1,11 +1,15 @@
 import subprocess
 import sys
 import re
+import argparse
 from pipes import *
 
 
 
-
+parser = argparse.ArgumentParser(prog='PLT FINAL',description=
+                "python test.py or python test.py --case number")
+parser.add_argument('--case',  help='choose a case number')
+args = parser.parse_args()
 
 
 
@@ -82,32 +86,42 @@ subprocess.call("./test.sh")
 /dev/null
 '''
 feed = feed[1:]
-fail = []
+
+s,e = 0,len(feed)
+if args.case != None:  s = int(args.case); e = s+1
+info = []
 count = 0
-for line in feed[:]:
+fail = []
+for line in feed[s:e]:
 	
 	with open('test.sm','w') as f:f.write(line)
 	exe = subprocess.Popen("./strat.out",stdin=open('test.sm','r'), stdout = subprocess.PIPE , stderr=subprocess.PIPE)
 	out =  [exe.stdout.read(),exe.stderr.read()]
 	res = 'pass'
-	if count < 10:
-		expected = re.findall('[0-9]*\.?[0-9]+',line)
+	if count < 30:
+		expected = re.findall('[0-9]*\.?[0-9]+',line)[1:]
 		for x in expected:
 			if x not in out[0]: 
 				res = 'fail'
 				break
+		if 'syntax' in out[1]:res = 'fail'
 	else:
 		expected = line.split('\n')[1].strip('*/')
 		if expected not in out[1]: res = 'fail'
 	print "case",count,':',res
-	fail.append([line,out[0]+out[1],expected])
+	info.append([line,out[0]+out[1],expected])
 	if res == 'fail':
+		fail.append(count)
 		print 'fail case number',count
 	count += 1
-n = int(raw_input('type the fail case by order: '))
+print "/*************summary**************/"
+print 'pass: ',count - len(fail),'/',count
+for i in fail:
+	print 'fail case',i,': ',info[i][0].split('*/')[0]
+n = int(raw_input('type the fail case number: '))
 print "/*************Source Code**************/"
-print fail[n][0]
+print info[n][0]
 print "\n/*****************Program Output****************/"
-print fail[n][1]
+print info[n][1]
 print "\n/*******************Expected Output*****************/"
-print fail[n][2]
+print info[n][2]
