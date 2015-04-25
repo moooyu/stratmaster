@@ -108,11 +108,12 @@ for line in feed[s:e]:
 	else:
 		expected = line.split('\n')[1].strip('*/')
 		if expected not in out[1]: res = 'fail'
-	print "case",count,':',res
+	
 	info.append([line,out[0]+out[1],expected])
-	if res == 'fail':
+	if res == 'pass': print "case",count,':',info[count][0].split('*/')[0],'\n','------->',res
+	elif res == 'fail':
 		fail.append(count)
-		print 'fail case number',count
+		print "case",count,':',info[count][0].split('*/')[0],'\n','------->',res
 	count += 1
 print "/*************summary**************/"
 print 'pass: ',count - len(fail),'/',count
@@ -125,3 +126,5 @@ print "\n/*****************Program Output****************/"
 print info[n][1]
 print "\n/*******************Expected Output*****************/"
 print info[n][2]
+if raw_input('dump to log file in this dir?(y/n)') == 'y':
+	with open('log','w') as f: f.write(info[n][0])

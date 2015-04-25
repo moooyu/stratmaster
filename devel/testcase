@@ -435,5 +435,16 @@ USE ACCOUNT ac_master;
 ALGORITHM al()
 {
 }
+/*<68>strat before algo*/
+USE ACCOUNT ac_master;
 
-
+STRATEGY hello
+{
+	WHEN ( al() IS TRUE )
+	{
+		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
+	}
+}
+ALGORITHM al()
+{
+}
