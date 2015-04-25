@@ -184,13 +184,7 @@ strategy_body	: variable_declaration_list statement_list strategy_block	{ $$ = $
 		;
 
 strategy_block	:  action_list			{ $$ = create_strategy_block(0, $1, NULL); }
-
-		|  process_statement_list	{ $$ = create_strategy_block(1, NULL, $1); printf("in strategy_block, num of process statements: %d\n", $$->num_of_process_statement);printf("in strategy_block, num of orders: %d\n", $$->num_of_orders);}
-
-		|  process_statement_list	{ $$ = create_strategy_block(1, NULL, $1); 
-						printf("in strategy_block, num of process statements: %d\n", $$->num_of_process_statement);
-						printf("in strategy_block, num of orders: %d\n", $$->num_of_orders);}
-
+		|  process_statement_list	{ $$ = create_strategy_block(1, NULL, $1); }
 		;
 
 process_statement_list : process_statement   { $$ = create_process_statement_list($1);}
@@ -333,7 +327,6 @@ multiplicative_expression : unary_expression { $$ = $1; }
 	
 unary_expression : postfix_expression { $$ = $1;}
 		| unary_operator unary_expression { $$ = create_opr($1,1,$2,NULL);}
-		| unary_operator unary_expression	{ }
 		;
 
 unary_operator 	: '-'  { $$ = OP_UNARY_MINUS; }
@@ -348,8 +341,6 @@ postfix_expression : primary_expression 			{ $$ = $1; }
 
 argument_expression_list : assignment_expression   { $$ = create_argument_expression_list($1);}
 		| argument_expression_list ',' assignment_expression  { $$ = add_argument_expression_list($1, $3);}
-argument_expression_list : assignment_expression 			{ }
-		| argument_expression_list ',' assignment_expression	{ }
 		;
 
 primary_expression : type_name		{ $$ = $1;}
