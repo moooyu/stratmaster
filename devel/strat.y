@@ -69,7 +69,6 @@ ast_strategy_block *strategy_block;
 %type <algorithm_function> algorithm_definition;
 %type <compound_statement> compound_statement;
 %type <variable_declaration_list> variable_declaration_list;
-%type <variable_declaration> variable_declaration;
 %type <type_specifier> type_specifier;
 %type <statement_list> statement_list;
 %type <statement> statement;
@@ -111,14 +110,14 @@ program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_
 		{ $$=$3; print_ast($$);fprintf(stdout, "ENDING PROGRAM\n"); print_symtab(top); root = $$;}
 	 	;
 
-use_list	: USE  variable_declaration		
+use_list	: USE  variable_declaration		{ }	
 		| use_list USE variable_declaration 
 		;
 
 process_list	: strategy_list 			{$$ = create_program(NULL, NULL, $1, top);}
-	     	| function_list strategy_list
+	     	| function_list strategy_list		{ }
 		| algorithm_list strategy_list 		{$$ = create_program(NULL, $1, $2, top);}
-		| function_list algorithm_list strategy_list
+		| function_list algorithm_list strategy_list	{ }
 		;	     	
 
 function_list	: function_definition			{ fprintf(stdout, "Function\n"); }
@@ -171,10 +170,10 @@ strategy_definition : STRATEGY IDENTIFIER '{' 	{ parent = top;
 						}
 	  	;
 
-strategy_body	: variable_declaration_list statement_list strategy_block
-	      	| variable_declaration_list strategy_block 
+strategy_body	: variable_declaration_list statement_list strategy_block	{ }
+	      	| variable_declaration_list strategy_block 	{ }
 		| strategy_block		{ $$ = $1; }
-		| /* empty */
+		| /* empty */			{ }
 		;
 
 strategy_block	:  action_list			{ $$ = create_strategy_block(0, $1, NULL); }
@@ -209,7 +208,7 @@ constraint_list	: constraint							{ $$ = $1;}
 		;
 
 constraint	: WHAT ':' order_item ';'					{ $$ = $3;}
-	   	| WHERE ':' IDENTIFIER ';'
+	   	| WHERE ':' IDENTIFIER ';'		{ }
 		;
 
 order_item	: security '.' AMOUNT '(' INTEGER ')''.' PRICE '(' price_expr ')' 	{ fprintf(stdout, "Order Item\n"); 
@@ -223,8 +222,8 @@ price_expr	: PRICEXP
 		| IDENTIFIER
 		;
 
-variable_declaration_list : variable_declaration			 
-		| variable_declaration_list variable_declaration
+variable_declaration_list : variable_declaration			{ }
+		| variable_declaration_list variable_declaration	
 		;
 
 variable_declaration : type_specifier IDENTIFIER ';'	{ if( install_symbol($<int_val>1, $<str>2, top) != 0 )
@@ -237,7 +236,7 @@ type_specifier	: INT					{ $<int_val>$ = $1; }
 		| BOOLEAN				{ $<int_val>$ = $1; }
 		| SECURITY				{ $<int_val>$ = $1; }
 		| PRICE					{ $<int_val>$ = $1; }
-		| use_type				
+		| use_type				{ }
 		| VOID					{ $<int_val>$ = $1; }
 		;
 
@@ -259,24 +258,24 @@ order_type	: BUY					{ $$ = BUY_ORDER;}
 		| SELL					{ $$ = SELL_ORDER;}
 		;
 
-statement	: expression_statement
-	  	| compound_statement
-		| selection_statement
-		| iteration_statement
-		| set_statement
+statement	: expression_statement		{ }
+	  	| compound_statement		{ }
+		| selection_statement		{ }
+		| iteration_statement		{ }
+		| set_statement			{ }
 		;
 
 expression_statement : expression ';'			{ $$ = $1; }
-		| ';'
+		| ';'					{ }
 		;
 
-compound_statement : '{' variable_declaration_list statement_list '}'
-		| '{' statement_list '}'
-		| '{' '}'
+compound_statement : '{' variable_declaration_list statement_list '}'	{ }
+		| '{' statement_list '}'	{	}
+		| '{' '}'			{ }
 		;
 
-statement_list	: statement
-		| statement_list statement
+statement_list	: statement			{ }
+		| statement_list statement	{ }
 		;
 
 selection_statement : IF '(' expression ')' statement
@@ -285,7 +284,7 @@ selection_statement : IF '(' expression ')' statement
 iteration_statement : WHILE '(' expression ')' statement
 		;
 
-set_statement 	: SET '{' argument_expression_list '}' IF ':' '{' expression '}'
+set_statement 	: SET '{' argument_expression_list '}' IF ':' '{' expression '}'	{	}
 		;
 
 expression	: assignment_expression				{ $$ = $1; }
@@ -327,7 +326,7 @@ multiplicative_expression : unary_expression { $$ = $1; }
 		;
 	
 unary_expression : postfix_expression { $$ = $1;}
-		| unary_operator unary_expression
+		| unary_operator unary_expression	{ }
 		;
 
 unary_operator 	: '-' 
@@ -340,19 +339,19 @@ postfix_expression : primary_expression 			{ $$ = $1; }
        		| postfix_expression '(' argument_expression_list ')'
 		;
 
-argument_expression_list : assignment_expression 
-		| argument_expression_list ',' assignment_expression
+argument_expression_list : assignment_expression 			{ }
+		| argument_expression_list ',' assignment_expression	{ }
 		;
 
 primary_expression : type_name		{ $$ = $1;}
 		| INTEGER		{ $$ = create_const($1);}
-		| PRICEXP
-		| security
-		| currency
-		| position
+		| PRICEXP		{ 	}
+		| security		{ }
+		| currency		{ }
+		| position		{ }
 		| TRUE_S		{ $$ = create_keyword("TRUE");}
-		| FALSE_S
-		| '(' expression ')'
+		| FALSE_S		{ }
+		| '(' expression ')'	{ }
 		;
 
 type_name	: IDENTIFIER		{ $$ = create_id($1);}
