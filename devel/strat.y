@@ -69,7 +69,7 @@ ast_strategy_block *strategy_block;
 %type <algorithm_function> algorithm_definition;
 %type <compound_statement> compound_statement;
 %type <variable_declaration_list> variable_declaration_list;
-%type <type_specifier> type_specifier;
+%type <int_val> type_specifier;
 %type <statement_list> statement_list;
 %type <statement> statement;
 %type <set_statement> set_statement;
@@ -156,8 +156,10 @@ algorithm_header : ALGORITHM IDENTIFIER '(' parameter_list ')'		{
 									$$ = create_algorithm_header($<str>2, NULL); 
 									}
 
-parameter_list	: type_specifier IDENTIFIER				{ fprintf(stdout, "Param List\n"); }	
-	       	| type_specifier '#' IDENTIFIER				{ fprintf(stdout, "Param List\n"); }
+parameter_list	: type_specifier IDENTIFIER				{ fprintf(stdout, "Param List\n"); 
+									symbol_table_put_value(top, $1, $<str>2, 0);}
+	       	| type_specifier '#' IDENTIFIER				{ fprintf(stdout, "Param List\n");
+									symbol_table_put_value(top, $1, $<str>2, 0);} 
 		| parameter_list ',' type_specifier '#' IDENTIFIER	{ fprintf(stdout, "Param List\n"); }
 		| /* empty */
 		;

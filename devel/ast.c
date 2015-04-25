@@ -1218,21 +1218,22 @@ void print_ast(ast_program *program)
 
 int install_symbol(int id_type, const char *id, struct symbol_table *symtab)
 {
+	int ret = 0;
 	switch( id_type )
 	{
 		case ACCOUNT_T:
 			return symbol_table_put_value(symtab, id_type, id, (void*)create_account());
 			break;
 		case DATAFEED_T:
-			symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id, id_type));
+			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id, id_type));
 			break;
 		case DATABASE_T:
-	  		symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id, id_type));
+	  		ret = symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id, id_type));
 			break;
 		default: /*TODO*/;
-	  		symbol_table_put_value(symtab, id_type, id, 0);
+	  		ret = symbol_table_put_value(symtab, id_type, id, 0);
 	}
-	return 0;
+	return ret;
 }
 
 ast_exp *
