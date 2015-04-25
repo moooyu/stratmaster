@@ -46,7 +46,9 @@ struct symbol_table *parent;
 	ast_algorithm_header *algorithm_header;
 	ast_algorithm *algorithm_function;
     	ast_compound_statement *compound_statement;
+	ast_parameter_list *parameter_list;
 ast_strategy_block *strategy_block;
+ast_argument_expression_list *argument_expression_list;
 };
 
 
@@ -69,8 +71,7 @@ ast_strategy_block *strategy_block;
 %type <algorithm_function> algorithm_definition;
 %type <compound_statement> compound_statement;
 %type <variable_declaration_list> variable_declaration_list;
-%type <variable_declaration> variable_declaration;
-%type <type_specifier> type_specifier;
+%type <int_val> type_specifier;
 %type <statement_list> statement_list;
 %type <statement> statement;
 %type <set_statement> set_statement;
@@ -104,6 +105,8 @@ ast_strategy_block *strategy_block;
 %type <process_statement> process_statement;
 %type <program> process_list
 %type <program> program
+%type <int_val> unary_operator
+%type <parameter_list> parameter_list
 
 %%
 program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_table_create(parent); } 
@@ -111,14 +114,14 @@ program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_
 		{ $$=$3; print_ast($$);fprintf(stdout, "ENDING PROGRAM\n"); print_symtab(top); root = $$;}
 	 	;
 
-use_list	: USE  variable_declaration		
+use_list	: USE  variable_declaration		{ }	
 		| use_list USE variable_declaration 
 		;
 
 process_list	: strategy_list 			{$$ = create_program(NULL, NULL, $1, top);}
-	     	| function_list strategy_list
+	     	| function_list strategy_list		{ }
 		| algorithm_list strategy_list 		{$$ = create_program(NULL, $1, $2, top);}
-		| function_list algorithm_list strategy_list
+		| function_list algorithm_list strategy_list	{ }
 		;	     	
 
 function_list	: function_definition			{ fprintf(stdout, "Function\n"); }
@@ -154,12 +157,22 @@ algorithm_definition : algorithm_header 		{ parent = top;
 
 algorithm_header : ALGORITHM IDENTIFIER '(' parameter_list ')'		{ 
 									fprintf(stdout, "Algo Hdr\n");
-									$$ = create_algorithm_header($<str>2, NULL); 
+									$$ = create_algorithm_header($<str>2, $4); 
 									}
 
+
 parameter_list	: type_specifier IDENTIFIER				{ fprintf(stdout, "Param List\n"); }	
-	       	| type_specifier '#' IDENTIFIER				{ fprintf(stdout, "Param List\n"); }
+	       	| type_specifier '#' IDENTIFIER	
+{ $$ = create_parameter_list($1,1, $<str>3);fprintf(stdout, "Param List\n"); }
+		| parameter_list ',' type_specifier '#' IDENTIFIER	
+{ $$ = add_parameter_list($1,$3,1, $<str>5);fprintf(stdout, "Param List\n"); }
+
+parameter_list	: type_specifier IDENTIFIER				{ fprintf(stdout, "Param List\n"); 
+									symbol_table_put_value(top, $1, $<str>2, 0);}
+	       	| type_specifier '#' IDENTIFIER				{ fprintf(stdout, "Param List\n");
+									symbol_table_put_value(top, $1, $<str>2, 0);} 
 		| parameter_list ',' type_specifier '#' IDENTIFIER	{ fprintf(stdout, "Param List\n"); }
+
 		| /* empty */
 		;
 
@@ -171,18 +184,20 @@ strategy_definition : STRATEGY IDENTIFIER '{' 	{ parent = top;
 						}
 	  	;
 
-strategy_body	: variable_declaration_list statement_list strategy_block
-	      	| variable_declaration_list strategy_block 
+strategy_body	: variable_declaration_list statement_list strategy_block	{ }
+	      	| variable_declaration_list strategy_block 	{ }
 		| strategy_block		{ $$ = $1; }
-		| /* empty */
+		| /* empty */			{ }
 		;
 
 strategy_block	:  action_list			{ $$ = create_strategy_block(0, $1, NULL); }
+
 		|  process_statement_list	{ $$ = create_strategy_block(1, NULL, $1); printf("in strategy_block, num of process statements: %d\n", $$->num_of_process_statement);printf("in strategy_block, num of orders: %d\n", $$->num_of_orders);}
-	/*	|  expression_statement { 
-					printf("opr info. operator: %d, %d, %d, %s, %s\n",
-					$1->type, $1->oper.oper, $1->oper.op1->oper.oper, $1->oper.op1->oper.op1->id.value, $1->oper.op2->key.value);
-					; } */
+
+		|  process_statement_list	{ $$ = create_strategy_block(1, NULL, $1); 
+						printf("in strategy_block, num of process statements: %d\n", $$->num_of_process_statement);
+						printf("in strategy_block, num of orders: %d\n", $$->num_of_orders);}
+
 		;
 
 process_statement_list : process_statement   { $$ = create_process_statement_list($1);}
@@ -209,7 +224,7 @@ constraint_list	: constraint							{ $$ = $1;}
 		;
 
 constraint	: WHAT ':' order_item ';'					{ $$ = $3;}
-	   	| WHERE ':' IDENTIFIER ';'
+	   	| WHERE ':' IDENTIFIER ';'		{ }
 		;
 
 order_item	: security '.' AMOUNT '(' INTEGER ')''.' PRICE '(' price_expr ')' 	{ fprintf(stdout, "Order Item\n"); 
@@ -223,28 +238,25 @@ price_expr	: PRICEXP
 		| IDENTIFIER
 		;
 
-variable_declaration_list : variable_declaration			 
-		| variable_declaration_list variable_declaration
+variable_declaration_list : variable_declaration			{ }
+		| variable_declaration_list variable_declaration	
 		;
 
 variable_declaration : type_specifier IDENTIFIER ';'	{ if( install_symbol($<int_val>1, $<str>2, top) != 0 )
 		    						strat_error_msg("Duplicated Symbol", 1, yylineno); }
 		;
 
-type_specifier	: INT					{ $<int_val>$ = $1; }
-		| LONG					{ $<int_val>$ = $1; }
-		| DOUBLE				{ $<int_val>$ = $1; }
-		| BOOLEAN				{ $<int_val>$ = $1; }
-		| SECURITY				{ $<int_val>$ = $1; }
-		| PRICE					{ $<int_val>$ = $1; }
-		| use_type				
-		| VOID					{ $<int_val>$ = $1; }
-		;
-
-use_type	: ACCOUNT				{ $<int_val>$ = $1; }
-		| DATAFEED				{ $<int_val>$ = $1; }
-		| DATABASE				{ $<int_val>$ = $1; }
-		| EXCHANGE				{ $<int_val>$ = $1; }
+type_specifier	: INT					{ $$ = INT_T; }
+		| LONG					{ $$ = LONG_T; }
+		| DOUBLE				{ $$ = DOUBLE_T; }
+		| BOOLEAN				{ $$ = BOOLEAN_T; }
+		| SECURITY				{ $$ = SECURITY_T; }
+		| PRICE					{ $$ = PRICE_T; }
+		| VOID					{ $$ = VOID_T; }
+		| ACCOUNT				{ $$ = ACCOUNT_T; }
+		| DATAFEED				{ $$ = DATAFEED_T; }
+		| DATABASE				{ $$ = DATABASE_T; }
+		| EXCHANGE				{ $$ = EXCHANGE_T; }
 		;
 
 security_type 	: EQTY					{$$ = EQTY_T;}
@@ -259,24 +271,24 @@ order_type	: BUY					{ $$ = BUY_ORDER;}
 		| SELL					{ $$ = SELL_ORDER;}
 		;
 
-statement	: expression_statement
-	  	| compound_statement
-		| selection_statement
-		| iteration_statement
-		| set_statement
+statement	: expression_statement		{ }
+	  	| compound_statement		{ }
+		| selection_statement		{ }
+		| iteration_statement		{ }
+		| set_statement			{ }
 		;
 
 expression_statement : expression ';'			{ $$ = $1; }
-		| ';'
+		| ';'					{ }
 		;
 
-compound_statement : '{' variable_declaration_list statement_list '}'
-		| '{' statement_list '}'
-		| '{' '}'
+compound_statement : '{' variable_declaration_list statement_list '}'	{ }
+		| '{' statement_list '}'	{	}
+		| '{' '}'			{ }
 		;
 
-statement_list	: statement
-		| statement_list statement
+statement_list	: statement			{ }
+		| statement_list statement	{ }
 		;
 
 selection_statement : IF '(' expression ')' statement
@@ -285,7 +297,7 @@ selection_statement : IF '(' expression ')' statement
 iteration_statement : WHILE '(' expression ')' statement
 		;
 
-set_statement 	: SET '{' argument_expression_list '}' IF ':' '{' expression '}'
+set_statement 	: SET '{' argument_expression_list '}' IF ':' '{' expression '}'	{	}
 		;
 
 expression	: assignment_expression				{ $$ = $1; }
@@ -296,7 +308,7 @@ assignment_expression : logical_OR_expression 			{ $$ = $1; }
             	| unary_expression '=' logical_OR_expression
 		;
 
-logical_OR_expression :  logical_AND_expression 
+logical_OR_expression :  logical_AND_expression 		{ $$ = $1; }
             	| logical_OR_expression OR logical_AND_expression
 		;
 
@@ -316,7 +328,7 @@ relation_expression :  additive_expression 				{ $$ = $1;}
         	| relation_expression '>''=' additive_expression
 		;
 
-additive_expression : multiplicative_expression
+additive_expression : multiplicative_expression				{ $$ = $1; }
         	| additive_expression '+' multiplicative_expression { $$= create_opr('+', 2, $1, $3);}
 	        | additive_expression '-' multiplicative_expression
 		;
@@ -327,35 +339,39 @@ multiplicative_expression : unary_expression { $$ = $1; }
 		;
 	
 unary_expression : postfix_expression { $$ = $1;}
-		| unary_operator unary_expression
+		| unary_operator unary_expression { $$ = create_opr($1,1,$2,NULL);}
+		| unary_operator unary_expression	{ }
 		;
 
-unary_operator 	: '-' 
-		| '#' 
-		| NOT
+unary_operator 	: '-'  { $$ = OP_UNARY_MINUS; }
+		| '#'  { $$ = OP_UNARY_SHARP; }
+		| NOT  { $$ = OP_UNARY_NOT; }
 		;
 
 postfix_expression : primary_expression 			{ $$ = $1; }
 	        | postfix_expression '(' ')'			{ $$ = create_opr(OP_FUNC, 1, $1, NULL);}
-       		| postfix_expression '(' argument_expression_list ')'
+       		| postfix_expression '(' argument_expression_list ')'  { $$ = create_opr(OP_FUNC, 2, $1, $3);}
 		;
 
-argument_expression_list : assignment_expression 
-		| argument_expression_list ',' assignment_expression
+
+argument_expression_list : assignment_expression   { $$ = create_argument_expression_list($1);}
+		| argument_expression_list ',' assignment_expression  { $$ = add_argument_expression_list($1, $3);}
+argument_expression_list : assignment_expression 			{ }
+		| argument_expression_list ',' assignment_expression	{ }
 		;
 
 primary_expression : type_name		{ $$ = $1;}
 		| INTEGER		{ $$ = create_const($1);}
-		| PRICEXP
-		| security
-		| currency
-		| position
+		| PRICEXP		{ 	}
+		| security		{ }
+		| currency		{ }
+		| position		{ }
 		| TRUE_S		{ $$ = create_keyword("TRUE");}
-		| FALSE_S
-		| '(' expression ')'
+		| FALSE_S		{ }
+		| '(' expression ')'	{ }
 		;
 
-type_name	: IDENTIFIER		{ $$ = create_id($1);}
+type_name	: IDENTIFIER		{ $$ = create_id($1, top);}
 	  	| type_name '.' IDENTIFIER
 		| type_name '.' attribute
 		;
