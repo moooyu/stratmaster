@@ -203,7 +203,8 @@ create_algorithm_ast(ast_algorithm_header * algorithm_header,ast_compound_statem
     }
     
     strcpy (algo->name, algorithm_header->name);
-    /* TODO: param_list */
+    algo->num_of_para = algorithm_header->num_of_para;
+    algo->para_list = algorithm_header->para_list;
     algo->compound_statement = compound_statement;
     algo->sym = sym;
     
@@ -214,7 +215,7 @@ create_algorithm_ast(ast_algorithm_header * algorithm_header,ast_compound_statem
 }
 
 ast_algorithm_header *
-create_algorithm_header(char * name, ast_algorithm_parameter_list * algorithm_parameter_list)
+create_algorithm_header(char * name, ast_parameter_list * parameter_list)
 {
     ast_algorithm_header * algorithm_header;
     
@@ -225,12 +226,77 @@ create_algorithm_header(char * name, ast_algorithm_parameter_list * algorithm_pa
     }
     
     strcpy (algorithm_header->name, name);
-    algorithm_header->algorithm_parameter_list = algorithm_parameter_list;
+    algorithm_header->para_list = parameter_list->para_list;
+    algorithm_header->num_of_para = parameter_list->num_of_para;
     
     PRINT(("%s\n", __func__));
+    free(parameter_list);
     
     return algorithm_header;
     
+}
+
+ast_parameter_list *
+create_parameter_list(int type_specifier, int has_sharp, char * name)
+{
+    ast_parameter_list * list;
+    
+    list = malloc(sizeof(ast_parameter_list));
+    if (!list) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
+    list->para_list = malloc(sizeof(parameter*));
+    if (!list->para_list) {
+        printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    
+    parameter * para;
+    para = malloc(sizeof(parameter));
+    if (!para) {
+    	printf("out of memory in %s\n", __func__);
+        return NULL;
+    }
+    para = malloc(sizeof(parameter));
+    para->type_specifier = type_specifier;
+    para->has_sharp = has_sharp;
+    strcpy(para->name, name);
+
+    list->para_list[0] = para; 
+    list->num_of_para = 1;
+    
+    PRINT(("%s\n", __func__));
+    
+    return list;
+}
+
+ast_parameter_list *
+add_parameter_list(ast_parameter_list * list, int type_specifier, int has_sharp, char * name)
+{
+	int num_of_para = list->num_of_para+1;
+	list->para_list = realloc(list->para_list, num_of_para*sizeof(parameter*));
+      	if (!list->para_list) {
+        	printf("out of memory in %s\n", __func__);
+        	return NULL;
+    	}
+    
+    	parameter * para;
+    	para = malloc(sizeof(parameter));
+	if (!para) {
+	    	printf("out of memory in %s\n", __func__);
+	        return NULL;
+    	}
+    	para->type_specifier = type_specifier;
+    	para->has_sharp = has_sharp;
+    	strcpy(para->name, name);
+
+	list->para_list[num_of_para-1] = para;
+    	list->num_of_para += 1;
+    
+    	PRINT(("%s\n", __func__));
+    	return list;
 }
 
 ast_algorithm_parameter_list *
@@ -520,26 +586,64 @@ create_set_statement(int this_type, ast_argument_expression_list *argument_expre
     return set_statement;
     
 }
-
-ast_argument_expression_list *
-create_argument_expression_list(ast_unary_expression *unary_expression,ast_logical_OR_expression *logical_OR_expression)
+/*
+ast_exp *
+create_const(int value)
 {
-    ast_argument_expression_list * argument_expression_list;
+	ast_exp *p;
+	p = malloc(sizeof(ast_exp));
+	if (!p) {
+		printf("out of memory in %s\n", __func__);
+		return NULL;
+	}
+
+	p->type = typeConst;
+	p->con.value = value;
+
+    	PRINT(("%s\n", __func__));
+	return p;
+}
+*/
+ast_exp *
+create_argument_expression_list(ast_exp * exp)
+{
+	ast_exp * p;
+	p = malloc(sizeof(ast_exp));
+	if(!p)
+	{
+		printf("out of memory in %s\n", __func__);
+       		return NULL;
+    	}
+	
+	p->type = typeArgulist;
+	p->argu_list.exp = malloc(sizeof(ast_expression*));
+	if(!p->argu_list.exp)
+	{
+		printf("out of memory in %s\n", __func__);
+       		return NULL;
+    	}
+	p->argu_list.exp[0] = exp;
+	p->argu_list.num_of_argument_expression_list = 1;
+	return p;
+}
+
+ast_exp *
+add_argument_expression_list(ast_exp * p, ast_exp * exp)
+{
+    int num_of_argument_expression_list;
     
-    argument_expression_list = malloc(sizeof(ast_argument_expression_list));
-    if (!argument_expression_list) {
+    num_of_argument_expression_list = p->argu_list.num_of_argument_expression_list + 1;
+    p->argu_list.exp = realloc(p->argu_list.exp, num_of_argument_expression_list*sizeof(ast_expression*));
+    if (!p->argu_list.exp) {
         printf("out of memory in %s\n", __func__);
         return NULL;
     }
-    
-    argument_expression_list->unary_expression = unary_expression;
-    argument_expression_list->logical_OR_expression = logical_OR_expression;
-   
+
+    p->argu_list.exp[num_of_argument_expression_list-1] = exp;
+    p->argu_list.num_of_argument_expression_list += 1;
     
     PRINT(("%s\n", __func__));
-    
-    return argument_expression_list;
-    
+    return p;
 }
 
 ast_unary_expression *
@@ -1211,9 +1315,103 @@ create_process_statement(ast_exp *expression, ast_action_list *action_list)
 }
 
 void print_ast(ast_program *program)
+{	
+	int num_of_algos, num_of_strats,i;
+	num_of_algos = program->num_of_algos;
+	num_of_strats = program->num_of_strategies;
+
+	printf("##############################\nHere is print ast_tree.\n");
+	printf("\n\nNum of algorithms: %d\n", num_of_algos);
+	for(i = 0; i<num_of_algos; i++)
+	{	
+		printf(">>>Algorithm %d: \n", i);
+		print_algorithm(program->algo_list[i]);
+	}
+
+	printf("\n\nNum of stategies: %d\n", num_of_strats);
+	for(i = 0; i<num_of_strats; i++)
+	{	
+		printf(">>>STRATEGY %d\n", i);		
+		print_strategy(program->strategy_list[i]);
+	}
+	printf("\n\nEnd of print ast_tree\n##############################\n");
+}
+
+void print_algorithm(ast_algorithm * algorithm)
 {
-	printf("****************************\nHere is print ast_tree.\n");
-	printf("End of print ast_tree\n****************************\n");
+	int i = 0;
+	printf("Algorithm name: %s\n", algorithm->name);
+	for(i = 0; i<algorithm->num_of_para; i++)
+	{
+		printf("parameter %d, type: %d, has sharp: %d, identifier: %s\n", i, algorithm->para_list[i]->type_specifier, algorithm->para_list[i]->has_sharp, algorithm->para_list[i]->name);
+	}
+}
+
+void print_strategy(ast_strategy * strategy)
+{	
+	int i;
+	printf("Strategy name: %s\n", strategy->name);
+	printf("num of orders: %d\n", strategy->num_of_orders);
+	for(i = 0; i<strategy->num_of_orders; i++)
+	{
+		printf("ORDER %d:\n", i );
+		print_order(strategy->order_list[i]);
+	}
+	printf("num of process_statements: %d\n", strategy->num_of_process_statement);
+	for(i = 0; i<strategy->num_of_process_statement; i++)
+	{
+		printf("PROCESS_STATEMENT %d:\n", i );
+		print_process_statement(strategy->process_statement[i]);
+	}
+	
+}
+
+void print_order(ast_order_item * order_item)
+{
+	printf("Order type: %d\n", order_item->type);	
+	printf("Security_type: %d	Security_name: %s\n", order_item->security_type, order_item->security_name);
+	printf("Amount: %d	Price: %s\n", order_item->number, order_item->price);
+}
+
+void print_process_statement(ast_process_statement * process_statement)
+{	
+	int i;
+	printf("================>Exression tree:\n");
+	print_exp(process_statement->expression);
+	printf("================>End of Exression tree:\n");
+
+	printf("\nNum of orders: %d\n", process_statement->action_list->num_of_orders);
+	for(i = 0; i<process_statement->action_list->num_of_orders; i++)
+	{	
+		printf("ORDER %d:\n", i );
+		print_order(process_statement->action_list->order[i]);
+	}
+}
+
+void print_exp(ast_exp *exp)
+{
+	int i = 0;
+	switch(exp->type)
+	{
+		case(typeConst):
+			printf("leaf const: %d\n", exp->con.value); break;
+		case(typeID):
+			printf("leaf ID: %s\n", exp->id.value); break;
+		case(typeKeyword):
+			printf("leaf Keyword: %s\n", exp->key.value); break;
+		case(typeArgulist):
+			printf("leaf Argulist: \n"); 
+			for(i=0; i<exp->argu_list.num_of_argument_expression_list; i++)
+				print_exp(exp->argu_list.exp[i]);
+			break;
+		case(typeOper):	
+			printf("Operator: %d\n", exp->oper.oper);
+			print_exp(exp->oper.op1);
+			if (exp->oper.nops == 2) print_exp(exp->oper.op2); 
+			break;
+		default:
+			printf("Wrong exp node type.\n");
+	}
 }
 
 int install_symbol(int id_type, const char *id, struct symbol_table *symtab)
@@ -1243,7 +1441,8 @@ create_opr(int oper, int nops, ast_exp* op1, ast_exp* op2) {
 	}
 
 	p->type = typeOper;
-	p->oper.oper = oper;
+	p->oper.nops = nops;
+	p->oper.oper = oper;  /*operater*/
 	p->oper.op1 = op1;
 	p->oper.op2 = op2;
 

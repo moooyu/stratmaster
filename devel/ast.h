@@ -5,12 +5,18 @@
 #define NAMEBUF    32      /* Max size of an identifier or name */
 /*typedef enum {BUY_ORDER, SELL_ORDER} basic_type;*/
 
-typedef enum {typeConst, typeOper, typeID, typeKeyword} nodeType;
+typedef enum {typeConst, typeOper, typeID, typeKeyword, typeArgulist} nodeType;
 
 typedef struct{
     int type;  /*1ACCOUNT, 2DATAFEED, 3DATABASE, 4EXCHANGE*/
     char * name;
 }use_define;
+
+typedef struct{
+   int type_specifier;
+   int has_sharp;
+   char name[NAMEBUF];
+}parameter;
 
 /********************AST NODES***********************/
 
@@ -30,6 +36,16 @@ typedef struct {
 	struct ast_exp *op2;
 } ast_oper;
 
+typedef struct {
+    int num_of_argument_expression_list;
+    struct ast_exp ** exp;
+}ast_argument_expression_list;
+
+typedef struct {
+    int num_of_para;
+    parameter ** para_list;
+}ast_parameter_list;
+
 typedef struct ast_exp{
 	nodeType type;
 	union {
@@ -37,6 +53,7 @@ typedef struct ast_exp{
 		ast_oper oper;
 		ast_str key;
 		ast_str id;
+		ast_argument_expression_list argu_list;
 	};
 } ast_exp;
 
@@ -86,11 +103,6 @@ typedef struct {
     int num_of_assignment_expressions;
     ast_assignment_expression ** assignment_expression;
 }ast_expression;
-
-typedef struct {
-    ast_unary_expression *unary_expression;
-    ast_logical_OR_expression *logical_OR_expression;
-}ast_argument_expression_list;
 
 typedef struct {
     int this_type;
@@ -147,12 +159,14 @@ typedef struct {
 
 typedef struct {
     char name[NAMEBUF];
-    ast_algorithm_parameter_list * algorithm_parameter_list;
+    int num_of_para;
+    parameter ** para_list;
 }ast_algorithm_header;
 
 typedef struct {
     char name[NAMEBUF];
-    ast_algorithm_parameter_list * algorithm_parameter_list;
+    int num_of_para;
+    parameter ** para_list;
     ast_compound_statement * compound_statement;
     struct symbol_table * sym;
 }ast_algorithm;
@@ -279,6 +293,12 @@ create_const(int value);
 ast_program *
 create_program(ast_use_list * use_list, ast_algorithm_list * algorithm_list,ast_strategy_list* strategy_list, struct symbol_table* sym);
 
+ast_parameter_list *
+create_parameter_list(int type_specifier, int has_sharp, char * name);
+
+ast_parameter_list *
+add_parameter_list(ast_parameter_list * list, int type_specifier, int has_sharp, char * name);
+
 ast_use_list *
 create_use_list(char* first_acc_name, ast_use_others * use_others);
 
@@ -301,7 +321,7 @@ ast_algorithm *
 create_algorithm_ast(ast_algorithm_header * algorithm_header,ast_compound_statement * compound_statement, struct symbol_table* sym);
 
 ast_algorithm_header *
-create_algorithm_header(char * name, ast_algorithm_parameter_list * algorithm_parameter_list);
+create_algorithm_header(char * name, ast_parameter_list * parameter_list);
 
 ast_algorithm_parameter_list *
 create_algorithm_parameter_list(char* name, ast_target_list * target_list);
@@ -344,8 +364,11 @@ create_statement(ast_set_statement * set_statement);
 ast_set_statement *
 create_set_statement(int this_type, ast_argument_expression_list *argument_expression_list, ast_expression *expression);
 
-ast_argument_expression_list *
-create_argument_expression_list(ast_unary_expression *unary_expression,ast_logical_OR_expression *logical_OR_expression);
+ast_exp *
+create_argument_expression_list(ast_exp * exp);
+
+ast_exp *
+add_argument_expression_list(ast_exp * p, ast_exp * exp);
 
 ast_unary_expression *
 create_unary_expression(ast_postfix_expression *postfix_expression);
@@ -442,6 +465,11 @@ ast_process_statement *
 create_process_statement(ast_exp *expression, ast_action_list *action_list);
 
 void print_ast(ast_program *program);
+void print_strategy(ast_strategy * strategy);
+void print_order(ast_order_item * order_item);
+void print_process_statement(ast_process_statement * process_statement);
+void print_exp(ast_exp *exp);
+void print_algorithm(ast_algorithm * algorithm);
 
 int install_symbol(int id_type, const char *id, struct symbol_table *symtab);
 
