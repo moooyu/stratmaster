@@ -90,12 +90,13 @@ for line in feed[:]:
 	exe = subprocess.Popen("./strat.out",stdin=open('test.sm','r'), stdout = subprocess.PIPE , stderr=subprocess.PIPE)
 	out =  [exe.stdout.read(),exe.stderr.read()]
 	res = 'pass'
-	if count < 10:
-		expected = re.findall('[0-9]*\.?[0-9]+',line)
+	if count < 30:
+		expected = re.findall('[0-9]*\.?[0-9]+',line)[1:]
 		for x in expected:
 			if x not in out[0]: 
 				res = 'fail'
 				break
+		if 'syntax' in out[1]:res = 'fail'
 	else:
 		expected = line.split('\n')[1].strip('*/')
 		if expected not in out[1]: res = 'fail'
