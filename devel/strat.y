@@ -48,7 +48,6 @@ struct symbol_table *parent;
     	ast_compound_statement *compound_statement;
 	ast_parameter_list *parameter_list;
 ast_strategy_block *strategy_block;
-ast_argument_expression_list *argument_expression_list;
 };
 
 
@@ -75,7 +74,7 @@ ast_argument_expression_list *argument_expression_list;
 %type <statement_list> statement_list;
 %type <statement> statement;
 %type <set_statement> set_statement;
-%type <argument_expression_list> argument_expression_list;
+%type <exp> argument_expression_list;
 %type <exp> unary_expression;
 %type <exp> postfix_expression;
 %type <exp> primary_expression;
@@ -155,25 +154,20 @@ algorithm_definition : algorithm_header 		{ parent = top;
 							}
 		;
 
-algorithm_header : ALGORITHM IDENTIFIER '(' parameter_list ')'		{ 
-									fprintf(stdout, "Algo Hdr\n");
-									$$ = create_algorithm_header($<str>2, $4); 
-									}
-
-
-parameter_list	: type_specifier IDENTIFIER				{ fprintf(stdout, "Param List\n"); }	
-	       	| type_specifier '#' IDENTIFIER	
-{ $$ = create_parameter_list($1,1, $<str>3);fprintf(stdout, "Param List\n"); }
-		| parameter_list ',' type_specifier '#' IDENTIFIER	
-{ $$ = add_parameter_list($1,$3,1, $<str>5);fprintf(stdout, "Param List\n"); }
+algorithm_header: ALGORITHM IDENTIFIER '(' parameter_list ')'		{ fprintf(stdout, "Algo Hdr\n");
+									$$ = create_algorithm_header($<str>2, $4); }
+		;
 
 parameter_list	: type_specifier IDENTIFIER				{ fprintf(stdout, "Param List\n"); 
+									$$ = create_parameter_list($1,0,$<str>2);
 									symbol_table_put_value(top, $1, $<str>2, 0);}
 	       	| type_specifier '#' IDENTIFIER				{ fprintf(stdout, "Param List\n");
+									$$ = create_parameter_list($1,1, $<str>3);
 									symbol_table_put_value(top, $1, $<str>2, 0);} 
-		| parameter_list ',' type_specifier '#' IDENTIFIER	{ fprintf(stdout, "Param List\n"); }
+		| parameter_list ',' type_specifier '#' IDENTIFIER	{ $$ = add_parameter_list($1,$3,1, $<str>5);
+									fprintf(stdout, "Param List\n"); }
 
-		| /* empty */
+		| /* empty */						{ }
 		;
 
 strategy_definition : STRATEGY IDENTIFIER '{' 	{ parent = top;
@@ -352,7 +346,6 @@ postfix_expression : primary_expression 			{ $$ = $1; }
 	        | postfix_expression '(' ')'			{ $$ = create_opr(OP_FUNC, 1, $1, NULL);}
        		| postfix_expression '(' argument_expression_list ')'  { $$ = create_opr(OP_FUNC, 2, $1, $3);}
 		;
-
 
 argument_expression_list : assignment_expression   { $$ = create_argument_expression_list($1);}
 		| argument_expression_list ',' assignment_expression  { $$ = add_argument_expression_list($1, $3);}
