@@ -298,9 +298,306 @@ STRATEGY hello_with_ast
 
 }
 
+/*<25> Data pass through */
 
 
-/*<30> empty Algo not used*/
+USE ACCOUNT ac_master;
+
+ALGORITHM al(PRICE #zbra_price)
+{
+	SET {zbra_price = 200 }
+	IF:
+	{
+		TRUE
+	}
+}
+
+STRATEGY hello
+{
+	PRICE zbra_price;
+
+	WHEN ( al(#zbra_price) IS TRUE ) 
+	{
+		 BUY { WHAT : EQTY(ZBRA).AMOUNT(100).PRICE(zbra_price); }
+	}
+}
+
+/*<26> Data pass through 2 */
+
+
+USE ACCOUNT ac_master;
+
+ALGORITHM al(PRICE #zbra_price)
+{
+	SET {zbra_price = 200 }
+	IF:
+	{
+		TRUE
+	}
+}
+
+STRATEGY hello
+{
+	PRICE zbra_price;
+
+	WHEN ( al(#zbra_price) IS TRUE ) 
+	{
+		 BUY { WHAT : EQTY(ZBRA).AMOUNT(100).PRICE(hello223); }
+	}
+}
+
+/*<26> Only Price */
+
+USE ACCOUNT ac_master;
+
+STRATEGY hello
+{
+	PRICE zbra_price;
+
+}
+
+/*<27> Price with WHEN*/
+
+USE ACCOUNT ac_master;
+
+ALGORITHM al(/*DATAFEED some_feed, */PRICE # zbra_price,PRICE # cat_price, PRICE # rabbit_price)
+{
+
+}
+
+STRATEGY hello
+{
+	PRICE zbra_price;
+	PRICE cat_price;
+	WHEN ( al(#zbra_price, #cat_price) IS TRUE ) 
+	{
+		BUY { WHAT : EQTY(hi0).AMOUNT(100).PRICE(10.00); }
+ 		BUY { WHAT : EQTY(hi1).AMOUNT(101).PRICE(10.01); }
+		BUY { WHAT : EQTY(hi2).AMOUNT(102).PRICE(10.02); }
+	}
+}
+
+/*<28> Price with WHEN*/
+
+USE ACCOUNT ac_master;
+
+ALGORITHM al(/*DATAFEED some_feed, */PRICE # zbra_price,PRICE # cat_price, PRICE # rabbit_price)
+{
+
+}
+
+STRATEGY hello
+{
+	PRICE zbra_price;
+	PRICE cat_price;
+	WHEN ( al(#zbra_price, #cat_price) IS TRUE ) 
+	{
+		BUY { WHAT : EQTY(hi0).AMOUNT(100).PRICE(10.00); }
+ 		BUY { WHAT : EQTY(hi1).AMOUNT(101).PRICE(10.01); }
+		BUY { WHAT : EQTY(hi2).AMOUNT(102).PRICE(10.02); }
+	}
+}
+
+/*<29> Algo parse*/
+
+USE ACCOUNT ac_MASTER
+USE DATABASE some_dataBASE
+USE DATAFEED some_dataBASE1
+ALGORITHM my_algo(DATAFEED some_data_feed PRICE hi)
+{
+	PRICE hihi;
+	PRICE bee;
+	SET {id1 = id2}
+	SET {id1 = id2}
+     	SET {id1 = id2}
+	IF :
+	{
+		TRUE
+	}
+}
+STRATEGY hello
+{
+	
+}
+
+/*<31> empty Algo not used*/
+USE ACCOUNT ac_MASTER
+
+ALGORITHM my_algo(DATAFEED some_data_feed PRICE some_price PRICE some_other_price)
+{
+	PRICE abc;
+	VOID cba;
+	SET {id1 = id2}
+	SET {id3 = id4}
+	IF:
+	{
+		id5 = id6,
+		id7,
+		id8 = id9
+			
+	} 
+
+}
+
+STRATEGY hello
+{
+	
+}
+/*<32>Set statement work*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_quotes;
+
+ALGORITHM al()
+{
+    SET  { buy_price = TRUE }
+    IF:
+    {
+         TRUE
+    }
+}
+
+STRATEGY my_buy_strat
+{
+
+}
+
+/*<33> SET statement*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_quotes;
+
+ALGORITHM al()
+{
+    SET  { buy_price = 112 }
+    IF:
+    {
+         TRUE
+    }
+}
+
+STRATEGY my_buy_strat
+{
+
+}
+/*<34> SET statement*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_quotes;
+
+ALGORITHM al()
+{
+    SET  { buy_price = id2 }
+    IF:
+    {
+         TRUE
+    }
+}
+
+STRATEGY my_buy_strat
+{
+
+}
+
+/*<35> FALSE*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_quotes;
+
+ALGORITHM al()
+{
+    SET  { buy_price = 22.22 }
+    IF:
+    {
+         FALSE
+    }
+}
+
+STRATEGY my_buy_strat
+{
+
+}
+/*<36> PRICE IN ALGO*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_quotes;
+
+ALGORITHM al()
+{
+    PRICE buy_price;
+    SET  { buy_price = 22.22 }
+    IF:
+    {
+         FALSE
+    }
+}
+
+STRATEGY my_buy_strat
+{
+
+}
+
+/*<37> PRICE IN ALGO*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_quotes;
+
+ALGORITHM al()
+{
+    PRICE buy_price;
+    SET  { buy_price = 22.22 }
+    IF:
+    {
+	 PRICE buy_price;
+         TRUE
+    }
+}
+
+STRATEGY my_buy_strat
+{
+
+}
+
+/*<38> define twice*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_quotes;
+
+ALGORITHM al(PRICE #buy_price)
+{
+    PRICE buy_price;
+    SET  { buy_price = 22.22 }
+    IF:
+    {
+	 PRICE buy_price;
+         TRUE
+    }
+}
+/*<39> not set*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_quotes;
+
+ALGORITHM al(PRICE #buy_price)
+{
+    IF:
+    {
+
+         TRUE
+    }
+}
+
+STRATEGY my_buy_strat
+{
+	WHEN(){}
+	UNTIL()
+}
+/*<40> when until*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_quotes;
+
+ALGORITHM al(PRICE #buy_price)
+{
+}
+
+STRATEGY my_buy_strat
+{
+	WHEN(){}
+	UNTIL()
+}
+/*<59> empty Algo not used*/
 USE ACCOUNT ac_MASTER
 USE DATAFEED df_QUITES
 USE DATABASE db_PRICES
@@ -342,7 +639,6 @@ STRATEGY hello_with_ast
 	} 
 	UNTIL(ida = idb)
 }
-
 
 
 
@@ -447,4 +743,15 @@ STRATEGY hello
 }
 ALGORITHM al()
 {
+}
+
+/*<69> unclosed comments*/
+/*line 5: error*/
+USE ACCOUNT my_Account;
+STRATEGY hello
+{hello from comment*/
+BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.00);  } 
+/*
+SELL{ WHAT: EQTY(AA).AMOUNT(85).PRICE(22.00);  } 
+*/
 }
