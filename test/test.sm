@@ -1,5 +1,8 @@
-/*<68>strat before algo*/
+/*<1>empty Algo*/
 USE ACCOUNT ac_master;
+ALGORITHM al()
+{
+}
 
 STRATEGY hello
 {
@@ -7,7 +10,4 @@ STRATEGY hello
 	{
 		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
 	}
-}
-ALGORITHM al()
-{
 }

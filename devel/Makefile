@@ -54,7 +54,7 @@ symtab.o: symtab.c
 
 
 clean:
-	/bin/rm -f *.o *.out lex.yy.c y.tab.c y.tab.h core *~
+	rm -f *.o *.out lex.yy.c y.tab.c y.tab.h core *~ y.output
 
 
 
