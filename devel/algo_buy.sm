@@ -1,4 +1,6 @@
-/* StratMaster: Simple Algorithm */
+/*  StratMaster: Simple Algorithm
+ *  Conforms to revised grammar [VM]
+ */
 
 USE ACCOUNT ac_master;
 USE DATAFEED df_quotes;

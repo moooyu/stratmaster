@@ -1,4 +1,6 @@
-/* StratMaster HelloWorld */
+/*   StratMaster Test Case
+ *   ALGORITHM with single param 
+ */
 
 USE ACCOUNT ac_master;
 
