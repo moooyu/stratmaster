@@ -188,9 +188,11 @@ void ex_process_statement(ast_process_statement * process_statement)
 	        pthread_t algo_thr;
 	        /* Set up ALGORITHM args */
 	        /* Create data source */
+		/*
 	        char *df_name = "df_ZBRA";
 	        if( (df1 = create_data_source(df_name, DATAFEED)) == NULL )
 		    die("error creating data source");
+		*/
                 struct algorithm *al1;
 	        al1 = create_algorithm(df1); 
 	        al1->num_args = 1;
