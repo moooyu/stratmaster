@@ -4,6 +4,7 @@
 #include "ast.h"
 #include "y.tab.h"
 #include "symtab.h"
+#include "runtime.h"
 void yyerror(char *);
 %}
 
@@ -28,8 +29,8 @@ wsn		[ \t\n]
 \S\E\L\L			{ return(SELL); }
 \W\H\A\T 			{ return(WHAT); }
 \A\M\O\U\N\T			{ return(AMOUNT); }
-\P\R\I\C\E			{ yylval.int_val = PRICE_T; return(PRICE); }
 \E\Q\T\Y			{ return(EQTY); }
+\P\R\I\C\E			{ return(PRICE); }
 \S\E\T             		{ return(SET);}
 \I\F                		{ return(IF);}
 \W\H\E\R\E          		{ return(WHERE);}
@@ -37,12 +38,11 @@ wsn		[ \t\n]
 \U\N\T\I\L          		{ return(UNTIL);}
 \R\E\T\U\R\N\S      		{ return(RETURNS);}
 \I\N\T				{ yylval.int_val = INT_T; return(INT); }
-\L\O\N\G			{ yylval.int_val = LONG_T; return(LONG); }
 \D\O\U\B\L\E  			{ yylval.int_val = DOUBLE_T; return(DOUBLE); }
 \B\O\O\L\E\A\N			{ yylval.int_val = BOOLEAN_T; return(BOOLEAN); }
 \S\E\C\U\R\I\T\Y		{ yylval.int_val = SECURITY_T; return(SECURITY); }
 \V\O\I\D			{ yylval.int_val = VOID_T; return(VOID); }
-\C\U\R\R\E\N\C\Y		{ return(CURRENCY); }
+\C\U\R\R\E\N\C\Y		{ yylval.int_val = CURRENCY_T; return(CURRENCY); }
 \P\O\S\I\T\I\O\N		{ return(POSITION); }
 \I\S				{ return(IS); }
 \I\S\N\O\T			{ return(ISNOT); }
@@ -52,16 +52,16 @@ wsn		[ \t\n]
 \A\N\D				{ return(AND); }
 \N\O\T				{ return(NOT); }
 \W\H\I\L\E			{ return(WHILE); }
-\U\S\D				{ return(USD); }
-\E\U\R				{ return(EUR); }
-\J\P\Y				{ return(JPY); }
+\U\S\D				{ yylval.int_val = USD_T; return(USD); }
+\E\U\R				{ yylval.int_val = EUR_T; return(EUR); }
+\J\P\Y				{ yylval.int_val = JPY_T; return(JPY); }
 \P\O\S				{ return(POS); }
 \S\E\C				{ return(SEC); }
 \A\M\T				{ return(AMT); }
 \P\R\C				{ return(PRC); }
 \A\V\A\I\L\_\C\A\S\H		{ return(AVAIL_CASH); }
 \N\E\X\T			{ return(NEXT); }
-{number}"."{digit}{digit}	{ strcpy(yylval.str, yytext); return(PRICEXP); }
+{number}"."{digit}{digit}	{ strcpy(yylval.str, yytext); return(PRICESTRING); }
 {digit}*"."{digit}		{ yylval.fp_val  = atof(yytext); return(FLOATPT); }
 {number}			{ yylval.int_val = atoi(yytext); return(INTEGER); }
 {id}				{ strcpy(yylval.str, yytext); return(IDENTIFIER); }

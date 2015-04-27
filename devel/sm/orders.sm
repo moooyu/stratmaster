@@ -1,0 +1,15 @@
+/*   StratMaster  Test Program
+ *   Multiple orders in a STRATEGY
+ *   
+ */
+
+USE ACCOUNT ac_master;
+
+STRATEGY my_strat1
+{
+	BUY { WHAT : SECURITY( EQTY(INTC) ).AMOUNT(100).PRICE( 50.00 ); }
+	SELL { WHAT : SECURITY( EQTY(ZBRA) ).AMOUNT(202).PRICE( EUR(19.01) ); }
+	BUY  { WHAT : SECURITY( EQTY(X) ).AMOUNT(5).PRICE( USD(201.00)); }
+	SELL { WHAT : SECURITY( EQTY(QQQ) ).AMOUNT(10000).PRICE( JPY(3419.88) ); }
+}
+

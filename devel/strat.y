@@ -29,37 +29,40 @@ struct symbol_table *parent;
     char str[32];
     int  int_val;
     double fp_val;
+    ast_currency *currency;
     ast_security *security;
-    ast_security_type *security_type;
-	ast_order_item *order_item;
-	ast_order_item *constraint;
-	ast_order_item * constraint_list;
-	ast_action_list *process_body;
-	ast_action_list *action_list;
-	ast_strategy *strategy;
-	ast_strategy_list *strategy_list;
-	ast_algorithm_list *algorithm_list;
-	ast_program *program;
-	ast_exp *exp;
-	ast_process_statement * process_statement;
-	ast_process_statement_list * process_statement_list;	
-	ast_algorithm_header *algorithm_header;
-	ast_algorithm *algorithm_function;
-    	ast_compound_statement *compound_statement;
-	ast_parameter_list *parameter_list;
-ast_strategy_block *strategy_block;
+    ast_position *position;     
+    ast_order_item *order_item;
+    ast_order_item *constraint;
+    ast_order_item * constraint_list;
+    ast_action_list *process_body;
+    ast_action_list *action_list;
+    ast_strategy *strategy;
+    ast_strategy_list *strategy_list;
+    ast_algorithm_list *algorithm_list;
+    ast_program *program;
+    ast_exp *exp;
+    ast_process_statement * process_statement;
+    ast_process_statement_list * process_statement_list;	
+    ast_algorithm_header *algorithm_header;
+    ast_algorithm *algorithm_function;
+    ast_compound_statement *compound_statement;
+    ast_parameter_list *parameter_list;
+    ast_strategy_block *strategy_block;
 };
 
 
 %start program
 %token STRATEGY ALGORITHM FUNCTION USE 
-%token BUY SELL WHAT AMOUNT EQTY SET IF WHERE WHEN UNTIL RETURNS
+%token BUY SELL WHAT AMOUNT EQTY PRICE SET IF WHERE WHEN UNTIL RETURNS
 %token POSITION IS ISNOT
 %token TRUE_S FALSE_S OR AND NOT WHILE
-%token USD EUR JPY POS SEC AMT PRC AVAIL_CASH NEXT
-%token <str> IDENTIFIER PRICEXP
+%token POS SEC AMT PRC AVAIL_CASH NEXT
+%token <str> IDENTIFIER PRICESTRING
+%token <int_val> USD EUR JPY
+%token <int_val> INT LONG DOUBLE BOOLEAN SECURITY VOID CURRENCY ACCOUNT DATAFEED DATABASE EXCHANGE 
+/* Arithmetic objec tokens */
 %token <int_val> INTEGER
-%token <int_val> INT LONG DOUBLE BOOLEAN SECURITY VOID CURRENCY PRICE ACCOUNT DATAFEED DATABASE EXCHANGE 
 %token <fp_val> FLOATPT
 
 
@@ -87,8 +90,14 @@ ast_strategy_block *strategy_block;
 %type <exp> assignment_expression;
 %type <exp> expression_statement;
 %type <exp> type_name;
-
+%type <exp> int_expr;
+%type <currency> currency;
+%type <currency> curr_expr;
+%type <security> security;
+%type <security> sec_expr;
+%type <position> position
 %type <int_val> security_type;
+%type <int_val> currency_type;
 %type <strategy> strategy_definition
 %type <strategy_list> strategy_list;
 %type <strategy_block> strategy_body;
@@ -98,7 +107,6 @@ ast_strategy_block *strategy_block;
 %type <order_item> constraint_list;
 %type <order_item> order_item;
 %type <order_item> constraint;
-%type <security> security;
 %type <process_statement_list> process_statement_list; 
 %type <process_statement> process_statement;
 %type <program> process_list
@@ -107,9 +115,9 @@ ast_strategy_block *strategy_block;
 %type <parameter_list> parameter_list
 
 %%
-program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_table_create(parent); } 
+program		: { fprintf(stdout, "STARTING PARSE\n"); parent = NULL; top = symbol_table_create(parent); } 
 	 	  use_list process_list 
-		{ $$=$3; print_ast($$);fprintf(stdout, "ENDING PROGRAM\n"); print_symtab(top); root = $$;}
+		{ $$=$3; fprintf(stdout, "ENDING PARSE\n"); print_ast($$);  print_symtab(top); root = $$;}
 	 	;
 
 use_list	: USE  variable_declaration		{ }	
@@ -145,12 +153,12 @@ function_header : FUNCTION IDENTIFIER '(' parameter_list ')' func_return	{ fprin
 func_return	: RETURNS type_specifier
 		;
 
-algorithm_definition : algorithm_header 		{ parent = top;
-							top = symbol_table_create(parent);     }
-			compound_statement		{ $$ = create_algorithm_ast($1, $3, top);
-							top = parent;
-							symbol_table_put_value(top, ALGO_SYM, $$->name, $$);
-							}
+algorithm_definition : { parent = top; top = symbol_table_create(parent); } 
+		     	algorithm_header 		
+			
+			compound_statement		{ $$ = create_algorithm_ast($2, $3, top);
+							  top = parent;
+							  symbol_table_put_value(top, ALGO_SYM, $$->name, $$); }
 		;
 
 algorithm_header: ALGORITHM IDENTIFIER '(' parameter_list ')'		{ fprintf(stdout, "Algo Hdr\n");
@@ -214,15 +222,24 @@ constraint	: WHAT ':' order_item ';'					{ $$ = $3;}
 	   	| WHERE ':' IDENTIFIER ';'		{ }
 		;
 
-order_item	: security '.' AMOUNT '(' INTEGER ')''.' PRICE '(' price_expr ')' 	{ fprintf(stdout, "Order Item\n"); 
-											$$ = create_order_item($1, $<int_val>5, $<str>10);
-											}
+order_item	: SECURITY '(' sec_expr ')' '.' AMOUNT '(' int_expr ')''.' PRICE '(' curr_expr ')' 	{ fprintf(stdout, "Order Item\n"); 
+										                        $$ = create_order_item($<security>3, $<exp>8, $<currency>13, 0); }
 		;
 
+sec_expr	: security				{ $$ = $1; }
+	 	| IDENTIFIER				{ struct symbol_value *val = symbol_table_get_value(top, SECURITY_T, $1);
+$$ = (ast_security *)val->nodePtr; } 
+		;
 
-price_expr	: PRICEXP
-		| currency
-		| IDENTIFIER
+int_expr	: INTEGER				{ $$ = create_integer_const($1); }
+	 	| IDENTIFIER				{ struct symbol_value *val = symbol_table_get_value(top, INT_T, $1);
+$$ = (ast_exp *)val->nodePtr; } 
+		;
+
+curr_expr	: PRICESTRING				{ $$ = create_ast_currency(0, $<str>1); }
+		| currency				{ $$ = $1; }
+		| IDENTIFIER				{ struct symbol_value *val = symbol_table_get_value(top, CURRENCY_T, $1);
+$$ = (ast_currency *)val->nodePtr; }
 		;
 
 variable_declaration_list : variable_declaration			{ }
@@ -234,11 +251,10 @@ variable_declaration : type_specifier IDENTIFIER ';'	{ if( install_symbol($<int_
 		;
 
 type_specifier	: INT					{ $$ = INT_T; }
-		| LONG					{ $$ = LONG_T; }
 		| DOUBLE				{ $$ = DOUBLE_T; }
 		| BOOLEAN				{ $$ = BOOLEAN_T; }
 		| SECURITY				{ $$ = SECURITY_T; }
-		| PRICE					{ $$ = PRICE_T; }
+		| CURRENCY				{ $$ = CURRENCY_T; }
 		| VOID					{ $$ = VOID_T; }
 		| ACCOUNT				{ $$ = ACCOUNT_T; }
 		| DATAFEED				{ $$ = DATAFEED_T; }
@@ -249,9 +265,9 @@ type_specifier	: INT					{ $$ = INT_T; }
 security_type 	: EQTY					{$$ = EQTY_T;}
 		;
 
-currency_type	: USD
-		| EUR
-		| JPY
+currency_type	: USD					{$$ = USD_T;}
+		| EUR					{$$ = EUR_T;}
+		| JPY					{$$ = JPY_T;}
 		;
 
 order_type	: BUY					{ $$ = BUY_ORDER;}
@@ -344,8 +360,9 @@ argument_expression_list : assignment_expression   { $$ = create_argument_expres
 		;
 
 primary_expression : type_name		{ $$ = $1;}
-		| INTEGER		{ $$ = create_const($1);}
-		| PRICEXP		{ 	}
+		| INTEGER		{ $$ = create_integer_const($1);}
+		| FLOATPT		{ $$ = create_double_const($1); }
+		| PRICESTRING		{ $$ = create_price_const($1); }
 		| security		{ }
 		| currency		{ }
 		| position		{ }
@@ -359,13 +376,13 @@ type_name	: IDENTIFIER		{ $$ = create_id($1, top);}
 		| type_name '.' attribute
 		;
 
-position 	: POS '(' IDENTIFIER ')'
+position 	: POS '(' IDENTIFIER ')'	{  }
 	  	;
 
-security	: security_type '(' IDENTIFIER ')' {$$ = create_security($1, $<str>3);}
+security	: security_type '(' IDENTIFIER ')' {$$ = create_ast_security($<int_val>1, $<str>3);}
 		;
 
-currency	: currency_type '(' PRICEXP ')'
+currency	: currency_type '(' PRICESTRING ')'    { $$ = create_ast_currency($<int_val>1, $<str>3); }
 	 	;
 
 attribute	: SEC

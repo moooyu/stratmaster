@@ -13,7 +13,7 @@ void dbg_printf(const char *fmt, ...)
 }
 
 ast_program *
-create_program(ast_use_list * use_list, ast_algorithm_list * algorithm_list,ast_strategy_list* strategy_list, struct symbol_table* sym)
+create_program(ast_use_list * use_list, ast_algorithm_list * algorithm_list, ast_strategy_list* strategy_list, struct symbol_table* sym)
 {
 	ast_program * program;
 
@@ -35,9 +35,7 @@ create_program(ast_use_list * use_list, ast_algorithm_list * algorithm_list,ast_
 	}
 	program->sym = sym;
 
-
 	PRINT(("%s\n", __func__));
-	PRINT(("End of AST construction\n\n"));
 
 	return program;
 
@@ -889,6 +887,54 @@ add_expression(ast_expression * list, ast_assignment_expression * assignment_exp
     return list;
 }
 
+
+ast_currency *
+create_ast_currency(int type, char *price)
+{
+	ast_currency *curr_node = malloc( sizeof(ast_currency) );
+	if ( curr_node == NULL )
+	{
+		die("malloc failed in create_ast_currency()");
+	}
+
+	curr_node->curr = create_currency(type, price);
+
+	PRINT(("%s\n", __func__));
+	return curr_node;
+}
+
+
+ast_security *
+create_ast_security(int sec_type, char * name)
+{
+	ast_security *security_node = malloc( sizeof(ast_security) );
+	if ( security_node == NULL )
+	{
+		die("malloc failed in create_ast_security()");
+	}
+
+	security_node->sec = create_security(sec_type, name);
+
+	PRINT(("%s\n", __func__));
+	return security_node;
+}
+
+ast_position *
+create_ast_position(ast_security *astsec, int amt, ast_currency *astpr)
+{
+	ast_position *position_node = malloc( sizeof(ast_position) );
+	if ( position_node == NULL )
+	{
+		die("malloc failed in create_ast_position()");
+	}
+
+	position_node->pos = create_position(astsec->sec, amt, astpr->curr);
+
+	PRINT(("%s\n", __func__));
+	return position_node;
+}
+
+
 /*************strategy part********************/
 ast_strategy_list *
 create_strategy_list(ast_strategy * strategy)
@@ -1163,6 +1209,7 @@ create_constraint(ast_order_item * order_item)
     
 }
 
+/*
 ast_order_item *
 create_order_item(ast_security *security, int number, char * price)
 {
@@ -1185,7 +1232,27 @@ create_order_item(ast_security *security, int number, char * price)
     return order_item;
     
 }
+*/
 
+ast_order_item *
+create_order_item(ast_security *sec, ast_exp *num, ast_currency *prc, int t)
+{
+    ast_order_item * new_order_item = malloc(sizeof(ast_order_item));
+    if (!new_order_item) {
+        die("malloc failed in create_order_item");
+    }
+
+    new_order_item->sec = sec;
+    new_order_item->number = num;
+    new_order_item->prc = prc;
+    new_order_item->type = t;
+
+    PRINT(("%s\n", __func__));
+
+    return new_order_item;
+}
+
+/*
 ast_security *
 create_security(int security_type, char * name)
 {
@@ -1222,7 +1289,7 @@ create_security_type(int type)
     return security_type;
     
 }
-
+*/
 ast_process_statement_list *
 create_process_statement_list(ast_process_statement * process_statement)
 {
@@ -1320,7 +1387,7 @@ void print_ast(ast_program *program)
 	num_of_algos = program->num_of_algos;
 	num_of_strats = program->num_of_strategies;
 
-	printf("##############################\nHere is print ast_tree.\n");
+	printf("##############################\nSTART: print ast_tree.\n");
 	printf("\n\nNum of algorithms: %d\n", num_of_algos);
 	for(i = 0; i<num_of_algos; i++)
 	{	
@@ -1334,7 +1401,7 @@ void print_ast(ast_program *program)
 		printf(">>>STRATEGY %d\n", i);		
 		print_strategy(program->strategy_list[i]);
 	}
-	printf("\n\nEnd of print ast_tree\n##############################\n");
+	printf("\n\nEND: print ast_tree\n##############################\n");
 }
 
 void print_algorithm(ast_algorithm * algorithm)
@@ -1366,19 +1433,42 @@ void print_strategy(ast_strategy * strategy)
 	
 }
 
+/*
 void print_order(ast_order_item * order_item)
 {
 	printf("Order type: %d\n", order_item->type);	
 	printf("Security_type: %d	Security_name: %s\n", order_item->security_type, order_item->security_name);
 	printf("Amount: %d	Price: %s\n", order_item->number, order_item->price);
 }
+*/
+
+void print_order(ast_order_item * order_item)
+{
+	if( order_item->type == BUY_ORDER )
+	{
+		printf("Order type: BUY\n");
+	}
+	else if( order_item->type == SELL_ORDER )
+	{
+		printf("Order type: SELL\n");
+	}
+
+	char *sectype = NULL;
+	if( order_item->sec->sec->sec_t == EQTY_T )
+		sectype = "EQTY";
+
+	printf("Security_type: %s	Security_name: %s\n", sectype, order_item->sec->sec->sym);
+	printf("Amount: %d	Price: %s\n", order_item->number->con.int_value->value, order_item->prc->curr->p);
+}
+
+
 
 void print_process_statement(ast_process_statement * process_statement)
 {	
 	int i;
-	printf("================>Exression tree:\n");
+	printf("================>Expression tree:\n");
 	print_exp(process_statement->expression);
-	printf("================>End of Exression tree:\n");
+	printf("================>End of Expression tree:\n");
 
 	printf("\nNum of orders: %d\n", process_statement->action_list->num_of_orders);
 	for(i = 0; i<process_statement->action_list->num_of_orders; i++)
@@ -1393,8 +1483,14 @@ void print_exp(ast_exp *exp)
 	int i = 0;
 	switch(exp->type)
 	{
-		case(typeConst):
-			printf("leaf const: %d\n", exp->con.value); break;
+	/*	case(typeConst):
+			printf("leaf const: %d\n", exp->con.value); break; */
+		case(typeIntegerConst):
+			printf("leaf int const: %d\n", exp->con.int_value->value); break;
+		case(typeDoubleConst):
+			printf("leaf double const: %.1f\n", exp->con.double_value->value); break;
+		case(typePriceConst):
+			printf("lead price const: %s\n", exp->con.price_value->price); break;
 		case(typeID):
 			printf("leaf ID: %s\n", exp->id.value); break;
 		case(typeKeyword):
@@ -1427,6 +1523,18 @@ int install_symbol(int id_type, const char *id, struct symbol_table *symtab)
 			break;
 		case DATABASE_T:
 	  		ret = symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id, id_type));
+			break;
+		case CURRENCY_T:
+			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_currency(id_type, NULL));
+			break;
+		case SECURITY_T:
+			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_security(id_type, NULL));
+			break;
+		case INT_T:
+			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_integer(0));
+			break;
+		case DOUBLE_T:
+			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_double(0.0));
 			break;
 		default: /*TODO*/;
 	  		ret = symbol_table_put_value(symtab, id_type, id, 0);
@@ -1491,7 +1599,7 @@ create_keyword(char* value)
 
 
 ast_exp *
-create_const(int value)
+create_integer_const(int value)
 {
 	ast_exp *p;
 	p = malloc(sizeof(ast_exp));
@@ -1500,8 +1608,42 @@ create_const(int value)
 		return NULL;
 	}
 
-	p->type = typeConst;
-	p->con.value = value;
+	p->type = typeIntegerConst;
+	p->con.int_value = create_integer(value);
+
+    	PRINT(("%s\n", __func__));
+	return p;
+}
+
+ast_exp *
+create_double_const(double value)
+{
+	ast_exp *p;
+	p = malloc(sizeof(ast_exp));
+	if (!p) {
+		printf("out of memory in %s\n", __func__);
+		return NULL;
+	}
+
+	p->type = typeDoubleConst;
+	p->con.double_value = create_double(value);
+
+    	PRINT(("%s\n", __func__));
+	return p;
+}
+
+ast_exp *
+create_price_const(char *value)
+{
+	ast_exp *p;
+	p = malloc(sizeof(ast_exp));
+	if (!p) {
+		printf("out of memory in %s\n", __func__);
+		return NULL;
+	}
+
+	p->type = typePriceConst;
+	p->con.price_value = create_price(value);
 
     	PRINT(("%s\n", __func__));
 	return p;

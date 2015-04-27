@@ -1,0 +1,13 @@
+/*   StratMaster  Test Program
+ *   Multiple orders in a STRATEGY
+ *   Testing account feedback in placing orders. 
+ */
+
+USE ACCOUNT ac_master;
+
+STRATEGY my_strat1
+{
+	BUY  { WHAT : SECURITY( EQTY(INTC) ).AMOUNT(100).PRICE( 50.00 ); }
+	BUY  { WHAT : SECURITY( EQTY(INTC) ).AMOUNT(100).PRICE( USD(50.00)); }
+}
+
