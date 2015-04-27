@@ -274,8 +274,6 @@ void ex_process_statement(ast_process_statement * process_statement)
 	        int retval;
 	        void *result;
 	        pthread_t algo_thr;
-	        // Set up ALGORITHM args 
-	        // Create data source 
 	        char *df_name = "df_ZBRA";
 	        if( (df1 = create_data_source(df_name, DATAFEED)) == NULL )
 		    die("error creating data source");
