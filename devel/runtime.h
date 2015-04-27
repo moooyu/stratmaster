@@ -29,9 +29,22 @@ typedef enum { OP_IS = 256, OP_ISNOT, OP_FUNC } oper_type;
 typedef enum { OP_UNARY_MINUS = 512, OP_UNARY_SHARP, OP_UNARY_NOT } oper_unary;
 
 /****** Structures ****************/
-struct price {
+struct integer_object {
+	int value;
+};
+
+struct double_object {
+	double value;
+};
+
+
+struct price_object {
+	char price[NAMEBUF];
+};
+
+struct currency {
 	int  curr_t;          /* type of currency */
-	char p[NAMEBUF];
+	char p[NAMEBUF];      /* amount (e.g. 29.99) */
 };
 
 struct security {
@@ -42,12 +55,13 @@ struct security {
 struct position {
 	struct security sec;            /* the security object  */
 	int    amt;                     /* quantity (e.g. number of shares) */
-	struct price purch_price;       /* purchase price of this position */
+	struct currency purch_price;       /* purchase price of this position */
 };
 
 struct account {
+	int    num_positions;           /* number of positions  */
 	struct position *positions;     /* array of position objects */
-	struct price avail_cash;        /* available cash to buy securities */
+	struct currency avail_cash;     /* available cash to buy securities */
 };
 
 struct data {
@@ -58,14 +72,14 @@ struct data {
 
 struct data_item {
 	struct security sec;            /* the security object */
-	struct price curr_price;        /* the security's current price */
+	struct currency curr_price;        /* the security's current price */
 };
 
 struct order {
 	struct security sec;            /* the security object */
 	int    amt;                     /* quantity of order  */
 	int    order_t;                 /* type of order */
-	struct price pr;                /* price */
+	struct currency pr;             /* price */
 };
 
 struct order_item {
@@ -98,12 +112,21 @@ void die(const char *message);
 int is_equal_sec(struct security *sec1, struct security *sec2);
 void copy_name(char *buf, const char *str);
 long price_to_long(const char *pr);
+void long_to_price(long value, char *buf);
 /*  Runtime helper functions */
-struct algorithm *create_algorithm(struct data *data_src);
+struct integer_object *create_integer(int val);
+struct double_object *create_double(double val);
+struct price_object *create_price(const char *val);
+struct currency *create_currency(int type, const char *prc);
+struct security *create_security(int type, const char *ticker);
+struct position *create_position(struct security *s, int amt, struct currency *p);
 struct account *create_account();
+long get_available_cash(struct account *acct);
+long can_add_position(struct account *acct, struct order *order);
+long add_position(struct account *acct, struct order *order);
+struct algorithm *create_algorithm(struct data *data_src);
 struct data *create_data_source(const char *fname, int data_type);
-struct security *create_new_security(const char *ticker, int type);
-struct order *create_new_order(struct security *sec, int amount, const char *price, int order_type);
+struct order *create_order(struct security *security, int amount, struct currency *price, int order_type);
 void emit_order(struct order_item *my_order);
 /*  Order queue functions */
 void order_queue_init(struct queue *q);

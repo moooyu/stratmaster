@@ -3,9 +3,8 @@
 #include <stdarg.h>
 #include "symtab.h"
 #define NAMEBUF    32      /* Max size of an identifier or name */
-/*typedef enum {BUY_ORDER, SELL_ORDER} basic_type;*/
 
-typedef enum {typeConst, typeOper, typeID, typeKeyword, typeArgulist} nodeType;
+typedef enum {typeIntegerConst, typeDoubleConst, typePriceConst, typeOper, typeID, typeKeyword, typeArgulist} nodeType;
 
 typedef struct{
     int type;  /*1ACCOUNT, 2DATAFEED, 3DATABASE, 4EXCHANGE*/
@@ -19,11 +18,32 @@ typedef struct{
 }parameter;
 
 /********************AST NODES***********************/
+typedef struct {
+	struct currency *curr;
+} ast_currency;
+
+
+typedef struct {
+	struct security *sec;
+} ast_security;
+
+
+typedef struct {
+	struct position *pos;
+} ast_position;
+
 
 struct ast_exp;
+
+
 typedef struct {
-	int value;
+	union {
+		struct integer_object* int_value;
+		struct double_object* double_value;
+		struct price_object *price_value;
+	};
 } ast_const;
+
 
 typedef struct {
 	char value[NAMEBUF];
@@ -191,9 +211,7 @@ typedef struct{
     ast_use_others * use_others;
 }ast_use_list;
 
-
-/*******strategy*******/
-
+/*
 typedef struct {
     int type;
 }ast_security_type;
@@ -202,14 +220,26 @@ typedef struct {
     int type;
     char  name[NAMEBUF];
 }ast_security;
+*/
 
+/*** Strategy items ***/
+/*
 typedef struct {
     int security_type;
     char security_name[NAMEBUF];
     int number;
     char price[NAMEBUF];
-    int type; /*BUY SELL*/
+    int type; //BUY SELL
 }ast_order_item;
+*/
+
+typedef struct {
+	ast_security *sec;
+	ast_exp *number;
+	ast_currency *prc;
+	int type; /* BUY, SELL */
+} ast_order_item;
+
 
 typedef struct {
     ast_order_item * order_item;
@@ -289,7 +319,13 @@ ast_exp *
 create_opr(int oper, int nops, ast_exp* op1, ast_exp* op2);
 
 ast_exp *
-create_const(int value);
+create_integer_const(int value);
+
+ast_exp *
+create_double_const(double value);
+
+ast_exp *
+create_price_const(char *value);
 
 ast_program *
 create_program(ast_use_list * use_list, ast_algorithm_list * algorithm_list,ast_strategy_list* strategy_list, struct symbol_table* sym);
@@ -444,13 +480,28 @@ add_constraint_list(ast_constraint_list * list, ast_constraint * constraint);
 
 ast_constraint *
 create_constraint(ast_order_item * order_item);
-
+/*
 ast_order_item *
 create_order_item(ast_security *security, int number, char * price_name);
+*/
+
+ast_order_item *
+create_order_item(ast_security *sec, ast_exp *num, ast_currency *prc, int t);
+
+ast_currency *
+create_ast_currency(int type, char *price);
+
 ast_security *
-create_security(int security_type, char * name);
+create_ast_security(int sec_type, char * name);
+
+ast_position *
+create_ast_position(ast_security *astsec, int amt, ast_currency *astpr);
+
+
+/*
 ast_security_type *
 create_security_type(int type);
+*/
 
 ast_process_statement_list *
 create_process_statement_list(ast_process_statement * process_statement);
