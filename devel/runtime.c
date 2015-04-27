@@ -70,23 +70,255 @@ long price_to_long(const char *pr)
 	return atol(price);
 }
 
+/*
+ * Convert a long to a price string.
+ */
+void long_to_price(long value, char *buf)
+{
+	memset(buf, 0, sizeof(buf));
+	char resultbuf[NAMEBUF];
+	char tempbuf[NAMEBUF];
+
+	long dollars = value / 100L;
+	long cents   = value - (dollars * 100L);
+	//fprintf(stderr, "DOLLARS = %ld CENTS = %02ld\n", dollars, cents);	
+	sprintf(resultbuf, "%ld.", dollars);
+	sprintf(tempbuf, "%02ld", cents);
+        strcat(resultbuf, tempbuf);
+
+	//fprintf(stderr, "DOLLARS = %s CENTS = %s\n", resultbuf, tempbuf);
+	copy_name(buf, resultbuf);
+}
+
 
 /*********** STRATMASTER RUNTIME FUNCTIONS ********************/
+/*
+ *   Create an INT object.
+ */
+struct integer_object *create_integer(int val)
+{
+	struct integer_object *new_int = (struct integer_object *)malloc(sizeof(struct integer_object));
+	if( new_int == NULL )
+		die("malloc failed in create_integer");
+
+	new_int->value = val;
+
+	return new_int;
+}
+
+/*
+ *   Create a DOUBLE object.
+ */
+struct double_object *create_double(double val)
+{
+	struct double_object *new_double = (struct double_object *)malloc(sizeof(struct double_object));
+	if( new_double == NULL )
+		die("malloc failed in create_double");
+
+	new_double->value = val;
+
+	return new_double;
+}
+
+/*
+ *   Create a price object.
+ */
+struct price_object *create_price(const char *val)
+{
+	struct price_object *new_price = (struct price_object *)malloc(sizeof(struct price_object));
+	if( new_price == NULL )
+		die("malloc failed in create_price");
+
+	copy_name(new_price->price, val);
+
+	return new_price;
+}
+
+/*
+ *   Create a new currency object.
+ *   PARAMS: 
+ *      curr: the currency type; if 0, use default USD
+ *      prc : the price
+ * 
+ */
+struct currency *create_currency(int type, const char *prc)
+{
+	struct currency *new_curr = (struct currency *)malloc(sizeof(struct currency));
+	if( new_curr == NULL )
+		die("malloc failed");
+
+	/* copy price */
+	if( prc == NULL )
+	{ /* Default value: 0.00 */
+		copy_name(new_curr->p, "0.00");
+	}
+	else
+		copy_name(new_curr->p, prc);
+	
+	/* set currency type */
+	if( type == 0 )
+	{     /* Default currency: USD */
+		new_curr->curr_t = USD_T;
+	}
+	else
+		new_curr->curr_t = type;
+
+	return new_curr;
+}
+
+/*
+ *   Create a new security object.
+ */
+
+struct security *create_security(int type, const char *ticker)
+{
+	struct security *new_sec = (struct security *)malloc(sizeof(struct security));
+	if( new_sec == NULL )
+		die("error mallocing new security");
+
+	if( ticker == NULL )
+	{
+		copy_name(new_sec->sym, " ");
+	}
+	else
+		copy_name(new_sec->sym, ticker);
+	
+	/* Set security type */
+	if( type == 0 )
+	{  /*  Default security: EQTY */
+		new_sec->sec_t = EQTY_T;
+	}
+	else
+		new_sec->sec_t = type;
+
+	return new_sec;
+}
+
+/*
+ *   Create a new position object.
+ */
+
+struct position *create_position(struct security *s, int amt, struct currency *p)
+{
+	struct position *new_pos = (struct position *)malloc(sizeof(struct position));
+	if( new_pos == NULL )
+		die("error mallocing new position");
+	new_pos->sec = *s;
+	new_pos->amt = amt;
+	new_pos->purch_price = *p;
+
+	return new_pos;
+}
+
+
+
 /*
  *   Create a new account.
  */
 struct account *create_account()
 {
-	struct account *new_ac = (struct account *)malloc(sizeof(struct account));
-	if( new_ac == NULL )
+	struct account *new_acct = (struct account *)malloc(sizeof(struct account));
+	if( new_acct == NULL )
 		die("malloc failed");
 
-	/* We generously give each account $100 million to play with. */
-	copy_name(new_ac->avail_cash.p, "100000000.00");
-	/* Default currency: USD */
-	new_ac->avail_cash.curr_t = USD_T;
-	return new_ac;
+	/* We generously give each account $10,000 to play with. */
+	struct currency *cash = create_currency(0, "10000.00");
+	new_acct->avail_cash = *cash;
+	free(cash);
+
+	new_acct->num_positions = 0;
+	new_acct->positions = NULL;
+
+	return new_acct;
 }
+
+/*
+ *  Get amount of available cash in an account.
+ *  Return value: the numerical amount of cash as a long
+ *  (NOTE: this does not check currency type).
+ */
+long get_available_cash(struct account *acct)
+{
+	return price_to_long(acct->avail_cash.p);
+}
+
+/*
+ *  Determine if you can add a position to an account.
+ *  Return value: the amount of cash remaining if this order
+ *      were placed.  A negative value indicates rejection
+ *      of the order, since we would not have enough cash.
+ */
+long can_add_position(struct account *acct, struct order *order)
+{
+	long cash_bal = get_available_cash(acct);
+	return cash_bal - (order->amt * price_to_long(order->pr.p));
+}
+
+/*
+ *  Add a position to an account.
+ */
+long add_position(struct account *acct, struct order *order)
+{
+	int i = acct->num_positions;
+
+	if( i == 0 )
+	{    /* need to create a brand new position */
+		acct->positions = (struct position *)malloc(sizeof(struct position));
+		if( acct->positions == NULL )
+			die("malloc failed in add_position\n");
+
+		memcpy(&(acct->positions[0].sec), &order->sec, sizeof(struct security));
+		memcpy(&(acct->positions[0].amt), &order->amt, sizeof(int));
+		memcpy(&(acct->positions[0].purch_price), &order->pr, sizeof(struct currency));
+		fprintf(stderr, "[INFO] New position added: %s : %d shares at %s\n", acct->positions[0].sec.sym, acct->positions[0].amt, acct->positions[0].purch_price.p);
+	}
+	else
+	{      /* Search for an existing position with this security */
+		int found = 0;
+		struct position *temp_pos;
+		while( i > 0 )
+		{
+			if( is_equal_sec(&acct->positions[i].sec, &order->sec) )
+			{
+				temp_pos = &acct->positions[i];
+				found = 1;
+				break;
+			}
+			i--;
+		}
+
+		if( found )
+		{  /* add to an existing position */
+			temp_pos->amt += order->amt;
+			copy_name(temp_pos->purch_price.p, order->pr.p);
+
+		}
+		else
+		{  /* need to add a brand new position */
+			int size = acct->num_positions + 1;
+			acct->positions = (struct position *)realloc(acct->positions, sizeof(struct position) * size);
+			if( acct->positions == NULL )
+				die("malloc failed in add_position\n");
+
+			memcpy(&(acct->positions[acct->num_positions].sec), &order->sec, sizeof(struct security));
+			memcpy(&(acct->positions[acct->num_positions].amt), &order->amt, sizeof(int));
+			memcpy(&(acct->positions[acct->num_positions].purch_price), &order->pr, sizeof(struct currency));
+			fprintf(stderr, "[INFO] New position added: %s : %d shares at %s\n", acct->positions[acct->num_positions].sec.sym, 
+					acct->positions[acct->num_positions].amt, acct->positions[acct->num_positions].purch_price.p);
+
+		}
+
+	}
+
+	acct->num_positions++;
+
+	/* update account available cash balance */
+	long new_bal = get_available_cash(acct) - (order->amt * price_to_long(order->pr.p)); 
+	long_to_price(new_bal, acct->avail_cash.p);
+
+	return new_bal;
+}
+
 
 /*
  *   Create a data source object.
@@ -118,35 +350,20 @@ struct data *create_data_source(const char *dfname, int data_type)
 	return new_data_source;
 }
 
-/*
- *   Create a new security object.
- */
-
-struct security *create_new_security(const char *ticker, int type)
-{
-	struct security *new_sec = (struct security *)malloc(sizeof(struct security));
-	if( new_sec == NULL )
-		die("error mallocing new security");
-	copy_name(new_sec->sym, ticker);
-	new_sec->sec_t = type;
-
-	return new_sec;
-}
-
 
 /*
  *   Create a new order.
  */
-struct order *create_new_order(struct security *sec, int amount, const char *price, int order_type)
+struct order *create_order(struct security *security, int amount, struct currency *price, int order_type)
 {
 	struct order *new_order = (struct order *)malloc(sizeof(struct order));
 	if( new_order == NULL )
 		die("malloc failed");
 	
-	new_order->sec = *sec;
-	free(sec);
+	new_order->sec = *security;
+	free(security);
 	new_order->amt = amount;
-	copy_name(new_order->pr.p, price);
+	new_order->pr = *price;
 	new_order->order_t = order_type;
 
 	return new_order;
@@ -202,10 +419,20 @@ void emit_order(struct order_item *my_order)
 		default: order_type = "DID SOMETHING ELSE";
 	}
 
+	/* Determine currency type */
+	char *curr_type = "";
+	switch(my_order->ord->pr.curr_t)
+	{
+		case USD_T: curr_type = "USD"; break; 
+		case EUR_T: curr_type = "EUR"; break;
+		case JPY_T: curr_type = "JPY"; break;
+		default: curr_type = "XXX";
+	}
+
 	/* Print confirmation */
 	printf("++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++\n");
-	printf("[%s] YOU %s: %d SHARES OF %s AT USD %s\n", buf, order_type, my_order->ord->amt, 
-			my_order->ord->sec.sym, my_order->ord->pr.p);
+	printf("[%s] YOU %s: %d SHARES OF %s AT %s %s\n", buf, order_type, my_order->ord->amt, 
+			my_order->ord->sec.sym, curr_type, my_order->ord->pr.p);
 	printf(" >>>>>> ORDER PLACED BY %s\n", my_order->strat);
 	printf("++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++\n\n");
 }
