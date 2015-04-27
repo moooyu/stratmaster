@@ -6,6 +6,7 @@
 /*typedef enum {BUY_ORDER, SELL_ORDER} basic_type;*/
 
 typedef enum {typeConst, typeOper, typeID, typeKeyword, typeArgulist} nodeType;
+typedef enum {expression_ST, compound_ST, selection_ST, iteration_ST, set_ST} stmtType;
 
 typedef struct{
     int type;  /*1ACCOUNT, 2DATAFEED, 3DATABASE, 4EXCHANGE*/
@@ -105,21 +106,37 @@ typedef struct {
     ast_assignment_expression ** assignment_expression;
 }ast_expression;
 
-typedef struct {
-    int this_type;
-    ast_argument_expression_list *argument_expression_list;
-    ast_expression *expression;
-}ast_set_statement;
 
-typedef struct {
-    ast_set_statement * set_statement;
-}ast_statement;
+/***********************statement member******************************/
+typedef struct ast_statement ast_statement;
+
+typedef struct ast_selection_statement{
+	ast_exp *exp;
+	ast_statement *statement;
+}ast_selection_statement;  /*if exp stmt*/
 
 typedef struct {
     int num_of_statement;
     ast_statement ** statement;
 }ast_statement_list;
 
+typedef struct {
+    int this_type;
+    ast_exp *argu_list;
+    ast_exp *exp;
+}ast_set_statement;
+
+typedef struct ast_statement{
+    int type;
+    union {
+		ast_exp *expression_statement;
+		ast_selection_statement selection_statement;
+		ast_statement_list statement_list;   /*compound_statement*/
+		ast_set_statement set_statement;
+	}; 
+}ast_statement;
+
+/*****************************************************/
 typedef struct {
     int type;
 }ast_arithmetic_type;
@@ -168,7 +185,8 @@ typedef struct {
     char name[NAMEBUF];
     int num_of_para;
     parameter ** para_list;
-    ast_compound_statement * compound_statement;
+    int num_of_statement;
+    ast_statement ** statement;
     struct symbol_table * sym;
 }ast_algorithm;
 
@@ -291,6 +309,18 @@ create_opr(int oper, int nops, ast_exp* op1, ast_exp* op2);
 ast_exp *
 create_const(int value);
 
+ast_statement*
+create_selection_statement(ast_exp *exp, ast_statement *statement);
+
+ast_statement*
+create_expression_statement(ast_exp *exp);
+
+ast_statement *
+create_set_statement(int this_type, ast_exp *argu_list, ast_exp *exp);
+
+ast_statement *
+create_compound_statement(ast_statement_list * statement_list);
+
 ast_program *
 create_program(ast_use_list * use_list, ast_algorithm_list * algorithm_list,ast_strategy_list* strategy_list, struct symbol_table* sym);
 
@@ -319,7 +349,7 @@ ast_algorithm_list *
 add_algorithm_list(ast_algorithm_list *list, ast_algorithm * algorithm_function);
 
 ast_algorithm *
-create_algorithm_ast(ast_algorithm_header * algorithm_header,ast_compound_statement * compound_statement, struct symbol_table* sym);
+create_algorithm_ast(ast_algorithm_header * algorithm_header,ast_statement_list * statement_list, struct symbol_table* sym);
 
 ast_algorithm_header *
 create_algorithm_header(char * name, ast_parameter_list * parameter_list);
@@ -332,9 +362,6 @@ create_target_list();
 
 ast_target_list *
 add_target_list(ast_target_list * list, ast_type_specifier *type_specifier, char * name);
-
-ast_compound_statement *
-create_compound_statement(ast_variable_declaration_list * variable_declaration_list, ast_statement_list * statement_list);
 
 
 ast_variable_declaration_list *
@@ -354,16 +381,10 @@ ast_arithmetic_type *
 create_arithmetic_type(int type);
 
 ast_statement_list *
-create_statement_list();
+create_statement_list(ast_statement *statement);
 
 ast_statement_list *
-add_statement_list(ast_statement_list * list, ast_statement* statement);
-
-ast_statement *
-create_statement(ast_set_statement * set_statement);
-
-ast_set_statement *
-create_set_statement(int this_type, ast_argument_expression_list *argument_expression_list, ast_expression *expression);
+add_statement_list(ast_statement_list *list, ast_statement *statement);
 
 ast_exp *
 create_argument_expression_list(ast_exp * exp);
@@ -471,6 +492,7 @@ void print_order(ast_order_item * order_item);
 void print_process_statement(ast_process_statement * process_statement);
 void print_exp(ast_exp *exp);
 void print_algorithm(ast_algorithm * algorithm);
+void print_statement(ast_statement *statement);
 
 int install_symbol(int id_type, const char *id, struct symbol_table *symtab);
 

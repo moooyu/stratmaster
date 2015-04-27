@@ -45,9 +45,10 @@ struct symbol_table *parent;
 	ast_process_statement_list * process_statement_list;	
 	ast_algorithm_header *algorithm_header;
 	ast_algorithm *algorithm_function;
-    	ast_compound_statement *compound_statement;
+    	ast_statement_list * statement_list;
 	ast_parameter_list *parameter_list;
 ast_strategy_block *strategy_block;
+ast_statement *statement;
 };
 
 
@@ -68,11 +69,15 @@ ast_strategy_block *strategy_block;
 %type <algorithm_list> algorithm_list;
 %type <algorithm_header> algorithm_header;
 %type <algorithm_function> algorithm_definition;
-%type <compound_statement> compound_statement;
 %type <int_val> type_specifier;
+
+%type <statement_list> compound_statement;
 %type <statement_list> statement_list;
 %type <statement> statement;
-%type <set_statement> set_statement;
+%type <statement> expression_statement;
+%type <statement> selection_statement;
+%type <statement> set_statement;
+
 %type <exp> argument_expression_list;
 %type <exp> unary_expression;
 %type <exp> postfix_expression;
@@ -85,7 +90,6 @@ ast_strategy_block *strategy_block;
 %type <exp> multiplicative_expression;
 %type <exp> expression;
 %type <exp> assignment_expression;
-%type <exp> expression_statement;
 %type <exp> type_name;
 
 %type <int_val> security_type;
@@ -105,6 +109,7 @@ ast_strategy_block *strategy_block;
 %type <program> program
 %type <int_val> unary_operator
 %type <parameter_list> parameter_list
+
 
 %%
 program		: { fprintf(stdout, "STARTING PROGRAM\n"); parent = NULL; top = symbol_table_create(parent); } 
@@ -258,33 +263,33 @@ order_type	: BUY					{ $$ = BUY_ORDER;}
 		| SELL					{ $$ = SELL_ORDER;}
 		;
 
-statement	: expression_statement		{ }
-	  	| compound_statement		{ }
-		| selection_statement		{ }
+statement	: expression_statement		{ $$ = $1;}
+	  	| compound_statement		{ $$ = create_compound_statement($1); }
+		| selection_statement		{ $$ = $1; }
 		| iteration_statement		{ }
-		| set_statement			{ }
+		| set_statement			{ $$ = $1; }
 		;
 
-expression_statement : expression ';'			{ $$ = $1; }
+expression_statement : expression ';'			{ $$ = create_expression_statement($1); }
 		| ';'					{ }
 		;
 
-compound_statement : '{' variable_declaration_list statement_list '}'	{ }
-		| '{' statement_list '}'	{	}
+compound_statement : '{' variable_declaration_list statement_list '}'	{ $$ = $3; }
+		| '{' statement_list '}'	{ $$ = $2; }
 		| '{' '}'			{ }
 		;
 
-statement_list	: statement			{ }
-		| statement_list statement	{ }
+statement_list	: statement			{ $$ = create_statement_list($1); }
+		| statement_list statement	{ $$ = add_statement_list($1, $2);}
 		;
 
-selection_statement : IF '(' expression ')' statement
+selection_statement : IF '(' expression ')' statement   { $$ = create_selection_statement($3, $5); }
 		;
 
 iteration_statement : WHILE '(' expression ')' statement
 		;
 
-set_statement 	: SET '{' argument_expression_list '}' IF ':' '{' expression '}'	{	}
+set_statement 	: SET '{' argument_expression_list '}' IF ':' '{' expression '}'	{ $$ = create_set_statement(0,$3,$8); }
 		;
 
 expression	: assignment_expression				{ $$ = $1; }
@@ -292,7 +297,7 @@ expression	: assignment_expression				{ $$ = $1; }
 		;
 
 assignment_expression : logical_OR_expression 			{ $$ = $1; }
-            	| unary_expression '=' logical_OR_expression
+            	| unary_expression '=' logical_OR_expression	{ $$ = create_opr('=', 2, $1, $3); }
 		;
 
 logical_OR_expression :  logical_AND_expression 		{ $$ = $1; }

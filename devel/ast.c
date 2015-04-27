@@ -192,7 +192,7 @@ add_algorithm_list(ast_algorithm_list *list, ast_algorithm * algo)
 
 
 ast_algorithm *
-create_algorithm_ast(ast_algorithm_header * algorithm_header,ast_compound_statement * compound_statement, struct symbol_table* sym)
+create_algorithm_ast(ast_algorithm_header * algorithm_header,ast_statement_list * statement_list, struct symbol_table* sym)
 {
     ast_algorithm * algo;
     
@@ -205,7 +205,8 @@ create_algorithm_ast(ast_algorithm_header * algorithm_header,ast_compound_statem
     strcpy (algo->name, algorithm_header->name);
     algo->num_of_para = algorithm_header->num_of_para;
     algo->para_list = algorithm_header->para_list;
-    algo->compound_statement = compound_statement;
+    algo->num_of_statement = statement_list->num_of_statement;
+    algo->statement = statement_list->statement;
     algo->sym = sym;
     
     PRINT(("%s\n", __func__));
@@ -375,26 +376,126 @@ add_target_list(ast_target_list * list, ast_type_specifier *type_specifier, char
     return list;
 }
 
-
-ast_compound_statement *
-create_compound_statement(ast_variable_declaration_list * variable_declaration_list, ast_statement_list * statement_list)
+ast_statement*
+create_expression_statement(ast_exp *exp)
 {
-    ast_compound_statement * compound_statement;
+	ast_statement *stmt;
+	stmt = malloc(sizeof(ast_statement));
+	if(!stmt)
+	{
+	       printf("out of memory in %s\n", __func__);
+        	return NULL;
+	}
+	stmt->type = expression_ST;
+	stmt->expression_statement = exp;
+ 	
+	PRINT(("%s\n", __func__));
+	return stmt;
+}
+
+ast_statement*
+create_compound_statement(ast_statement_list * statement_list)
+{
+	ast_statement *stmt;
+	stmt = malloc(sizeof(ast_statement));
+	if(!stmt)
+	{
+	       printf("out of memory in %s\n", __func__);
+        	return NULL;
+	}
+	stmt->type = compound_ST;
+	stmt->statement_list.num_of_statement = statement_list->num_of_statement;
+	stmt->statement_list.statement = statement_list->statement;
+ 	
+	PRINT(("%s\n", __func__));
+	return stmt;
+}
+
+ast_statement*
+create_selection_statement(ast_exp *exp, ast_statement *statement)
+{
+	ast_statement *stmt;
+	stmt = malloc(sizeof(ast_statement));
+	if(!stmt)
+	{
+	       printf("out of memory in %s\n", __func__);
+        	return NULL;
+	}
+	stmt->type = selection_ST;
+	stmt->selection_statement.exp = exp;
+	stmt->selection_statement.statement = statement;
+ 	
+	PRINT(("%s\n", __func__));
+	return stmt;
+}
+
+ast_statement *
+create_set_statement(int this_type, ast_exp *argu_list, ast_exp *exp)
+{
+    ast_statement * stmt;
     
-    compound_statement = malloc(sizeof(ast_compound_statement));
-    if (!compound_statement) {
+    stmt = malloc(sizeof(ast_statement));
+    if (!stmt) {
         printf("out of memory in %s\n", __func__);
         return NULL;
     }
     
-    compound_statement->variable_declaration_list = variable_declaration_list;
-    compound_statement->statement_list = statement_list;
+    stmt->type = set_ST;
+    stmt->set_statement.this_type = this_type;
+    stmt->set_statement.argu_list = argu_list;
+    stmt->set_statement.exp = exp;
     
     PRINT(("%s\n", __func__));
     
-    return compound_statement;
+    return stmt;
     
 }
+
+ast_statement_list *
+create_statement_list(ast_statement *statement)
+{	
+	ast_statement_list * list;
+	list = malloc(sizeof(ast_statement_list));
+	if(!list)
+	{
+	       printf("out of memory in %s\n", __func__);
+        	return NULL;
+	}
+	
+	list->statement = malloc(sizeof(ast_statement*));
+	if(!list->statement)
+	{
+	       printf("out of memory in %s\n", __func__);
+        	return NULL;
+	}
+	
+	list->statement[0] = statement;
+	list->num_of_statement = 1;
+	
+	PRINT(("%s\n", __func__));
+	return list;
+}
+
+ast_statement_list *
+add_statement_list(ast_statement_list *list, ast_statement *statement)
+{
+	int num = list->num_of_statement + 1;
+	list->statement = realloc(list->statement, num*sizeof(ast_statement*));
+	if(!list->statement)
+	{
+	       printf("out of memory in %s\n", __func__);
+        	return NULL;
+	}
+	
+	list->statement[num-1] = statement;
+	list->num_of_statement = num;
+
+	PRINT(("%s\n", __func__));
+	return list;
+
+}
+
+
 
 
 ast_variable_declaration_list *
@@ -507,85 +608,7 @@ create_arithmetic_type(int type)
     
 }
 
-ast_statement_list *
-create_statement_list()
-{
-    ast_statement_list * statement_list;
-    
-    statement_list = malloc(sizeof(ast_statement_list));
-    if (!statement_list) {
-        printf("out of memory in %s\n", __func__);
-        return NULL;
-    }
-    
-    statement_list->num_of_statement = 0;
-    statement_list->statement = NULL;
-    
-    PRINT(("%s\n", __func__));
-    
-    return statement_list;
-    
-}
 
-ast_statement_list *
-add_statement_list(ast_statement_list * list, ast_statement* statement)
-{
-    int num_of_statement;
-    num_of_statement = list->num_of_statement + 1;
-    
-    list->statement = realloc(list->statement, num_of_statement*sizeof(ast_statement*));
-    if (!list->statement) {
-        printf("out of memory in %s\n", __func__);
-        return NULL;
-    }
-    
-    list->statement[num_of_statement-1] = statement;
-    list->num_of_statement += 1;
-    
-    PRINT(("%s\n", __func__));
-    return list;
-}
-
-
-ast_statement *
-create_statement(ast_set_statement * set_statement)
-{
-    ast_statement * statement;
-    
-    statement = malloc(sizeof(ast_statement));
-    if (!statement) {
-        printf("out of memory in %s\n", __func__);
-        return NULL;
-    }
-    
-    statement->set_statement = set_statement;
-    
-    PRINT(("%s\n", __func__));
-    
-    return statement;
-    
-}
-
-ast_set_statement *
-create_set_statement(int this_type, ast_argument_expression_list *argument_expression_list, ast_expression *expression)
-{
-    ast_set_statement * set_statement;
-    
-    set_statement = malloc(sizeof(ast_set_statement));
-    if (!set_statement) {
-        printf("out of memory in %s\n", __func__);
-        return NULL;
-    }
-    
-    set_statement->this_type = this_type;
-    set_statement->argument_expression_list = argument_expression_list;
-    set_statement->expression = expression;
-    
-    PRINT(("%s\n", __func__));
-    
-    return set_statement;
-    
-}
 /*
 ast_exp *
 create_const(int value)
@@ -1345,7 +1368,45 @@ void print_algorithm(ast_algorithm * algorithm)
 	{
 		printf("parameter %d, type: %d, has sharp: %d, identifier: %s\n", i, algorithm->para_list[i]->type_specifier, algorithm->para_list[i]->has_sharp, algorithm->para_list[i]->name);
 	}
+	for(i = 0; i<algorithm->num_of_statement; i++)
+	{
+		printf("Algorithm compound statement %d\n", i);
+		print_statement(algorithm->statement[i]);
+	}
 }
+
+void print_statement(ast_statement *statement)
+{
+	int i;
+	switch(statement->type)
+	{
+		case(expression_ST):
+			print_exp(statement->expression_statement);
+		 	break;
+		case(compound_ST):
+			for(i = 0; i<statement->statement_list.num_of_statement; i++)
+			{
+				print_statement(statement->statement_list.statement[i]);
+			}	
+			break;
+		case(selection_ST): /*if*/
+			print_exp(statement->selection_statement.exp);
+			print_statement(statement->selection_statement.statement);
+			break;
+		case(set_ST):
+			printf("What to set: \n");
+			for(i = 0; i<statement->set_statement.argu_list->argu_list.num_of_argument_expression_list; i++)
+			{
+				print_exp(statement->set_statement.argu_list->argu_list.exp[i]);
+			}
+			printf("Set condition: \n");
+			print_exp(statement->set_statement.exp);
+			break;
+		default:	
+			;
+	}
+}
+
 
 void print_strategy(ast_strategy * strategy)
 {	
