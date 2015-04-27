@@ -1,10 +1,11 @@
 /*   StratMaster Test Case
  *   ALGORITHM with single param 
+ *   REVISED order item [VM]
  */
 
 USE ACCOUNT ac_master;
 
-ALGORITHM al(PRICE #zbra_price)
+ALGORITHM al(CURRENCY #zbra_price)
 {
 	SET {zbra_price = 200 }
 	IF:
@@ -15,10 +16,12 @@ ALGORITHM al(PRICE #zbra_price)
 
 STRATEGY hello
 {
-	PRICE zbra_price;
+	CURRENCY zbra_price;
 
 	WHEN ( al(#zbra_price) IS TRUE ) 
 	{
-		 BUY { WHAT : EQTY(ZBRA).AMOUNT(100).PRICE(zbra_price); }
+		 BUY { WHAT : SECURITY( EQTY(ZBRA) ).AMOUNT(100).PRICE(zbra_price); }
+                 SELL{ WHAT : SECURITY( EQTY(INTC) ).AMOUNT(1000).PRICE( JPY(233.11) ); }
+                 BUY { WHAT: SECURITY( EQTY(SHAK) ).AMOUNT(440).PRICE( 44.44 ); }
 	}
 }

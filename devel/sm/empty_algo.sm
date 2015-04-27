@@ -4,19 +4,19 @@
 
 USE ACCOUNT ac_master;
 
-ALGORITHM al(/*DATAFEED some_feed, */PRICE # zbra_price,PRICE # cat_price, PRICE # rabbit_price)
+ALGORITHM al(/*DATAFEED some_feed, */CURRENCY #zbra_price, CURRENCY #cat_price, CURRENCY #rabbit_price)
 {
 
 }
 
 STRATEGY hello
 {
-	PRICE zbra_price;
-	PRICE cat_price;
+	CURRENCY zbra_price;
+	CURRENCY cat_price;
 	WHEN ( al(#zbra_price, #cat_price) IS TRUE ) 
 	{
-		BUY { WHAT : EQTY(hi0).AMOUNT(100).PRICE(10.00); }
- 		BUY { WHAT : EQTY(hi1).AMOUNT(101).PRICE(10.01); }
-		BUY { WHAT : EQTY(hi2).AMOUNT(102).PRICE(10.02); }
+		BUY { WHAT : SECURITY( EQTY(hi0)).AMOUNT(100).PRICE(10.00); }
+ 		BUY { WHAT : SECURITY( EQTY(hi1) ).AMOUNT(101).PRICE(10.01); }
+		BUY { WHAT : SECURITY( EQTY(hi2)).AMOUNT(102).PRICE(10.02); }
 	}
 }

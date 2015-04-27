@@ -1,10 +1,11 @@
 /*   StratMaster HelloWorld
- *   Single order in STRATEGY [VM]
+ *   Single order in STRATEGY
+ *   REVISED ORDER ITEM [VM]
  */
 
 USE ACCOUNT ac_master;
 
 STRATEGY hello
 {
-	BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
+	BUY { WHAT : SECURITY( EQTY(HI) ).AMOUNT(100).PRICE( 99.99 ); }
 }
