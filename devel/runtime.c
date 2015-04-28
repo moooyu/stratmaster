@@ -93,6 +93,21 @@ void long_to_price(long value, char *buf)
 
 /*********** STRATMASTER RUNTIME FUNCTIONS ********************/
 /*
+ *   Create a BOOLEAN object.
+ */
+struct boolean_object *create_boolean(int val)
+{
+	struct boolean_object *new_bool = (struct boolean_object *)malloc(sizeof(struct boolean_object));
+	if( new_bool == NULL )
+		die("malloc failed in create_boolean");
+
+	new_bool->value = val;
+
+	return new_bool;
+}
+
+
+/*
  *   Create an INT object.
  */
 struct integer_object *create_integer(int val)
@@ -551,5 +566,94 @@ struct order_item *queue_get_order(struct queue *q)
 	pthread_mutex_unlock(&q->mutex);	
 
 	return next_order;
+}
+
+char *type_tostring(int t)
+{
+	char *str = "";
+	switch(t)
+	{
+		case INT_T: str = "INT"; break;
+		case DOUBLE_T: str = "DOUBLT"; break;
+		case BOOLEAN_T: str = "BOOLEAN"; break;
+		case SECURITY_T: str = "SECURITY"; break;
+		case CURRENCY_T: str = "CURRENCY"; break;
+		case VOID_T: str = "VOID"; break;
+		case ACCOUNT_T: str = "ACCOUNT"; break;
+		case DATAFEED_T: str = "DATAFEED"; break;
+		case DATABASE_T: str = "DATABASE"; break;
+		case EXCHANGE_T: str = "EXCHANGE"; break;
+		case STRATEGY_T: str = "STRATEGY"; break;
+		case ALGORITHM_T: str = "ALGORITHM"; break;
+		case FUNCTION_T: str = "FUNCTION"; break;
+		default: str = "UNKNOWN TYPE";
+	}
+
+	return str;
+}
+
+
+char *statement_type_tostring(int t)
+{
+	char *str = "";
+	switch(t)
+	{
+		case expression_ST: str = "EXPRESSION STATEMENT"; break;
+		case compound_ST: str = "COMPOUND STATEMENT"; break;
+		case selection_ST: str = "SELECTION STATEMENT"; break;
+		case iteration_ST: str = "ITERATION STATEMENT"; break;
+		case set_ST: str = "SET STATEMENT"; break;
+		default: str = "UNKNOWN STATEMENT TYPE";
+	}
+
+	return str;
+}
+
+
+char *node_type_tostring(int t)
+{
+	char *str = "";
+	switch(t)
+	{
+		case typeIntegerConst: str = "INTEGER CONSTANT"; break;
+		case typeBooleanConst: str = "BOOLEAN CONSTANT"; break;
+		case typeDoubleConst: str = "DOUBLE CONSTANT"; break;
+		case typePriceConst: str = "PRICE CONSTANT"; break;
+		case typeOper: str = "OPERATOR"; break;
+		case typeID: str = "ID"; break;
+		case typeKeyword: str = "KEYWORD"; break;
+		case typeArgulist: str = "ARGUMENT LIST"; break;
+		default: str = "UNKNOWN EXP NODE TYPE";
+	}
+
+	return str;
+}
+
+char *oper_type_tostring(int t)
+{
+	char *str = "";
+	switch(t)
+	{
+		case OP_IS: str = "OP_IS"; break;
+		case OP_ISNOT: str = "OP_ISNOT"; break;
+		case OP_FUNC: str = "OP_FUNC"; break;
+		case OP_ASSIGN: str = "OP_ASSIGN"; break;
+		case OP_OR: str = "OP_OR"; break;
+		case OP_AND: str = "OP_AND"; break;
+		case OP_ADD: str = "OP_ADD"; break;
+		case OP_SUB: str = "OP_SUB"; break;
+		case OP_MULT: str = "OP_MULT"; break;
+		case OP_DIV: str = "OP_DIV"; break;
+		case OP_LT: str = "OP_LT"; break;
+		case OP_GT: str = "OP_GT"; break;
+		case OP_LTEQ: str = "OP_LTEQ"; break;
+		case OP_GTEQ: str = "OP_GTEQ"; break;
+		case OP_UNARY_SHARP: str = "OP_UNARY_SHARP"; break;
+		case OP_UNARY_MINUS: str = "OP_UNARY_MINUS"; break; 
+		case OP_UNARY_NOT: str = "OP_UNARY_NOT"; break;
+		default: str = "UNKNOWN OPERATOR TYPE";
+	}
+
+	return str;
 }
 

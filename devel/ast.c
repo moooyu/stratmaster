@@ -203,8 +203,16 @@ create_algorithm_ast(ast_algorithm_header * algorithm_header,ast_statement_list 
     strcpy (algo->name, algorithm_header->name);
     algo->num_of_para = algorithm_header->num_of_para;
     algo->para_list = algorithm_header->para_list;
-    algo->num_of_statement = statement_list->num_of_statement;
-    algo->statement = statement_list->statement;
+    if( statement_list == NULL )
+    {
+	    algo->num_of_statement = 0;
+	    algo->statement = NULL;
+    }
+    else
+    {
+	    algo->num_of_statement = statement_list->num_of_statement;
+	    algo->statement = statement_list->statement;
+    }
     algo->sym = sym;
     
     PRINT(("%s\n", __func__));
@@ -402,15 +410,21 @@ create_compound_statement(ast_statement_list * statement_list)
         	return NULL;
 	}
 	stmt->type = compound_ST;
-	stmt->statement_list.num_of_statement = statement_list->num_of_statement;
-	stmt->statement_list.statement = statement_list->statement;
- 	
+	if( statement_list == NULL )
+	{
+		stmt->statement_list.num_of_statement = 0;
+		stmt->statement_list.statement = NULL;
+	}
+	else
+	{
+		stmt->statement_list.num_of_statement = statement_list->num_of_statement;
+		stmt->statement_list.statement = statement_list->statement;
+	}
 	PRINT(("%s\n", __func__));
 	return stmt;
 }
 
-ast_statement*
-create_selection_statement(ast_exp *exp, ast_statement *statement)
+ast_statement *create_selection_statement(ast_exp *exp, ast_statement *statement)
 {
 	ast_statement *stmt;
 	stmt = malloc(sizeof(ast_statement));
@@ -428,7 +442,8 @@ create_selection_statement(ast_exp *exp, ast_statement *statement)
 }
 
 ast_statement *
-create_set_statement(int this_type, ast_exp *argu_list, ast_exp *exp)
+//create_set_statement(int this_type, ast_exp *argu_list, ast_exp *exp)
+create_set_statement(ast_exp *argu_list, ast_exp *exp)
 {
     ast_statement * stmt;
     
@@ -439,14 +454,13 @@ create_set_statement(int this_type, ast_exp *argu_list, ast_exp *exp)
     }
     
     stmt->type = set_ST;
-    stmt->set_statement.this_type = this_type;
+    //stmt->set_statement.this_type = this_type;
     stmt->set_statement.argu_list = argu_list;
     stmt->set_statement.exp = exp;
     
     PRINT(("%s\n", __func__));
     
     return stmt;
-    
 }
 
 ast_statement_list *
@@ -492,8 +506,6 @@ add_statement_list(ast_statement_list *list, ast_statement *statement)
 	return list;
 
 }
-
-
 
 
 ast_variable_declaration_list *
@@ -1433,7 +1445,7 @@ void print_algorithm(ast_algorithm * algorithm)
 	printf("Algorithm name: %s\n", algorithm->name);
 	for(i = 0; i<algorithm->num_of_para; i++)
 	{
-		printf("parameter %d, type: %d, has sharp: %d, identifier: %s\n", i, algorithm->para_list[i]->type_specifier, algorithm->para_list[i]->has_sharp, algorithm->para_list[i]->name);
+		printf("parameter %d, type: %s, has sharp: %d, identifier: %s\n", i, type_tostring(algorithm->para_list[i]->type_specifier), algorithm->para_list[i]->has_sharp, algorithm->para_list[i]->name);
 	}
 	for(i = 0; i<algorithm->num_of_statement; i++)
 	{
@@ -1544,8 +1556,8 @@ void print_exp(ast_exp *exp)
 	int i = 0;
 	switch(exp->type)
 	{
-	/*	case(typeConst):
-			printf("leaf const: %d\n", exp->con.value); break; */
+		case(typeBooleanConst):
+			printf("leaf boolean const: %d\n", exp->con.bool_value->value); break;
 		case(typeIntegerConst):
 			printf("leaf int const: %d\n", exp->con.int_value->value); break;
 		case(typeDoubleConst):
@@ -1562,7 +1574,7 @@ void print_exp(ast_exp *exp)
 				print_exp(exp->argu_list.exp[i]);
 			break;
 		case(typeOper):	
-			printf("Operator: %d\n", exp->oper.oper);
+			printf("Operator: %s\n", oper_type_tostring(exp->oper.oper));
 			print_exp(exp->oper.op1);
 			if (exp->oper.nops == 2) print_exp(exp->oper.op2); 
 			break;
@@ -1658,6 +1670,22 @@ create_keyword(char* value)
 	return p;
 }
 
+ast_exp *
+create_boolean_const(int value)
+{
+	ast_exp *p;
+	p = malloc(sizeof(ast_exp));
+	if (!p) {
+		printf("out of memory in %s\n", __func__);
+		return NULL;
+	}
+
+	p->type = typeBooleanConst;
+	p->con.bool_value = create_boolean(value);
+
+    	PRINT(("%s\n", __func__));
+	return p;
+}
 
 ast_exp *
 create_integer_const(int value)

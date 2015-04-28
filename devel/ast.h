@@ -4,8 +4,9 @@
 #include "symtab.h"
 #define NAMEBUF    32      /* Max size of an identifier or name */
 
-typedef enum {typeIntegerConst, typeDoubleConst, typePriceConst, typeOper, typeID, typeKeyword, typeArgulist} nodeType;
+typedef enum {typeBooleanConst, typeIntegerConst, typeDoubleConst, typePriceConst, typeOper, typeID, typeKeyword, typeArgulist} nodeType;
 typedef enum {expression_ST, compound_ST, selection_ST, iteration_ST, set_ST} stmtType;
+
 
 typedef struct{
     int type;  /*1ACCOUNT, 2DATAFEED, 3DATABASE, 4EXCHANGE*/
@@ -39,6 +40,7 @@ struct ast_exp;
 
 typedef struct {
 	union {
+		struct boolean_object *bool_value;
 		struct integer_object* int_value;
 		struct double_object* double_value;
 		struct price_object *price_value;
@@ -141,7 +143,7 @@ typedef struct {
 }ast_statement_list;
 
 typedef struct {
-    int this_type;
+    //int this_type;
     ast_exp *argu_list;
     ast_exp *exp;
 }ast_set_statement;
@@ -337,6 +339,9 @@ ast_exp *
 create_opr(int oper, int nops, ast_exp* op1, ast_exp* op2);
 
 ast_exp *
+create_boolean_const(int value);
+
+ast_exp *
 create_integer_const(int value);
 
 ast_exp *
@@ -352,7 +357,8 @@ ast_statement*
 create_expression_statement(ast_exp *exp);
 
 ast_statement *
-create_set_statement(int this_type, ast_exp *argu_list, ast_exp *exp);
+//create_set_statement(int this_type, ast_exp *argu_list, ast_exp *exp);
+create_set_statement(ast_exp *argu_list, ast_exp *exp);
 
 ast_statement *
 create_compound_statement(ast_statement_list * statement_list);
@@ -569,7 +575,5 @@ void ex_action_list(ast_action_list * action_list);
 
 void dbg_printf(const char *fmt, ...);
 #endif
-
-
 
 

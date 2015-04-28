@@ -17,7 +17,7 @@ void print_symtab(struct symbol_table* top)
 	{
 		struct symbol_value *val = (struct symbol_value *)value;
 		// do something with key and value
-		PRINTS(("%s %d\n", val->identifier, val->type_specifier));
+		PRINTS(("%s %s\n", val->identifier, type_tostring(val->type_specifier)));
 		if( val->type_specifier == ACCOUNT_T )
 		{
 			struct account *ac = (struct account*)val->nodePtr;
@@ -101,8 +101,9 @@ symbol_table_get_value(struct symbol_table *symtab,
 {
 	struct symbol_table *cur_table = symtab;
 	struct symbol_value* symval;
+
 	for (; cur_table != NULL; cur_table = cur_table->parent) {
-		symval = g_hash_table_lookup(symtab->ht_symbols, identifier);
+		symval = g_hash_table_lookup(cur_table->ht_symbols, identifier);
 		if (symval != NULL)
 			return symval;
 	}

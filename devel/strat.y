@@ -123,7 +123,7 @@ ast_statement *statement;
 %%
 program		: { fprintf(stdout, "STARTING PARSE\n"); parent = NULL; top = symbol_table_create(parent); } 
 	 	  use_list process_list 
-		{ $$=$3; fprintf(stdout, "ENDING PARSE\n"); print_ast($$);  print_symtab(top); root = $$;}
+		{ $$=$3; fprintf(stdout, "ENDING PARSE\n"); print_ast($$); print_symtab(top); root = $$;}
 	 	;
 
 use_list	: USE  variable_declaration		{ }	
@@ -146,7 +146,7 @@ algorithm_list 	: algorithm_definition			{ fprintf(stdout, "Algorithm\n");
 		;
 
 strategy_list 	: strategy_definition				{ fprintf(stdout, "Strategy\n");
-								$$ = create_strategy_list($1);}
+								$$ = create_strategy_list($1); }
 		| strategy_list strategy_definition		{ fprintf(stdout, "Strategy\n"); }
 		;
 
@@ -159,36 +159,34 @@ function_header : FUNCTION IDENTIFIER '(' parameter_list ')' func_return	{ fprin
 func_return	: RETURNS type_specifier
 		;
 
-algorithm_definition : { parent = top; top = symbol_table_create(parent); } 
-		     	algorithm_header 		
-			
-			compound_statement		{ $$ = create_algorithm_ast($2, $3, top);
-							  top = parent;
-							  symbol_table_put_value(top, ALGO_SYM, $$->name, $$); }
+algorithm_definition : algorithm_header compound_statement     { $$ = create_algorithm_ast($1, $2, top);
+							            top = parent;
+							            symbol_table_put_value(top, ALGORITHM_T, $$->name, $$); }
 		;
 
-algorithm_header: ALGORITHM IDENTIFIER '(' parameter_list ')'		{ fprintf(stdout, "Algo Hdr\n");
-									$$ = create_algorithm_header($<str>2, $4); }
+algorithm_header: ALGORITHM IDENTIFIER          { parent = top; top = symbol_table_create(parent); }
+	     	'(' parameter_list ')'		{ fprintf(stdout, "Algo Hdr\n");
+						  $$ = create_algorithm_header($<str>2, $5); }
 		;
 
 parameter_list	: type_specifier IDENTIFIER				{ fprintf(stdout, "Param List\n"); 
 									$$ = create_parameter_list($1,0,$<str>2);
-									symbol_table_put_value(top, $1, $<str>2, 0);}
+									symbol_table_put_value(top, $1, $<str>2, (void*)0);}
 	       	| type_specifier '#' IDENTIFIER				{ fprintf(stdout, "Param List\n");
 									$$ = create_parameter_list($1,1, $<str>3);
-									symbol_table_put_value(top, $1, $<str>2, 0);} 
+									symbol_table_put_value(top, $1, $<str>3, (void*)0);} 
 		| parameter_list ',' type_specifier '#' IDENTIFIER	{ $$ = add_parameter_list($1,$3,1, $<str>5);
-									fprintf(stdout, "Param List\n"); }
+									fprintf(stdout, "Param List\n");
+									symbol_table_put_value(top, $3, $<str>5, (void*)0); }
 
 		| /* empty */						{ }
 		;
 
-strategy_definition : STRATEGY IDENTIFIER '{' 	{ parent = top;
-						top = symbol_table_create(parent); }
-			strategy_body '}'	{$$ = create_strategy($<str>2, $5, top);
+strategy_definition : STRATEGY IDENTIFIER '{' { parent = top; 
+		    				top = symbol_table_create(parent);  }    
+		      strategy_body '}'	      {$$ = create_strategy($<str>2, $5, top);
 						top = parent;
-						symbol_table_put_value(top, STRAT_SYM, $<str>2, $$);
-						}
+						symbol_table_put_value(top, STRATEGY_T, $<str>2, $$); }
 	  	;
 
 strategy_body	: variable_declaration_list statement_list strategy_block	{ $$ = $3; }
@@ -253,7 +251,7 @@ variable_declaration_list : variable_declaration			{ }
 		;
 
 variable_declaration : type_specifier IDENTIFIER ';'	{ if( install_symbol($<int_val>1, $<str>2, top) != 0 )
-		    						strat_error_msg("Duplicated Symbol", 1, yylineno); }
+		     					 	strat_error_msg("Duplicated Symbol", 1, yylineno); }
 		;
 
 type_specifier	: INT					{ $$ = INT_T; }
@@ -293,7 +291,7 @@ expression_statement : expression ';'			{ $$ = create_expression_statement($1); 
 
 compound_statement : '{' variable_declaration_list statement_list '}'	{ $$ = $3; }
 		| '{' statement_list '}'	{ $$ = $2; }
-		| '{' '}'			{ }
+		| '{' '}'			{ $$ = NULL; }
 		;
 
 statement_list	: statement			{ $$ = create_statement_list($1); }
@@ -306,7 +304,7 @@ selection_statement : IF '(' expression ')' statement   { $$ = create_selection_
 iteration_statement : WHILE '(' expression ')' statement
 		;
 
-set_statement 	: SET '{' argument_expression_list '}' IF ':' '{' expression '}'	{ $$ = create_set_statement(0,$3,$8); }
+set_statement 	: SET '{' argument_expression_list '}' IF ':' '{' expression '}'	{ /* $$ = create_set_statement(0,$3,$8); */$$ = create_set_statement($3,$8);  }
 		;
 
 expression	: assignment_expression				{ $$ = $1; }
@@ -314,37 +312,37 @@ expression	: assignment_expression				{ $$ = $1; }
 		;
 
 assignment_expression : logical_OR_expression 			{ $$ = $1; }
-            	| unary_expression '=' logical_OR_expression	{ $$ = create_opr('=', 2, $1, $3); }
+            	| unary_expression '=' logical_OR_expression	{ $$ = create_opr(OP_ASSIGN, 2, $1, $3); }
 		;
 
 logical_OR_expression :  logical_AND_expression 		{ $$ = $1; }
-            	| logical_OR_expression OR logical_AND_expression
+            	| logical_OR_expression OR logical_AND_expression { $$ = create_opr(OP_OR, 2, $1, $3); }
 		;
 
 logical_AND_expression : equality_expression 				{ $$ = $1;}
-           	| logical_AND_expression AND equality_expression
+           	| logical_AND_expression AND equality_expression { $$ = create_opr(OP_AND, 2, $1, $3); }
 		;
 
 equality_expression : relation_expression 				{ $$ = $1;}
 		| equality_expression IS relation_expression		{ $$ = create_opr(OP_IS, 2, $1, $3);}
-		| equality_expression ISNOT relation_expression
+		| equality_expression ISNOT relation_expression		{ $$ = create_opr(OP_ISNOT, 2, $1, $3); }
 		;
 
 relation_expression :  additive_expression 				{ $$ = $1;}
-	        | relation_expression '<' additive_expression
-       		| relation_expression '>' additive_expression
-       		| relation_expression '<''=' additive_expression
-        	| relation_expression '>''=' additive_expression
+	        | relation_expression '<' additive_expression		{ $$ = create_opr(OP_LT, 2, $1, $3); }
+       		| relation_expression '>' additive_expression		{ $$ = create_opr(OP_GT, 2, $1, $3); }
+       		| relation_expression '<''=' additive_expression	{ $$ = create_opr(OP_LTEQ, 2, $1, $4); }
+        	| relation_expression '>''=' additive_expression	{ $$ = create_opr(OP_GTEQ, 2, $1, $4); }
 		;
 
 additive_expression : multiplicative_expression				{ $$ = $1; }
-        	| additive_expression '+' multiplicative_expression { $$= create_opr('+', 2, $1, $3);}
-	        | additive_expression '-' multiplicative_expression
+        	| additive_expression '+' multiplicative_expression     { $$= create_opr(OP_ADD, 2, $1, $3);}
+	        | additive_expression '-' multiplicative_expression	{ $$ = create_opr(OP_SUB, 2, $1, $3); }
 		;
 
 multiplicative_expression : unary_expression { $$ = $1; }
-	        | multiplicative_expression '*' unary_expression
-        	| multiplicative_expression '/' unary_expression
+	        | multiplicative_expression '*' unary_expression	{ $$ = create_opr(OP_MULT, 2, $1, $3); }
+        	| multiplicative_expression '/' unary_expression	{ $$ = create_opr(OP_DIV, 2, $1, $3); }
 		;
 	
 unary_expression : postfix_expression { $$ = $1;}
@@ -372,12 +370,12 @@ primary_expression : type_name		{ $$ = $1;}
 		| security		{ }
 		| currency		{ }
 		| position		{ }
-		| TRUE_S		{ $$ = create_keyword("TRUE");}
-		| FALSE_S		{ }
+		| TRUE_S		{ $$ = create_boolean_const(TRUE_T);  }
+		| FALSE_S		{ $$ = create_boolean_const(FALSE_T); }
 		| '(' expression ')'	{ }
 		;
 
-type_name	: IDENTIFIER		{ $$ = create_id($1, top);}
+type_name	: IDENTIFIER		        { $$ = create_id($1, top);}
 	  	| type_name '.' IDENTIFIER
 		| type_name '.' attribute
 		;
