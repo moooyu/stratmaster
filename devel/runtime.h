@@ -25,10 +25,16 @@ typedef enum { EQTY_T = 2, BOND_T } security_type;
 typedef enum { BUY_ORDER = 4, SELL_ORDER } order_type;
 //typedef enum { DATAFEED = 6, DATABASE } data_type;
 typedef enum { USD_T = 8, EUR_T, JPY_T } curr_type;
-typedef enum { OP_IS = 256, OP_ISNOT, OP_FUNC } oper_type;
+typedef enum { OP_IS = 256, OP_ISNOT, OP_FUNC, OP_ASSIGN, 
+		OP_OR, OP_AND, OP_ADD, OP_SUB, OP_MULT, OP_DIV,
+                OP_LT, OP_GT, OP_LTEQ, OP_GTEQ } oper_type;
 typedef enum { OP_UNARY_MINUS = 512, OP_UNARY_SHARP, OP_UNARY_NOT } oper_unary;
 
 /****** Structures ****************/
+struct boolean_object {
+	int value;
+};
+
 struct integer_object {
 	int value;
 };
@@ -36,7 +42,6 @@ struct integer_object {
 struct double_object {
 	double value;
 };
-
 
 struct price_object {
 	char price[NAMEBUF];
@@ -113,7 +118,12 @@ int is_equal_sec(struct security *sec1, struct security *sec2);
 void copy_name(char *buf, const char *str);
 long price_to_long(const char *pr);
 void long_to_price(long value, char *buf);
+char *type_tostring(int t);
+char *oper_type_tostring(int t);
+char *node_type_tostring(int t);
+char *statement_type_tostring(int t);
 /*  Runtime helper functions */
+struct boolean_object *create_boolean(int val);
 struct integer_object *create_integer(int val);
 struct double_object *create_double(double val);
 struct price_object *create_price(const char *val);

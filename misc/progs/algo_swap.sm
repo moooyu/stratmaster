@@ -1,12 +1,13 @@
 /* StratMaster: A Swap Algorithm */
 
 USE ACCOUNT ac_master;
+/*
 USE DATAFEED df_quotes;
 USE DATABASE db_prices;
-
-ALGORITHM al_Swap(DATAFEED quotes, PRICE #sell_price, PRICE #buy_price)
+*/
+ALGORITHM al_Swap(DATAFEED quotes, CURRENCY #sell_price, CURRENCY #buy_price)
 {
-    SET  { buy_price  = Get_Curr_Price(db_prices, EQTY(ZBRA)),
+    SET  { /* buy_price  = Get_Curr_Price(db_prices, EQTY(ZBRA)),*/
            sell_price = quotes.NEXT.PRC }
     IF:
     {
@@ -18,17 +19,17 @@ ALGORITHM al_Swap(DATAFEED quotes, PRICE #sell_price, PRICE #buy_price)
 
 STRATEGY my_swap_strat
 {
-/*  PRICE zbra_price;
-    PRICE intc_price;
+    CURRENCY zbra_price;
+    CURRENCY intc_price;
     INT counter;
 
-    counter = 0;
-*/
+/*    counter = 0; */
+
     WHEN( al_Buy_Something(df_quotes, #intc_price, #zbra_price) IS TRUE )
     {
-         BUY  { WHAT: EQTY(ZBRA).AMOUNT(1000).PRICE(zbra_price); }
-         SELL { WHAT: EQTY(INTC).AMOUNT(1000).PRICE(intc_price); } 
-         counter = counter + 1;
+         BUY  { WHAT: SECURITY( EQTY(ZBRA) ).AMOUNT(1000).PRICE(zbra_price); }
+         SELL { WHAT: SECURITY( EQTY(INTC) ).AMOUNT(1000).PRICE(intc_price); } 
+       /*  counter = counter + 1; */
     }
     UNTIL( counter > 4 )
 
