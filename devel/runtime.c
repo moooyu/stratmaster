@@ -405,8 +405,9 @@ struct algorithm *create_algorithm(struct data *data_src)
 
 	new_algo->d = data_src;
 	new_algo->num_args = 0;
+	new_algo->is_dead = 0;
 	new_algo->args = NULL;
-        new_algo->algo_Ptr = NULL;
+        new_algo->algo_ptr = NULL;
 	
 	return new_algo;
 }

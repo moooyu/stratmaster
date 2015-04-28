@@ -10,22 +10,38 @@
 #define MAX_PROCSTATEMENTS 8
 
 struct proc_args {
+	char name[NAMEBUF];
+	ast_strategy *strat;
 	ast_process_statement *procst;
 	struct symbol_table *symtable;
 };
 
+struct action_list_args {
+	char *strat_name;
+	ast_action_list *actions;
+};
+
+
+struct cleanup_args {
+	struct security *n;
+	struct security *t;
+	FILE *f;
+};
 
 /*  Function Declarations  */
 void *strategy_process_handler(void *arg);
 void *strategy_order_handler(void *arg);
 void *order_handler(void *arg);
 void *process_handler(void *arg);
-
+void cleanup_algorithm(void *arg);
+void *algorithm_handler(void *arg);
 /*     Global Variables    */
 static struct queue order_queue;
 static pthread_t order_handler_thread;
 static struct account *ac_master;
-///static struct data *df1;
+static struct data *df1;
+static struct cleanup_args ca;
+
 
 void print_account_positions(struct account *acct)
 {
@@ -69,9 +85,8 @@ void run_interp(ast_program * program)
 
 	//print_account_positions(ac_master);
 	/* Create data source */
-	/*char *df_name = "df_ZBRA";
-	  if( (df1 = create_data_source(df_name, DATAFEED)) == NULL )
-	  die("error creating data source");*/
+	if( (df1 = create_data_source("../data/olddata/df_ZBRA", DATAFEED)) == NULL )
+	  	die("error creating data source");
 
 	/* ************************
 	 *    EXECUTE STRATEGIES 
@@ -127,7 +142,7 @@ void run_interp(ast_program * program)
 
 
 /*
- *  Handler for STRATEGY with action list.
+ *  Handler for STRATEGY with action list only.
  */
 void *strategy_order_handler(void *arg)
 {
@@ -149,6 +164,42 @@ void *strategy_order_handler(void *arg)
 	}
 	return (void *)0;
 }
+
+
+/*
+ *  Handler for STRATEGY action list.
+ */
+void *strategy_action_list_handler(void *arg)
+{
+	fprintf(stderr, "[INFO] Starting STRATEGY action list handler thread.\n");
+	struct action_list_args *args = (struct action_list_args *) arg;
+	ast_action_list *actions = args->actions;
+
+	int i;
+	ast_order_item *temp_item;
+	struct order *temp_order;
+	////iterating over orders
+	for(i = 0; i < actions->num_of_orders; i++)
+	{
+		temp_item = actions->order[i];
+fprintf(stderr, "before create order: %s \n", temp_item->sec->sec->sym);
+fprintf(stderr, "before create order: %d\n",  temp_item->number->con.int_value->value);
+fprintf(stderr, "before create order: %s\n",  temp_item->prc->curr->p);
+
+
+		temp_order = create_order(temp_item->sec->sec, temp_item->number->con.int_value->value, temp_item->prc->curr, temp_item->type);
+		
+		fprintf(stderr, "after create order\n");	
+		queue_put_order(&order_queue, temp_order, args->strat_name);
+
+	//	fprintf(stderr, "[INFO] Starting balance in ac_master: %ld\n", get_available_cash(ac_master)); 
+	//	print_account_positions(ac_master);
+	}
+	free(args);
+	return (void *)0;
+}
+
+
 
 /*
  *   Handler for STRATEGY with process statements.
@@ -172,7 +223,9 @@ void *strategy_process_handler(void *arg)
 		if( args == NULL )
 			die("malloc failed making proc_args\n");
 		args->procst = strategy->process_statement[i];
+		args->strat = strategy;
 		args->symtable = strategy->sym;
+		copy_name(args->name, strategy->name);
 
 		/*  execute process statements */
 		if( pthread_create(&proc_thread[i], NULL, process_handler, args) != 0 )
@@ -192,10 +245,10 @@ void *strategy_process_handler(void *arg)
 	fprintf(stderr, "[INFO] Return from process statement: Retrieving argument...\n");
 	struct symbol_value *param_val = symbol_table_get_value(symtable, 0, "zbra_price");
 	fprintf(stderr, "[INFO] Parameter %s is now set to: %s\n", param_val->identifier , ((struct currency *)param_val->nodePtr)->p );	
-
 	fprintf(stderr, "[INFO] Exiting STRATEGY process thread\n");
 	return (void *)0;
 }
+
 
 /*
  *  Handler for a process (WHEN) statement.
@@ -203,12 +256,124 @@ void *strategy_process_handler(void *arg)
 void *process_handler(void *arg)
 {
 	fprintf(stderr, "[INFO] Executing process statement.\n");
-	
+	void *result;
+	int retval;
+	int counter = 3;	
 	pthread_t algo_thread;
+	pthread_t order_thread;
+
+	/* Retrieve args: STRATEGY + symbol table + argument list */
 	struct proc_args *args = (struct proc_args *)arg;
 	struct symbol_table *symtable = args->symtable;	
+	ast_strategy *strat = args->strat;
 	ast_process_statement *proc_st = args->procst;
 	
+	/* Get algorithm node & identifier */
+	char *algo_id = proc_st->expression->oper.op1->oper.op1->id.value;
+	struct symbol_value *algo_symval = symbol_table_get_value(symtable, 0, algo_id);
+	fprintf(stderr, "[INFO] Retrieving ALGORITHM %s from symbol table.\n", algo_symval->identifier);
+
+	/* Create algorithm data structure */
+	struct algorithm *algo_data = create_algorithm(df1);
+
+	/* Get argument expr list */
+	ast_argument_expression_list algo_args = proc_st->expression->oper.op1->oper.op2->argu_list;
+	fprintf(stderr, "[INFO] Number of args: %d.\n", algo_args.num_of_argument_expression_list);
+
+	/* Set number of args , argument list pointer, & pointer to ALGORITHM AST node */
+	algo_data->num_args = algo_args.num_of_argument_expression_list;
+	algo_data->args     = algo_args.exp;
+	algo_data->algo_ptr = algo_symval->nodePtr;
+	algo_data->sym      = symtable;
+
+	/* Initialize lock & condition variable */
+	if( pthread_cond_init(&(algo_data->cond_true), NULL) != 0 )
+		die("in process_handler:error initializing cond var");
+
+	if( pthread_mutex_init(&(algo_data->mutex), NULL) != 0 )
+	{
+		pthread_cond_destroy(&algo_data->cond_true);
+		die("in process_handler: error initializing mutex");
+	}
+
+	/* Spin up algorithm thread */
+	if( pthread_create(&algo_thread, NULL, algorithm_handler, algo_data) != 0 )
+		die("algorithm thread create fail");
+
+	/*****************************************************
+	 *                UNTIL STATEMENT
+	 *****************************************************/
+	do
+	{	/************************************** 
+		 *       Execute WHEN statement 
+		 **************************************/
+		pthread_mutex_lock(&algo_data->mutex);
+		pthread_cond_wait(&algo_data->cond_true, &algo_data->mutex);
+
+		/*******************************
+		 *  STRATEGY BLOCK: action-list
+		 ******************************/
+		/* 
+		 * If we get here, the ALGORITHM has sent a "true" signal 
+		 * First check if algorithm is still alive
+		 */
+		if( algo_data->is_dead )
+			break;
+
+		/* Release lock */
+		pthread_mutex_unlock(&algo_data->mutex);
+
+		/* Send orders to action-list thread */
+		struct action_list_args *args = (struct action_list_args *)malloc(sizeof(struct action_list_args));
+		if( args == NULL )
+			die("malloc failed making action_list_args\n");
+		args->strat_name = strat->name;
+		args->actions = proc_st->action_list;
+
+		/* Looking at action list */
+		fprintf(stderr, "Action list bf order: %s\n", proc_st->action_list->order[0]->sec->sec->sym); 
+fprintf(stderr, "Action list bf order: %d\n", proc_st->action_list->order[0]->number->con.int_value->value);
+
+if(proc_st->action_list->order[0]->prc->curr->p == NULL)
+       fprintf(stderr, "CURR object is null\n");	
+
+fprintf(stderr, "Action list bf order: %s\n", proc_st->action_list->order[0]->prc->curr->p);
+
+		struct symbol_value *param_val = symbol_table_get_value(symtable, 0, "zbra_price");
+		fprintf(stderr, "[INFO] Parameter %s is now set to: %s\n", param_val->identifier , ((struct currency *)param_val->nodePtr)->p );
+		
+		
+		if( pthread_create(&order_thread, NULL, strategy_action_list_handler, args) != 0 )
+			die("action-list thread create fail");
+		if( pthread_join(order_thread, NULL) != 0 )
+			perror("action_list join");
+	} while( counter-- > 0 );
+
+	if( algo_data->is_dead )
+	{	/* Release lock */
+		pthread_mutex_unlock(&algo_data->mutex);
+	}
+
+	if( pthread_join(algo_thread, NULL) != 0 )
+		perror("algorithm thread join");
+
+
+	if( pthread_cancel(order_handler_thread) != 0 )
+		perror("order_handler_thread cancellation");
+
+	retval = pthread_join(order_handler_thread, &result);
+	if( retval != 0 )
+		perror("order_handler_thread join");
+
+	if( result != PTHREAD_CANCELED )
+		perror("order_handler_thread was not canceled");
+	pthread_mutex_destroy(&algo_data->mutex);
+	pthread_cond_destroy(&algo_data->cond_true);
+
+
+
+
+/*
 	ast_exp *when_exp = proc_st->expression;
 	fprintf(stderr, "[INFO] Node type: %s\n", node_type_tostring(when_exp->type));
 	ast_oper oper_node = when_exp->oper;
@@ -274,16 +439,183 @@ void *process_handler(void *arg)
 	fprintf(stderr, "[INFO] Variable to set: %s\n", set_tgt.value);
         struct symbol_value *tgt_sym = symbol_table_get_value(al->sym, 0, set_tgt.value);
 	fprintf(stderr, "[INFO] Have symbol table entry for %s of type %s\n", tgt_sym->identifier, type_tostring(tgt_sym->type_specifier));
-
+*/
 	/* Link up variables */
-	tgt_sym->nodePtr = param1_val->nodePtr;
+/*	tgt_sym->nodePtr = param1_val->nodePtr;
 	fprintf(stderr, "[INFO] Value to set is %s\n", op2->con.price_value->price);
 	copy_name( ((struct currency *)tgt_sym->nodePtr)->p, op2->con.price_value->price);
-	
+*/	
 	free(args);
 	return (void *)0;
 }
 
+
+/**********  Thread handlers  **********/
+/*
+ *  Thread exit cleanup handler.
+ *  When we cancel the ALGORITHM thread, this
+ *  cleanup code is executed.
+ */
+void cleanup_algorithm(void *arg)
+{
+	fprintf(stderr, "[INFO] EXITING ALGORITHM THREAD: CLEANING UP\n");
+	struct cleanup_args cargs = *(struct cleanup_args *)arg;
+	if( cargs.n != NULL )
+		free(cargs.n);
+	if( cargs.t != NULL )
+		free(cargs.t);
+	if( cargs.f )
+		fclose(cargs.f);
+}
+
+/*
+ *   	ALGORITHM thread handler.
+ */
+void *algorithm_handler(void *arg)
+{
+	fprintf(stderr, "[INFO] STARTING ALGORITHM THREAD\n");
+	struct algorithm *algo = (struct algorithm *)arg;
+
+	/*  Retrieve structures from arg */
+	int num_args = algo->num_args;
+	ast_exp **argument_list = (ast_exp **)algo->args;
+	ast_algorithm *algo_node = (ast_algorithm *)algo->algo_ptr;
+	struct symbol_table *symt = (struct symbol_table *)algo->sym;
+	
+	/* Link ALGORITHM parameters with STRATEGY arguments */
+	int i;
+	struct symbol_value *algo_param;  //this is a param in ALGO fcn def
+	struct symbol_value *strat_argu;  //this is corresponding arg in STRAT fcn call to ALGO
+	char *algo_id; 
+	char *strat_id;
+
+	for(i = 0; i < num_args; i++)
+	{
+		algo_id = algo_node->statement[0]->set_statement.argu_list->argu_list.exp[i]->oper.op1->id.value;
+		algo_param = symbol_table_get_value(algo_node->sym, 0, algo_id);
+
+		strat_id = argument_list[i]->oper.op1->id.value;
+		strat_argu = symbol_table_get_value(symt, 0, strat_id);
+
+		/* Check if types are the same */
+		if( algo_param->type_specifier != strat_argu->type_specifier )
+			die("paramater type mismatch");
+
+		/* make the assignment to effect the link */
+		algo_param->nodePtr = strat_argu->nodePtr;
+	}
+
+	/* To demonstrate, set local ALGO variables and return to STRATEGY */
+	for(i = 0; i < num_args; i++)
+	{
+		int type =  argument_list[i]->oper.op1->type;
+
+		switch( type )
+		{
+			case typeIntegerConst: 
+				fprintf(stderr, "Type is: %s\n", node_type_tostring( type ));
+				break;
+			case typeDoubleConst:
+				fprintf(stderr, "Type is: %s\n", node_type_tostring( type ));
+				break;
+			case typePriceConst:
+				algo_param = symbol_table_get_value(algo_node->sym, 0, algo_node->statement[0]->set_statement.argu_list->argu_list.exp[i]->oper.op1->id.value); 
+				copy_name( ((struct currency *)algo_param->nodePtr)->p, "22.33");
+				fprintf(stderr, "Type is: %s\n", node_type_tostring( type ));	
+				break;
+			case typeID:
+				algo_param = symbol_table_get_value(algo_node->sym, 0, algo_node->statement[0]->set_statement.argu_list->argu_list.exp[i]->oper.op1->id.value); 
+				copy_name( ((struct currency *)algo_param->nodePtr)->p, "22.33");
+				fprintf(stderr, "Type is: %s Id: %s  Value: %s \n", node_type_tostring( type ), algo_param->identifier, ((struct currency *)algo_param->nodePtr)->p); 
+				break;
+			case typeKeyword:
+				fprintf(stderr, "Type is: %s\n", node_type_tostring( type )); 
+				break;
+			case typeArgulist:
+				fprintf(stderr, "Type is: %s\n", node_type_tostring( type )); 
+				break;
+			default: ;
+		}
+
+	}
+
+/*
+	char *token_separators = "\t \n";
+	char *ticker;
+	char *date;
+	char *price;
+	char *bk;
+*/
+	/* 
+	 *   Sleep interval in microseconds.
+	 *   This is 1 sec per year of data.
+	 */ 
+//	unsigned int interval = 2740;
+	
+/*	struct security *next_sec = create_security(EQTY, "TEST");
+	struct security *test_sec = create_security(EQTY, "ZBRA");
+	ca.n = next_sec;
+	ca.t = test_sec;
+	ca.f = algo->d->fp; */
+	pthread_cleanup_push(cleanup_algorithm, &ca);
+
+	int keep_running = 4;
+
+	while( keep_running > 0 )
+	{
+		//if( fgets(buf, sizeof(buf), algo->d->fp) != NULL )
+	//	{	
+		//	ticker = strtok_r(buf, token_separators, &bk);
+		//	date   = strtok_r(NULL, token_separators, &bk);
+		//	price  = strtok_r(NULL, token_separators, &bk);
+
+		//	copy_name(next_sec->sym, ticker);
+		//	long pr = price_to_long(price);
+
+			/* DO TEST */
+		//	if( (is_equal_sec(next_sec, test_sec) == TRUE) && (pr < 2700) )
+		//	{
+		//		keep_running = FALSE;
+		//		fprintf(stderr, "[INFO] ALGO FOUND A PRICE TARGET: $%s\n", price);
+				/* Set argument value to new price for return to STRATEGY */
+		//		copy_name(((struct price *)algo->args)->p, price);
+
+		
+				sleep(3);
+				
+				pthread_cond_signal(&algo->cond_true);
+
+				pthread_mutex_lock(&algo->mutex);
+
+				pthread_testcancel();
+				
+				pthread_cond_wait(&algo->cond_true, &algo->mutex);
+				
+				keep_running--;
+				
+				pthread_mutex_unlock(&algo->mutex);
+
+		//	}
+		//	memset(buf, 0, IOBUFSIZE);
+		//	usleep(interval);
+	//	}
+	//	else
+	//	{
+	//		keep_running = FALSE;
+	//	}
+	}
+	algo->is_dead = 1;
+/*	if( next_sec != NULL )
+		free(next_sec);
+	if( test_sec != NULL )
+		free(test_sec); */
+
+	if( algo->d->fp )
+		fclose(algo->d->fp);
+	pthread_cond_signal(&algo->cond_true);
+	pthread_cleanup_pop(0);
+	return (void *)0;
+}
 
 //////called in ex_strategy
 /*
