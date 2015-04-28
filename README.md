@@ -7,7 +7,12 @@
 - System Integrator: Moning Zhang
 - Verification & Validation: Enrui Liao
 
-See `CONTRIBUTING.md` for guidelines on the github workflow. 
-
 See below spreatsheet for project status.
+
 https://docs.google.com/spreadsheets/d/1xaxyoI_-BGHko3RY85z6nDA2pyHHcfghksvc_plepuM/edit#gid=1203222631
+
+This is our presentation slide.
+
+https://docs.google.com/presentation/d/1vf4vorrELb7zvqXus0XhvtqVaEISIkwvRo_PReIPANk/edit?usp=sharing
+
+See `CONTRIBUTING.md` for guidelines on the github workflow. 
