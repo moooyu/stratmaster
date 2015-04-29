@@ -161,8 +161,8 @@ func_return	: RETURNS type_specifier
 
 algorithm_definition : algorithm_header compound_statement     { $$ = create_algorithm_ast($1, $2, top);
 							            top = parent;
-							            symbol_table_put_value(top, ALGORITHM_T, $$->name, $$); }
-		;
+								   symbol_table_put_value(top, ALGORITHM_T, $$->name, $$); }
+		;		
 
 algorithm_header: ALGORITHM IDENTIFIER          { parent = top; top = symbol_table_create(parent); }
 	     	'(' parameter_list ')'		{ fprintf(stdout, "Algo Hdr\n");

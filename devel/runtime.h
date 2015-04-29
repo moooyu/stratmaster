@@ -97,9 +97,11 @@ struct algorithm {
 	pthread_mutex_t mutex;         /* lock */
 	pthread_cond_t cond_true;      /* condition variable */
 	struct data *d;                /* the data source */
+	int  is_dead;                  /* is algorithm dead? */
 	int  num_args;                 /* number of arguments */
 	void *args;                    /* list of arguments to ALGORITHM */
-        void *algo_Ptr;       /* Pointer to ast node*/
+        void *algo_ptr;      	      /* Pointer to ast node*/
+	struct symbol_table *sym;     /* STRATEGY symbol table */
 };
 
 struct queue {
