@@ -649,7 +649,7 @@ create_argument_expression_list(ast_exp * exp)
     	}
 	
 	p->type = typeArgulist;
-	p->argu_list.exp = malloc(sizeof(ast_expression*));
+	p->argu_list.exp = malloc(sizeof(ast_exp*));
 	if(!p->argu_list.exp)
 	{
 		printf("out of memory in %s\n", __func__);
@@ -666,7 +666,7 @@ add_argument_expression_list(ast_exp * p, ast_exp * exp)
     int num_of_argument_expression_list;
     
     num_of_argument_expression_list = p->argu_list.num_of_argument_expression_list + 1;
-    p->argu_list.exp = realloc(p->argu_list.exp, num_of_argument_expression_list*sizeof(ast_expression*));
+    p->argu_list.exp = realloc(p->argu_list.exp, num_of_argument_expression_list*sizeof(ast_exp*));
     if (!p->argu_list.exp) {
         printf("out of memory in %s\n", __func__);
         return NULL;
@@ -1598,7 +1598,7 @@ int install_symbol(int id_type, const char *id, struct symbol_table *symtab)
 	  		ret = symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id, id_type));
 			break;
 		case CURRENCY_T:
-			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_currency(id_type, NULL));
+			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_ast_currency(id_type, NULL));
 			break;
 		case SECURITY_T:
 			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_security(id_type, NULL));

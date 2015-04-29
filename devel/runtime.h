@@ -15,6 +15,7 @@
 #include <signal.h>     /* for signal() */
 #include <sys/stat.h>   /* for stat() */
 #include <pthread.h>    /* for threads */
+#include "ast.h"
 
 #define NAMEBUF    32      /* Max size of an identifier or name */
 #define IOBUFSIZE  4096   /* size of read buffer */
@@ -145,5 +146,7 @@ void order_queue_init(struct queue *q);
 void queue_destroy(struct queue *q);
 void queue_put_order(struct queue *q, struct order *ord_in, const char *strat);
 struct order_item *queue_get_order(struct queue *q);
+
+void* ex_exp(ast_exp *p);
 
 #endif /*   _RUNTIME_H_  */

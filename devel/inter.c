@@ -268,23 +268,11 @@ void *process_handler(void *arg)
 	ast_strategy *strat = args->strat;
 	ast_process_statement *proc_st = args->procst;
 	
-	/* Get algorithm node & identifier */
-	char *algo_id = proc_st->expression->oper.op1->oper.op1->id.value;
-	struct symbol_value *algo_symval = symbol_table_get_value(symtable, 0, algo_id);
-	fprintf(stderr, "[INFO] Retrieving ALGORITHM %s from symbol table.\n", algo_symval->identifier);
+	/* We assume that we only call Algorithm at this point */
 
-	/* Create algorithm data structure */
-	struct algorithm *algo_data = create_algorithm(df1);
-
-	/* Get argument expr list */
-	ast_argument_expression_list algo_args = proc_st->expression->oper.op1->oper.op2->argu_list;
-	fprintf(stderr, "[INFO] Number of args: %d.\n", algo_args.num_of_argument_expression_list);
-
-	/* Set number of args , argument list pointer, & pointer to ALGORITHM AST node */
-	algo_data->num_args = algo_args.num_of_argument_expression_list;
-	algo_data->args     = algo_args.exp;
-	algo_data->algo_ptr = algo_symval->nodePtr;
-	algo_data->sym      = symtable;
+	struct algorithm *algo_data;
+	algo_data = (struct algorithm*) ex_exp(args->procst->expression);
+	algo_data->sym = symtable; /* This is dirty, but no way to get symtable in the ex_exp */
 
 	/* Initialize lock & condition variable */
 	if( pthread_cond_init(&(algo_data->cond_true), NULL) != 0 )
@@ -332,12 +320,12 @@ void *process_handler(void *arg)
 
 		/* Looking at action list */
 		fprintf(stderr, "Action list bf order: %s\n", proc_st->action_list->order[0]->sec->sec->sym); 
-fprintf(stderr, "Action list bf order: %d\n", proc_st->action_list->order[0]->number->con.int_value->value);
+		fprintf(stderr, "Action list bf order: %d\n", proc_st->action_list->order[0]->number->con.int_value->value);
 
-if(proc_st->action_list->order[0]->prc->curr->p == NULL)
-       fprintf(stderr, "CURR object is null\n");	
+		if(proc_st->action_list->order[0]->prc->curr->p == NULL)
+			fprintf(stderr, "CURR object is null\n");	
 
-fprintf(stderr, "Action list bf order: %s\n", proc_st->action_list->order[0]->prc->curr->p);
+		fprintf(stderr, "Action list bf order: %s\n", proc_st->action_list->order[0]->prc->curr->p);
 
 		struct symbol_value *param_val = symbol_table_get_value(symtable, 0, "zbra_price");
 		fprintf(stderr, "[INFO] Parameter %s is now set to: %s\n", param_val->identifier , ((struct currency *)param_val->nodePtr)->p );
@@ -525,8 +513,8 @@ void *algorithm_handler(void *arg)
 				break;
 			case typeID:
 				algo_param = symbol_table_get_value(algo_node->sym, 0, algo_node->statement[0]->set_statement.argu_list->argu_list.exp[i]->oper.op1->id.value); 
-				copy_name( ((struct currency *)algo_param->nodePtr)->p, "22.33");
-				fprintf(stderr, "Type is: %s Id: %s  Value: %s \n", node_type_tostring( type ), algo_param->identifier, ((struct currency *)algo_param->nodePtr)->p); 
+				copy_name( ((ast_currency *)algo_param->nodePtr)->curr->p, "22.33");
+				fprintf(stderr, "Type is: %s Id: %s  Value: %s \n", node_type_tostring( type ), algo_param->identifier, ((ast_currency *)algo_param->nodePtr)->curr->p); 
 				break;
 			case typeKeyword:
 				fprintf(stderr, "Type is: %s\n", node_type_tostring( type )); 
@@ -822,3 +810,64 @@ void ex_action_list(ast_action_list * action_list)
 */
 
 
+void* ex_exp(ast_exp *p)
+{
+	void* ret = NULL;
+	if (!p) return 0;
+	switch(p->type)
+	{
+		case typeID:
+			ret = (void*)symbol_table_get_value(p->id.sym, 0, p->id.value);
+			return ret;
+			
+			break;
+		case typeOper:
+			switch(p->oper.oper) {
+				case OP_IS:
+					printf("--------------------------> Operator IS\n");
+					ret = ex_exp(p->oper.op1);
+					break;
+				case OP_FUNC:
+					printf("--------------------------> Operator FUNC\n");
+					struct symbol_value* sym_entry;
+					int type;
+					sym_entry = (struct symbol_value*)ex_exp(p->oper.op1);
+					type = sym_entry->type_specifier;
+					if (type == ALGORITHM_T)
+						printf("--------------------------> This is ALGO call to %s\n", sym_entry->identifier);
+					else
+						printf("--------------------------> This is Function call???\n");
+
+					/* Create algorithm data structure */
+					struct algorithm *algo_data = create_algorithm(df1);
+
+					/* Get argument expr list */
+					ast_argument_expression_list algo_args = p->oper.op2->argu_list;
+					fprintf(stderr, "[INFO] Number of args: %d.\n", algo_args.num_of_argument_expression_list);
+
+
+					fprintf(stderr, "[INFO] arg1 is : %d.\n", algo_args.exp[0]->type);
+					fprintf(stderr, "[INFO] arg1 is : %d.\n", algo_args.exp[0]->oper.oper);
+					ast_exp *node = algo_args.exp[0]->oper.op1;
+					fprintf(stderr, "[INFO] node type is : %d.\n", node->type);
+					fprintf(stderr, "[INFO] node type name is : %s.\n", node->id.value);
+
+					/* Set number of args , argument list pointer, & pointer to ALGORITHM AST node */
+					algo_data->num_args = algo_args.num_of_argument_expression_list;
+					algo_data->args     = algo_args.exp;
+					algo_data->algo_ptr = sym_entry->nodePtr;
+
+					ret = (void*)algo_data;
+					break;
+
+				default:
+					printf("---------------------------> Operator is not recognized\n");
+			}
+		break;
+
+		default:
+			printf("--------------------> Expression type is not recognized\n");
+
+	}
+	return ret;
+}
