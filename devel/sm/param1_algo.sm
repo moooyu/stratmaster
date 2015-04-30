@@ -10,7 +10,7 @@ ALGORITHM al_coolness(CURRENCY #buy_price)
 	SET { buy_price = 200.00 }
 	IF:
 	{
-		TRUE
+		2>1	
 	}
 }
 

@@ -3,26 +3,28 @@
  */
 
 USE ACCOUNT ac_master;
-USE DATAFEED df_quotes;
+USE DATAFEED df_ZBRA;
 
-ALGORITHM al_Buy_Something(DATAFEED quotes, PRICE #buy_price)
+ALGORITHM al_Buy_Something(DATAFEED quotes, CURRENCY #buy_price)
 {
-    SET  { buy_price = quotes.NEXT.PRC }
+    SET  { /*buy_price = quotes.NEXT.PRC*/
+         buy_price = 200.00 }
     IF:
     {
-         quotes.NEXT.SEC IS EQTY(ZBRA)
+         /*quotes.NEXT.SEC IS EQTY(ZBRA)
          AND
-         quotes.NEXT.PRC < 27.00
+         quotes.NEXT.PRC < 27.00*/
+         False
     }
 }
 
 STRATEGY my_buy_strat
 {
-    PRICE zbra_price;
+    CURRENCY zbra_price;
 
-    WHEN( al_Buy_Something(df_quotes, #zbra_price) IS TRUE )
+    WHEN( al_Buy_Something(df_ZBRA, #zbra_price) IS TRUE )
     {
-         BUY  { WHAT: EQTY(ZBRA).AMOUNT(1000).PRICE(zbra_price); }
+         BUY  {  WHAT : SECURITY( EQTY(ZBRA) ).AMOUNT(100).PRICE(zbra_price);}
     }
 
 }

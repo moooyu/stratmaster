@@ -485,8 +485,14 @@ void *algorithm_handler(void *arg)
 	{
 		algo_id = algo_node->para_list[i]->name;
 		algo_param = symbol_table_get_value(algo_node->sym, 0, algo_id);
-
-		strat_id = argument_list[i]->oper.op1->id.value;
+                /////check the node type for argument
+                if (argument_list[i]->type == typeOper){
+                   strat_id = argument_list[i]->oper.op1->id.value;
+                }
+                else {
+                   strat_id = argument_list[i]->id.value;
+                }
+		
 		strat_argu = symbol_table_get_value(symt, 0, strat_id);
 
 		/* Check if types are the same */
@@ -495,6 +501,11 @@ void *algorithm_handler(void *arg)
 
 		/* make the assignment to effect the link */
 		algo_param->nodePtr = strat_argu->nodePtr;
+                if(algo_param->type_specifier == DATAFEED_T){
+                    algo->d = algo_param->nodePtr;
+                    printf("datafeed name is %s\n", algo->d->df_filename);
+                }
+                
 	}
 
 	/* To demonstrate, set local ALGO variables and return to STRATEGY */
@@ -542,24 +553,22 @@ void *algorithm_handler(void *arg)
 	num_stmt_in_set = set_stmt->argu_list->argu_list.num_of_argument_expression_list;
 	printf("---------------------> number of stmt in set statement is %d\n", num_stmt_in_set);
 
-	if (ex_exp(set_stmt->exp)) {
-		for (i = 0 ; i < num_stmt_in_set; i++) {
-			ex_exp(set_stmt->argu_list->argu_list.exp[i]);
-		}
-	}
 
-/*
+
+
 	char *token_separators = "\t \n";
 	char *ticker;
 	char *date;
 	char *price;
 	char *bk;
-*/
+        char buf[IOBUFSIZE];
+	memset(buf, 0, IOBUFSIZE);
+
 	/* 
 	 *   Sleep interval in microseconds.
 	 *   This is 1 sec per year of data.
 	 */ 
-//	unsigned int interval = 2740;
+	unsigned int interval = 2740;
 	
 /*	struct security *next_sec = create_security(EQTY, "TEST");
 	struct security *test_sec = create_security(EQTY, "ZBRA");
@@ -568,15 +577,18 @@ void *algorithm_handler(void *arg)
 	ca.f = algo->d->fp; */
 	pthread_cleanup_push(cleanup_algorithm, &ca);
 
-	int keep_running = 4;
+	int keep_running = 1;
 
-	while( keep_running > 0 )
+	while( keep_running )
 	{
-		//if( fgets(buf, sizeof(buf), algo->d->fp) != NULL )
-	//	{	
-		//	ticker = strtok_r(buf, token_separators, &bk);
-		//	date   = strtok_r(NULL, token_separators, &bk);
-		//	price  = strtok_r(NULL, token_separators, &bk);
+		if( fgets(buf, sizeof(buf), algo->d->fp) != NULL )
+		{	
+			ticker = strtok_r(buf, token_separators, &bk);
+			date   = strtok_r(NULL, token_separators, &bk);
+			price  = strtok_r(NULL, token_separators, &bk);
+                        printf("ticker is %s\n", ticker);
+                        printf("price is %s\n", price);
+                        printf("date is %s\n", date);
 
 		//	copy_name(next_sec->sym, ticker);
 		//	long pr = price_to_long(price);
@@ -588,9 +600,11 @@ void *algorithm_handler(void *arg)
 		//		fprintf(stderr, "[INFO] ALGO FOUND A PRICE TARGET: $%s\n", price);
 				/* Set argument value to new price for return to STRATEGY */
 		//		copy_name(((struct price *)algo->args)->p, price);
-
-		
-				sleep(3);
+	              if (ex_exp(set_stmt->exp)) {
+		           for (i = 0 ; i < num_stmt_in_set; i++) {
+			        ex_exp(set_stmt->argu_list->argu_list.exp[i]);
+		           }
+                           sleep(3);
 				
 				pthread_cond_signal(&algo->cond_true);
 
@@ -603,11 +617,14 @@ void *algorithm_handler(void *arg)
 				keep_running--;
 				
 				pthread_mutex_unlock(&algo->mutex);
+	               }
+		
 
-		//	}
-		//	memset(buf, 0, IOBUFSIZE);
-		//	usleep(interval);
-	//	}
+
+			//}
+			memset(buf, 0, IOBUFSIZE);
+			usleep(interval);
+		}
 	//	else
 	//	{
 	//		keep_running = FALSE;
@@ -892,10 +909,10 @@ void* ex_exp(ast_exp *p)
 
 
 					fprintf(stderr, "[INFO] arg1 is : %d.\n", algo_args.exp[0]->type);
-					fprintf(stderr, "[INFO] arg1 is : %d.\n", algo_args.exp[0]->oper.oper);
-					ast_exp *node = algo_args.exp[0]->oper.op1;
-					fprintf(stderr, "[INFO] node type is : %d.\n", node->type);
-					fprintf(stderr, "[INFO] node type name is : %s.\n", node->id.value);
+					///fprintf(stderr, "[INFO] arg1 is : %d.\n", algo_args.exp[0]->oper.oper);
+					//ast_exp *node = algo_args.exp[0]->oper.op1;
+					//fprintf(stderr, "[INFO] node type is : %d.\n", node->type);
+					//fprintf(stderr, "[INFO] node type name is : %s.\n", node->id.value);
 
 					/* Set number of args , argument list pointer, & pointer to ALGORITHM AST node */
 					algo_data->num_args = algo_args.num_of_argument_expression_list;
