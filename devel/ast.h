@@ -4,7 +4,7 @@
 #include "symtab.h"
 #define NAMEBUF    32      /* Max size of an identifier or name */
 
-typedef enum {typeBooleanConst, typeIntegerConst, typeDoubleConst, typePriceConst, typeOper, typeID, typeKeyword, typeArgulist} nodeType;
+typedef enum {typeBooleanConst, typeIntegerConst, typeDoubleConst, typePriceConst, typeOper, typeID, typeKeyword, typeArgulist, typeAttr} nodeType;
 typedef enum {expression_ST, compound_ST, selection_ST, iteration_ST, set_ST} stmtType;
 
 
@@ -77,6 +77,7 @@ typedef struct ast_exp{
 		ast_oper oper;
 		ast_str key;
 		ast_str id;
+		ast_str attr;
 		ast_argument_expression_list argu_list;
 	};
 } ast_exp;
@@ -328,6 +329,9 @@ typedef struct {
     ast_strategy ** strategy_list;
     struct symbol_table *sym;
 }ast_program;
+
+ast_exp *
+create_attr(char* value);
 
 ast_exp *
 create_id(char* value, struct symbol_table *top);

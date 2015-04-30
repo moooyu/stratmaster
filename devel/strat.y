@@ -95,6 +95,7 @@ ast_statement *statement;
 %type <exp> expression;
 %type <exp> assignment_expression;
 %type <exp> type_name;
+%type <exp> attribute;
 %type <exp> int_expr;
 %type <currency> currency;
 %type <currency> curr_expr;
@@ -175,8 +176,8 @@ parameter_list	: type_specifier IDENTIFIER				{ fprintf(stdout, "Param List\n");
 	       	| type_specifier '#' IDENTIFIER				{ fprintf(stdout, "Param List\n");
 									$$ = create_parameter_list($1,1, $<str>3);
 									symbol_table_put_value(top, $1, $<str>3, (void*)0);} 
-		| parameter_list ',' type_specifier '#' IDENTIFIER	{ $$ = add_parameter_list($1,$3,1, $<str>5);
-									fprintf(stdout, "Param List\n");
+		| parameter_list ',' type_specifier '#' IDENTIFIER	{ fprintf(stdout, "Param List\n");
+									$$ = add_parameter_list($1,$3,1, $<str>5);
 									symbol_table_put_value(top, $3, $<str>5, (void*)0); }
 
 		| /* empty */						{ }
@@ -376,8 +377,8 @@ primary_expression : type_name		{ $$ = $1;}
 		;
 
 type_name	: IDENTIFIER		        { $$ = create_id($1, top);}
-	  	| type_name '.' IDENTIFIER
-		| type_name '.' attribute
+	  	| type_name '.' IDENTIFIER	{ }
+		| type_name '.' attribute	{ $$ = create_opr(OP_ATTR, 2, $1, $3);}
 		;
 
 position 	: POS '(' IDENTIFIER ')'	{  }
@@ -389,12 +390,12 @@ security	: security_type '(' IDENTIFIER ')' {$$ = create_ast_security($<int_val>
 currency	: currency_type '(' PRICESTRING ')'    { $$ = create_ast_currency($<int_val>1, $<str>3); }
 	 	;
 
-attribute	: SEC
-	  	| AMT
-		| PRC
-		| POS
-		| AVAIL_CASH
-		| NEXT
+attribute	: SEC			{ $$ = create_attr("SEC");}
+	  	| AMT			{ $$ = create_attr("AMT");}
+		| PRC			{ $$ = create_attr("PRC");}
+		| POS			{ $$ = create_attr("POS");}
+		| AVAIL_CASH		{ $$ = create_attr("AVAIL_CASH");}
+		| NEXT			{ $$ = create_attr("NEXT");}
 		;
 
 %%

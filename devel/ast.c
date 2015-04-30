@@ -1563,7 +1563,7 @@ void print_exp(ast_exp *exp)
 		case(typeDoubleConst):
 			printf("leaf double const: %.1f\n", exp->con.double_value->value); break;
 		case(typePriceConst):
-			printf("lead price const: %s\n", exp->con.price_value->price); break;
+			printf("leaf price const: %s\n", exp->con.price_value->price); break;
 		case(typeID):
 			printf("leaf ID: %s\n", exp->id.value); break;
 		case(typeKeyword):
@@ -1578,6 +1578,10 @@ void print_exp(ast_exp *exp)
 			print_exp(exp->oper.op1);
 			if (exp->oper.nops == 2) print_exp(exp->oper.op2); 
 			break;
+		case(typeAttr):
+			printf("ATTR: %s\n", exp->attr.value);
+			break;
+
 		default:
 			printf("Wrong exp node type.\n");
 	}
@@ -1669,6 +1673,24 @@ create_keyword(char* value)
     	PRINT(("%s\n", __func__));
 	return p;
 }
+
+ast_exp *
+create_attr(char* value)
+{
+	ast_exp *p;
+	p = malloc(sizeof(ast_exp));
+	if (!p) {
+		printf("out of memory in %s\n", __func__);
+		return NULL;
+	}
+
+	p->type = typeAttr;
+	strcpy (p->attr.value, value);
+
+    	PRINT(("%s\n", __func__));
+	return p;
+}
+
 
 ast_exp *
 create_boolean_const(int value)

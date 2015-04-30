@@ -652,6 +652,7 @@ char *oper_type_tostring(int t)
 		case OP_UNARY_SHARP: str = "OP_UNARY_SHARP"; break;
 		case OP_UNARY_MINUS: str = "OP_UNARY_MINUS"; break; 
 		case OP_UNARY_NOT: str = "OP_UNARY_NOT"; break;
+		case OP_ATTR: str = "OP_ATTR"; break;
 		default: str = "UNKNOWN OPERATOR TYPE";
 	}
 
