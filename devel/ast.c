@@ -1143,7 +1143,6 @@ create_price_const(char *value)
 ast_exp *
 create_security_const(ast_security *security)
 {
-	printf("here is %s\n", __func__);
 	ast_exp *p;
 	p = malloc(sizeof(ast_exp));
 	if (!p) {

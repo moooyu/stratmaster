@@ -3,7 +3,7 @@
 
 #include <glib.h>
 
-#define DEBUGS 1
+//#define DEBUGS 1
 
 #ifdef DEBUGS
 #define PRINTS(x)  do { if (DEBUGS) dbg_printf x; } while (0)

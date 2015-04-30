@@ -549,7 +549,7 @@ void *order_handler(void *arg)
 	//	if( res >= 0 )
 	//	{
 			/* Issue the order */
-			fprintf(stderr, "[INFO] ISSUING ORDER.\n");
+			PRINTI(("[INFO] ISSUING ORDER.\n"));
 			emit_order(next_order);
 			/* add the position to the account */
 	/*		long res = add_position(ac_master, next_order->ord);

@@ -120,9 +120,9 @@ ast_statement *statement;
 
 
 %%
-program		: { fprintf(stdout, "STARTING PARSE\n"); parent = NULL; top = symbol_table_create(parent); } 
+program		: { PRINTI(("STARTING PARSE\n")); parent = NULL; top = symbol_table_create(parent); } 
 	 	  use_list process_list 
-		{ $$=$3; fprintf(stdout, "ENDING PARSE\n"); 
+		{ $$=$3; PRINTI(("ENDING PARSE\n")); 
 #ifdef DEBUG
 		print_ast($$);
 #endif
@@ -140,24 +140,22 @@ process_list	: strategy_list 			{$$ = create_program(NULL, $1, top);}
 		| function_list algorithm_list strategy_list	{ }
 		;	     	
 
-function_list	: function_definition			{ fprintf(stdout, "Function\n"); }
-		| function_list function_definition	{ fprintf(stdout, "Function\n"); }
+function_list	: function_definition			{ }
+		| function_list function_definition	{ }
 		;
 
-algorithm_list 	: algorithm_definition			{ fprintf(stdout, "Algorithm\n"); 
-							$$ = create_algorithm_list($1);}
-		| algorithm_list algorithm_definition	{ fprintf(stdout, "Algorithm\n"); }
+algorithm_list 	: algorithm_definition			{ $$ = create_algorithm_list($1);}
+		| algorithm_list algorithm_definition	{  }
 		;
 
-strategy_list 	: strategy_definition				{ fprintf(stdout, "Strategy\n");
-								$$ = create_strategy_list($1); }
-		| strategy_list strategy_definition		{ fprintf(stdout, "Strategy\n"); }
+strategy_list 	: strategy_definition				{ $$ = create_strategy_list($1); }
+		| strategy_list strategy_definition		{ }
 		;
 
 function_definition : function_header compound_statement
 		;
 
-function_header : FUNCTION IDENTIFIER '(' parameter_list ')' func_return	{ fprintf(stdout, "Function HDR\n"); }
+function_header : FUNCTION IDENTIFIER '(' parameter_list ')' func_return	{ }
 		;
 
 func_return	: RETURNS type_specifier
@@ -169,18 +167,14 @@ algorithm_definition : algorithm_header compound_statement     { $$ = create_alg
 		;		
 
 algorithm_header: ALGORITHM IDENTIFIER          { parent = top; top = symbol_table_create(parent); }
-	     	'(' parameter_list ')'		{ fprintf(stdout, "Algo Hdr\n");
-						  $$ = create_algorithm_header($<str>2, $5); }
+	     	'(' parameter_list ')'		{ $$ = create_algorithm_header($<str>2, $5); }
 		;
 
-parameter_list	: type_specifier IDENTIFIER				{ fprintf(stdout, "Param List\n"); 
-									$$ = create_parameter_list($1,0,$<str>2);
+parameter_list	: type_specifier IDENTIFIER				{ $$ = create_parameter_list($1,0,$<str>2);
 									symbol_table_put_value(top, $1, $<str>2, (void*)0);}
-	       	| type_specifier '#' IDENTIFIER				{ fprintf(stdout, "Param List\n");
-									$$ = create_parameter_list($1,1, $<str>3);
+	       	| type_specifier '#' IDENTIFIER				{ $$ = create_parameter_list($1,1, $<str>3);
 									symbol_table_put_value(top, $1, $<str>3, (void*)0);} 
-		| parameter_list ',' type_specifier '#' IDENTIFIER	{ fprintf(stdout, "Param List\n");
-									$$ = add_parameter_list($1,$3,1, $<str>5);
+		| parameter_list ',' type_specifier '#' IDENTIFIER	{ $$ = add_parameter_list($1,$3,1, $<str>5);
 									symbol_table_put_value(top, $3, $<str>5, (void*)0); }
 
 		| /* empty */						{ }
@@ -207,19 +201,16 @@ process_statement_list : process_statement   { $$ = create_process_statement_lis
 		| process_statement_list process_statement
 		;
 
-process_statement : WHEN '(' expression ')' '{' process_body '}' UNTIL '(' expression ')' { fprintf(stdout, "Process statement\n"); } 
-		| WHEN '(' expression ')' '{' process_body '}'				{ $$ = create_process_statement($3,$6);
-											fprintf(stdout, "Process statement\n");printf("in process_statement, num of orders: %d\n", $$->action_list->num_of_orders); }
+process_statement : WHEN '(' expression ')' '{' process_body '}' UNTIL '(' expression ')' { } 
+		| WHEN '(' expression ')' '{' process_body '}'				{ $$ = create_process_statement($3,$6);}
 		;
 
 process_body	: action_list { $$ = $1; }
 	     	| action_list statement_list
 		;
 
-action_list	: order_type '{' constraint_list '}'				{ fprintf(stdout, "Action List\n"); 
-										 $$ = create_action_list($1,$3);}
-		| action_list order_type '{' constraint_list '}'		{ fprintf(stdout, "Action List\n");
-										 $$ = add_action_list($1,$2,$4);}
+action_list	: order_type '{' constraint_list '}'				{ $$ = create_action_list($1,$3);}
+		| action_list order_type '{' constraint_list '}'		{ $$ = add_action_list($1,$2,$4);}
 		;
 
 constraint_list	: constraint							{ $$ = $1;}
@@ -230,8 +221,7 @@ constraint	: WHAT ':' order_item ';'					{ $$ = $3;}
 	   	| WHERE ':' IDENTIFIER ';'		{ }
 		;
 
-order_item	: SECURITY '(' sec_expr ')' '.' AMOUNT '(' int_expr ')''.' PRICE '(' curr_expr ')' 	{ fprintf(stdout, "Order Item\n"); 
-										                        $$ = create_order_item($<security>3, $<exp>8, $<currency>13, 0); }
+order_item	: SECURITY '(' sec_expr ')' '.' AMOUNT '(' int_expr ')''.' PRICE '(' curr_expr ')' 	{ $$ = create_order_item($<security>3, $<exp>8, $<currency>13, 0); }
 		;
 
 sec_expr	: security				{ $$ = $1; }
