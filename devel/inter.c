@@ -883,6 +883,15 @@ void* ex_exp(ast_exp *p)
 
 		case typeOper:
 			switch(p->oper.oper) {
+
+				case OP_AND:
+					if (ex_exp(p->oper.op1) && (ex_exp(p->oper.op2))) {
+						ret = (void*)(intptr_t)1;
+						break;
+					}
+					ret = (void*)(intptr_t)0;
+					break;
+
 				case OP_LT:
 					printf("--------------------------> Operator <\n");
 					/* TODO: type check */
@@ -903,7 +912,26 @@ void* ex_exp(ast_exp *p)
 
 				case OP_IS:
 					printf("--------------------------> Operator IS\n");
-					ret = ex_exp(p->oper.op1);
+
+					/* If IS is used for algo call, we do not compare op1 and op2 */
+					if (p->oper.op1->type == typeOper) {
+						if (p->oper.op1->oper.oper == OP_FUNC) {
+							int type;
+							sym_entry = (struct symbol_value*)ex_exp(p->oper.op1->oper.op1);
+							type = sym_entry->type_specifier;
+							if (type == ALGORITHM_T) {
+								ret = ex_exp(p->oper.op1);
+								printf("--------------------------> Right child of IS is FUNC ALGO Operator\n");
+								break;
+							}
+						}
+					}
+
+					/* TODO: Do this once EQTY(ZBRA) is done in AST
+					 * Until the, we just return true */
+					ex_exp(p->oper.op1);
+					ret = (void*)(intptr_t)1;
+
 					break;
 				case OP_FUNC:
 					printf("--------------------------> Operator FUNC\n");
@@ -941,7 +969,9 @@ void* ex_exp(ast_exp *p)
 					/*
 					   1. look at the op2
 					   - if op2 is NEXT, then return op1
-					   - if op2 is PRC, then return value in ex_exp(op1)->price */
+					   - if op2 is PRC, then return value in ex_exp(op1)->price
+					   - if op2 is SEC, then return value in ex_exp(op1)->eqty
+					   */
 					switch(p->oper.op2->attr.value){
 						case PRC_T:
 							printf("--------------------------> PRC_T\n");
@@ -952,6 +982,12 @@ void* ex_exp(ast_exp *p)
 						case NEXT_T:
 							ret = (void*)ex_exp(p->oper.op1);
 							break;
+						case SEC_T:
+							sym_entry = (struct symbol_value*)ex_exp(p->oper.op1);
+							ret = (void*)((struct data*)sym_entry->nodePtr)->current_data.eqty;
+							printf("------------------------------> SEC will be %s\n", (char*) ret);
+							break;
+
 						default:
 							printf("---------------------------> ATTR operator is not recognized\n");
 					}
