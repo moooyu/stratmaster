@@ -4,7 +4,7 @@
 #include "symtab.h"
 #define NAMEBUF    32      /* Max size of an identifier or name */
 
-typedef enum {typeBooleanConst, typeIntegerConst, typeDoubleConst, typePriceConst, typeOper, typeID, typeKeyword, typeArgulist, typeAttr} nodeType;
+typedef enum {typeBooleanConst, typeIntegerConst, typeDoubleConst, typePriceConst, typeOper, typeID, typeKeyword, typeArgulist, typeAttr, typeSec} nodeType;
 typedef enum {expression_ST, compound_ST, selection_ST, iteration_ST, set_ST} stmtType;
 
 typedef struct{
@@ -71,6 +71,7 @@ typedef struct ast_exp{
 		ast_str key;
 		ast_str id;
 		ast_attr attr;
+		ast_security *security;
 		ast_argument_expression_list argu_list;
 	};
 } ast_exp;
@@ -248,6 +249,9 @@ create_double_const(double value);
 ast_exp *
 create_price_const(char *value);
 
+ast_exp *
+create_security_const(ast_security *security);
+
 ast_statement*
 create_selection_statement(ast_exp *exp, ast_statement *statement);
 
@@ -389,7 +393,7 @@ void ex_process_statement(ast_process_statement * process_statement);
 void *algorithm_handler(void *arg);
 void ex_action_list(ast_action_list * action_list);
 
-#define DEBUG 0
+#define DEBUG 1
 
 #ifdef DEBUG
 #define PRINT(x)  do { if (DEBUG) dbg_printf x; } while (0)

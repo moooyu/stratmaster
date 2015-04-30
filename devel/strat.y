@@ -31,7 +31,6 @@ struct symbol_table *parent;
     double fp_val;
     ast_currency *currency;
     ast_security *security;
-   //ast_security_type *security_type;
     ast_position *position;     
 	ast_order_item *order_item;
 	ast_order_item *constraint;
@@ -367,7 +366,7 @@ primary_expression : type_name		{ $$ = $1;}
 		| INTEGER		{ $$ = create_integer_const($1);}
 		| FLOATPT		{ $$ = create_double_const($1); }
 		| PRICESTRING		{ $$ = create_price_const($1); }
-		| security		{ }
+		| security		{ $$ = create_security_const($1); }
 		| currency		{ }
 		| position		{ }
 		| TRUE_S		{ $$ = create_boolean_const(TRUE_T);  }
@@ -383,7 +382,7 @@ type_name	: IDENTIFIER		        { $$ = create_id($1, top);}
 position 	: POS '(' IDENTIFIER ')'	{  }
 	  	;
 
-security	: security_type '(' IDENTIFIER ')' {$$ = create_ast_security($<int_val>1, $<str>3);}
+security	: security_type '(' IDENTIFIER ')' { $$ = create_ast_security($<int_val>1, $<str>3); }
 		;
 
 currency	: currency_type '(' PRICESTRING ')'    { $$ = create_ast_currency($<int_val>1, $<str>3); }

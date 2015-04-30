@@ -958,9 +958,11 @@ void print_exp(ast_exp *exp)
 		case(typeAttr):
 			printf("ATTR: %s\n", attr_tostring(exp->attr.value));
 			break;
+		case(typeSec):
+			printf("Security type: %d\nSecurity name: %s\n", exp->security->sec->sec_t,exp->security->sec->sym);
 
 		default:
-			printf("Wrong exp node type.\n");
+			printf("Wrong exp node type.This type is %d\n", exp->type);
 	}
 }
 
@@ -1136,4 +1138,26 @@ create_price_const(char *value)
     	PRINT(("%s\n", __func__));
 	return p;
 }
+
+ast_exp *
+create_security_const(ast_security *security)
+{
+	printf("here is %s\n", __func__);
+	ast_exp *p;
+	p = malloc(sizeof(ast_exp));
+	if (!p) {
+		printf("out of memory in %s\n", __func__);
+		return NULL;
+	}
+
+	p->type = typeSec;
+	//p->security.sec->sec_t = 0;
+	//strcpy(p->security.sec->sym, security->sec->sym);
+	p->security = security;
+
+    	PRINT(("%s\n", __func__));
+	return p;
+}
+
+
 

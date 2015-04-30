@@ -29,7 +29,7 @@ typedef enum { BUY_ORDER = 4, SELL_ORDER } order_type;
 typedef enum { USD_T = 8, EUR_T, JPY_T } curr_type;
 typedef enum { OP_IS = 256, OP_ISNOT, OP_FUNC, OP_ASSIGN, 
 		OP_OR, OP_AND, OP_ADD, OP_SUB, OP_MULT, OP_DIV,
-                OP_LT, OP_GT, OP_LTEQ, OP_GTEQ, OP_ATTR } oper_type;
+                OP_LT, OP_GT, OP_LTEQ, OP_GTEQ, OP_ATTR, OP_SEC } oper_type;
 typedef enum { OP_UNARY_MINUS = 512, OP_UNARY_SHARP, OP_UNARY_NOT } oper_unary;
 
 /****** Structures ****************/
