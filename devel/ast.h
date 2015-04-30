@@ -401,7 +401,17 @@ void ex_action_list(ast_action_list * action_list);
 #define PRINT(x) do {} while(0)
 #endif
 
+
+#define DEBUGI 0
+
+#ifdef DEBUGI
+#define PRINTI(x)  do { if (DEBUGI) dbg_printf x; } while (0)
+#else
+#define PRINTI(x) do {} while(0)
+#endif
+
 void dbg_printf(const char *fmt, ...);
+
 #endif
 
 

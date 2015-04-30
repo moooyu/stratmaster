@@ -56,5 +56,6 @@ symtab.o: symtab.c
 clean:
 	rm -f *.o *.out lex.yy.c y.tab.c y.tab.h core *~ y.output
 
-
+run:
+	./strat.out < sm/algo_buy.sm
 
