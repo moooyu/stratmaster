@@ -2,7 +2,6 @@
 
 USE ACCOUNT ac_master;
 USE DATAFEED df_quotes;
-USE DATAFEED df_quotes;
 
 ALGORITHM al_Buy_Something(DATAFEED quotes, PRICE #buy_price)
 {
