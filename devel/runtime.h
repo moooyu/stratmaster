@@ -148,5 +148,5 @@ void queue_put_order(struct queue *q, struct order *ord_in, const char *strat);
 struct order_item *queue_get_order(struct queue *q);
 
 void* ex_exp(ast_exp *p);
-
+void* ex_stmt (ast_statement *statement);
 #endif /*   _RUNTIME_H_  */

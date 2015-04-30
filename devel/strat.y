@@ -289,8 +289,8 @@ expression_statement : expression ';'			{ $$ = create_expression_statement($1); 
 		| ';'					{ }
 		;
 
-compound_statement : '{' variable_declaration_list statement_list '}'	{ $$ = $3; }
-		| '{' statement_list '}'	{ $$ = $2; }
+compound_statement : '{' variable_declaration_list statement_list '}'	{ $$ = $3; /*TODO: Add symbol table!*/}
+		| '{' statement_list '}'	{ $$ = $2; /*TODO: Add symbol table */ }
 		| '{' '}'			{ $$ = NULL; }
 		;
 

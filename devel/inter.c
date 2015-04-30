@@ -4,6 +4,7 @@
 #include "y.tab.h"
 #include "runtime.h"
 #include "symtab.h"
+#include <stdint.h>
 
 #define MAX_STRATEGIES 8
 #define MAX_ALGORITHMS 8
@@ -469,6 +470,9 @@ void *algorithm_handler(void *arg)
 	ast_exp **argument_list = (ast_exp **)algo->args;
 	ast_algorithm *algo_node = (ast_algorithm *)algo->algo_ptr;
 	struct symbol_table *symt = (struct symbol_table *)algo->sym;
+	int num_stmt = algo_node->num_of_statement;
+	int num_stmt_in_set;
+	ast_set_statement *set_stmt;
 	
 	/* Link ALGORITHM parameters with STRATEGY arguments */
 	int i;
@@ -479,7 +483,7 @@ void *algorithm_handler(void *arg)
 
 	for(i = 0; i < num_args; i++)
 	{
-		algo_id = algo_node->statement[0]->set_statement.argu_list->argu_list.exp[i]->oper.op1->id.value;
+		algo_id = algo_node->para_list[i]->name;
 		algo_param = symbol_table_get_value(algo_node->sym, 0, algo_id);
 
 		strat_id = argument_list[i]->oper.op1->id.value;
@@ -494,6 +498,7 @@ void *algorithm_handler(void *arg)
 	}
 
 	/* To demonstrate, set local ALGO variables and return to STRATEGY */
+	/*
 	for(i = 0; i < num_args; i++)
 	{
 		int type =  argument_list[i]->oper.op1->type;
@@ -525,6 +530,22 @@ void *algorithm_handler(void *arg)
 			default: ;
 		}
 
+	}
+	*/
+
+	/* Semantically, SET statement is the last one, and we handle that after this for loop*/
+	for (i = 0; i < num_stmt-1; i++)
+	{
+		ex_stmt(algo_node->statement[i]);
+	}
+	set_stmt = &(algo_node->statement[i]->set_statement);
+	num_stmt_in_set = set_stmt->argu_list->argu_list.num_of_argument_expression_list;
+	printf("---------------------> number of stmt in set statement is %d\n", num_stmt_in_set);
+
+	if (ex_exp(set_stmt->exp)) {
+		for (i = 0 ; i < num_stmt_in_set; i++) {
+			ex_exp(set_stmt->argu_list->argu_list.exp[i]);
+		}
 	}
 
 /*
@@ -809,6 +830,11 @@ void ex_action_list(ast_action_list * action_list)
 
 */
 
+/* TODO */
+void* ex_stmt (ast_statement *statement)
+{
+	return NULL;
+}
 
 void* ex_exp(ast_exp *p)
 {
@@ -821,8 +847,27 @@ void* ex_exp(ast_exp *p)
 			return ret;
 			
 			break;
+		case typeBooleanConst:
+			printf("--------------------------> This exp is BooleanConst: %d\n", p->con.bool_value->value);
+			ret = (void*)(intptr_t)p->con.bool_value->value;
+			break;
+		case typePriceConst:
+			printf("--------------------------> This exp is PriceConst: %s\n", p->con.price_value->price );
+			ret = (void*)p->con.price_value->price;
+			break;
+		case typeKeyword:
+			printf("--------------------------> This exp is KEYword\n");
+			break;
+
 		case typeOper:
 			switch(p->oper.oper) {
+				case OP_ASSIGN:
+					printf("--------------------------> Operator =\n");
+					struct symbol_value* symval;
+					symval = (struct symbol_value*)ex_exp(p->oper.op1);
+					copy_name(((ast_currency*)symval->nodePtr)->curr->p, (char*)ex_exp(p->oper.op2));
+					break;
+
 				case OP_IS:
 					printf("--------------------------> Operator IS\n");
 					ret = ex_exp(p->oper.op1);
@@ -866,7 +911,7 @@ void* ex_exp(ast_exp *p)
 		break;
 
 		default:
-			printf("--------------------> Expression type is not recognized\n");
+			printf("--------------------> Expression type is not recognized: %d\n", p->type);
 
 	}
 	return ret;
