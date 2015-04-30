@@ -1579,7 +1579,7 @@ void print_exp(ast_exp *exp)
 			if (exp->oper.nops == 2) print_exp(exp->oper.op2); 
 			break;
 		case(typeAttr):
-			printf("ATTR: %d\n", exp->attr.value);
+			printf("ATTR: %s\n", attr_tostring(exp->attr.value));
 			break;
 
 		default:

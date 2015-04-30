@@ -71,10 +71,17 @@ struct account {
 	struct currency avail_cash;     /* available cash to buy securities */
 };
 
+struct datafeed_item {
+	char eqty[NAMEBUF];
+	char date[NAMEBUF];
+	char price[NAMEBUF];
+};
+
 struct data {
 	int  data_t;                    /* type of data source (DATAFEED or DATABASE) */
 	FILE *fp;                       /* file pointer for data file */
 	char df_filename[NAMEBUF];      /* file name: e.g. "quotes.dat" */
+	struct datafeed_item current_data;		/* Keep current data to evaluate expression in ex_exp */
 };
 
 struct data_item {
@@ -122,6 +129,7 @@ int is_equal_sec(struct security *sec1, struct security *sec2);
 void copy_name(char *buf, const char *str);
 long price_to_long(const char *pr);
 void long_to_price(long value, char *buf);
+char *attr_tostring(int t);
 char *type_tostring(int t);
 char *oper_type_tostring(int t);
 char *node_type_tostring(int t);

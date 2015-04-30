@@ -600,6 +600,9 @@ void *algorithm_handler(void *arg)
 		//		fprintf(stderr, "[INFO] ALGO FOUND A PRICE TARGET: $%s\n", price);
 				/* Set argument value to new price for return to STRATEGY */
 		//		copy_name(((struct price *)algo->args)->p, price);
+			strcpy(algo->d->current_data.eqty, ticker);
+			strcpy(algo->d->current_data.date, date);
+			strcpy(algo->d->current_data.price, price);
 	              if (ex_exp(set_stmt->exp)) {
 		           for (i = 0 ; i < num_stmt_in_set; i++) {
 			        ex_exp(set_stmt->argu_list->argu_list.exp[i]);
@@ -623,7 +626,7 @@ void *algorithm_handler(void *arg)
 			//}
 			memset(buf, 0, IOBUFSIZE);
 			usleep(interval);
-			keep_running--;
+	//		keep_running--;
 		}
 	//	else
 	//	{
@@ -856,10 +859,12 @@ void* ex_stmt (ast_statement *statement)
 void* ex_exp(ast_exp *p)
 {
 	void* ret = NULL;
+	struct symbol_value* sym_entry;
 	if (!p) return 0;
 	switch(p->type)
 	{
 		case typeID:
+			printf("--------------------------> This exp is ID\n");
 			ret = (void*)symbol_table_get_value(p->id.sym, 0, p->id.value);
 			return ret;
 			
@@ -880,7 +885,13 @@ void* ex_exp(ast_exp *p)
 			switch(p->oper.oper) {
 				case OP_LT:
 					printf("--------------------------> Operator <\n");
-					ret = (void*)(intptr_t)1;
+					/* TODO: type check */
+
+					if (price_to_long((char*)ex_exp(p->oper.op1))< price_to_long((char*)ex_exp(p->oper.op2)))
+						ret = (void*)(intptr_t)1;
+					else
+						ret = (void*)(intptr_t)0;
+
 					break;
 
 				case OP_ASSIGN:
@@ -896,7 +907,6 @@ void* ex_exp(ast_exp *p)
 					break;
 				case OP_FUNC:
 					printf("--------------------------> Operator FUNC\n");
-					struct symbol_value* sym_entry;
 					int type;
 					sym_entry = (struct symbol_value*)ex_exp(p->oper.op1);
 					type = sym_entry->type_specifier;
@@ -927,8 +937,25 @@ void* ex_exp(ast_exp *p)
 					ret = (void*)algo_data;
 					break;
 				case OP_ATTR:
-					printf("--------------------------> Operator ATTR\n");
-					ret = (void*)"123.00";
+
+					/*
+					   1. look at the op2
+					   - if op2 is NEXT, then return op1
+					   - if op2 is PRC, then return value in ex_exp(op1)->price */
+					switch(p->oper.op2->attr.value){
+						case PRC_T:
+							printf("--------------------------> PRC_T\n");
+							sym_entry = (struct symbol_value*)ex_exp(p->oper.op1);
+							ret = (void*)((struct data*)sym_entry->nodePtr)->current_data.price;
+							printf("------------------------------> PRC will be %s\n", (char*) ret);
+							break;
+						case NEXT_T:
+							ret = (void*)ex_exp(p->oper.op1);
+							break;
+						default:
+							printf("---------------------------> ATTR operator is not recognized\n");
+					}
+					printf("--------------------------> Operator ATTR: %s\n",  attr_tostring(p->oper.op2->attr.value));
 					break;
 
 				default:

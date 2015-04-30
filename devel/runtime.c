@@ -569,7 +569,25 @@ struct order_item *queue_get_order(struct queue *q)
 	return next_order;
 }
 
-/* TODO: add attr_tostring */
+
+char *attr_tostring(int t)
+{
+	char *str = "";
+	switch(t)
+	{
+		case SEC_T: str = "SEC"; break;
+		case AMT_T: str = "AMT"; break;
+		case PRC_T: str = "PRC"; break;
+		case POS_T: str = "POS"; break;
+		case AVAIL_CASH_T: str = "AVAIL_CASH"; break;
+		case NEXT_T: str = "NEXT"; break;
+		default: str = "UNKNOWN TYPE";
+	}
+
+	return str;
+}
+
+
 char *type_tostring(int t)
 {
 	char *str = "";
