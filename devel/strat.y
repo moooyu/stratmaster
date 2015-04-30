@@ -122,7 +122,12 @@ ast_statement *statement;
 %%
 program		: { fprintf(stdout, "STARTING PARSE\n"); parent = NULL; top = symbol_table_create(parent); } 
 	 	  use_list process_list 
-		{ $$=$3; fprintf(stdout, "ENDING PARSE\n"); if(DEBUG) print_ast($$); print_symtab(top); root = $$;}
+		{ $$=$3; fprintf(stdout, "ENDING PARSE\n"); 
+#ifdef DEBUG
+		print_ast($$);
+#endif
+		print_symtab(top);
+		root = $$;}
 	 	;
 
 use_list	: USE  variable_declaration		{ }	

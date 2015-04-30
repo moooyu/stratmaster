@@ -605,7 +605,10 @@ void* ex_exp(ast_exp *p)
 		case typeKeyword:
 			PRINTI(("--------------------------> This exp is KEYword\n"));
 			break;
-
+                case typeSec:
+                        PRINTI(("--------------------------> This exp is Security: %s\n", p->security.sec->sym));
+                        ret = (void*)p->security.sec->sym;
+                        break;
 		case typeOper:
 			switch(p->oper.oper) {
 
@@ -652,10 +655,12 @@ void* ex_exp(ast_exp *p)
 						}
 					}
 
-					/* TODO: Do this once EQTY(ZBRA) is done in AST
-					 * Until the, we just return true */
-					ex_exp(p->oper.op1);
-					ret = (void*)(intptr_t)1;
+                                        if (strcmp((char*)ex_exp(p->oper.op1), (char*)ex_exp(p->oper.op2)) == 0){
+                                             ret = (void*)(intptr_t)1;
+                                         }
+					else {
+                                             ret = (void*)(intptr_t)0;
+                                         }
 
 					break;
 				case OP_FUNC:
