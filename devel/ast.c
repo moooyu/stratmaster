@@ -959,7 +959,8 @@ void print_exp(ast_exp *exp)
 			printf("ATTR: %s\n", attr_tostring(exp->attr.value));
 			break;
 		case(typeSec):
-			printf("Security type: %d\nSecurity name: %s\n", exp->security->sec->sec_t,exp->security->sec->sym);
+			printf("Security type: %d\nSecurity name: %s\n", exp->security.sec->sec_t,exp->security.sec->sym);
+			break;
 
 		default:
 			printf("Wrong exp node type.This type is %d\n", exp->type);
@@ -1151,9 +1152,9 @@ create_security_const(ast_security *security)
 	}
 
 	p->type = typeSec;
-	//p->security.sec->sec_t = 0;
-	//strcpy(p->security.sec->sym, security->sec->sym);
-	p->security = security;
+	p->security.sec  = malloc(sizeof(struct security));
+	p->security.sec->sec_t = 0;
+	strcpy(p->security.sec->sym, security->sec->sym);
 
     	PRINT(("%s\n", __func__));
 	return p;

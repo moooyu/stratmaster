@@ -71,7 +71,7 @@ typedef struct ast_exp{
 		ast_str key;
 		ast_str id;
 		ast_attr attr;
-		ast_security *security;
+		ast_security security;
 		ast_argument_expression_list argu_list;
 	};
 } ast_exp;
@@ -393,7 +393,7 @@ void ex_process_statement(ast_process_statement * process_statement);
 void *algorithm_handler(void *arg);
 void ex_action_list(ast_action_list * action_list);
 
-#define DEBUG 1
+//#define DEBUG 1
 
 #ifdef DEBUG
 #define PRINT(x)  do { if (DEBUG) dbg_printf x; } while (0)
