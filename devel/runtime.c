@@ -569,6 +569,7 @@ struct order_item *queue_get_order(struct queue *q)
 	return next_order;
 }
 
+/* TODO: add attr_tostring */
 char *type_tostring(int t)
 {
 	char *str = "";

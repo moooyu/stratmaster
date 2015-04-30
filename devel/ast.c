@@ -1579,7 +1579,7 @@ void print_exp(ast_exp *exp)
 			if (exp->oper.nops == 2) print_exp(exp->oper.op2); 
 			break;
 		case(typeAttr):
-			printf("ATTR: %s\n", exp->attr.value);
+			printf("ATTR: %d\n", exp->attr.value);
 			break;
 
 		default:
@@ -1675,7 +1675,7 @@ create_keyword(char* value)
 }
 
 ast_exp *
-create_attr(char* value)
+create_attr(int value)
 {
 	ast_exp *p;
 	p = malloc(sizeof(ast_exp));
@@ -1685,7 +1685,7 @@ create_attr(char* value)
 	}
 
 	p->type = typeAttr;
-	strcpy (p->attr.value, value);
+	p->attr.value = value;
 
     	PRINT(("%s\n", __func__));
 	return p;

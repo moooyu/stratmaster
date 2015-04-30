@@ -390,12 +390,12 @@ security	: security_type '(' IDENTIFIER ')' {$$ = create_ast_security($<int_val>
 currency	: currency_type '(' PRICESTRING ')'    { $$ = create_ast_currency($<int_val>1, $<str>3); }
 	 	;
 
-attribute	: SEC			{ $$ = create_attr("SEC");}
-	  	| AMT			{ $$ = create_attr("AMT");}
-		| PRC			{ $$ = create_attr("PRC");}
-		| POS			{ $$ = create_attr("POS");}
-		| AVAIL_CASH		{ $$ = create_attr("AVAIL_CASH");}
-		| NEXT			{ $$ = create_attr("NEXT");}
+attribute	: SEC			{ $$ = create_attr(SEC_T);}
+	  	| AMT			{ $$ = create_attr(AMT_T);}
+		| PRC			{ $$ = create_attr(PRC_T);}
+		| POS			{ $$ = create_attr(POS_T);}
+		| AVAIL_CASH		{ $$ = create_attr(AVAIL_CASH_T);}
+		| NEXT			{ $$ = create_attr(NEXT_T);}
 		;
 
 %%

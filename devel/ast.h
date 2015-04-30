@@ -47,6 +47,9 @@ typedef struct {
 	};
 } ast_const;
 
+typedef struct {
+	int value;
+} ast_attr;
 
 typedef struct {
 	char value[NAMEBUF];
@@ -77,7 +80,7 @@ typedef struct ast_exp{
 		ast_oper oper;
 		ast_str key;
 		ast_str id;
-		ast_str attr;
+		ast_attr attr;
 		ast_argument_expression_list argu_list;
 	};
 } ast_exp;
@@ -331,7 +334,7 @@ typedef struct {
 }ast_program;
 
 ast_exp *
-create_attr(char* value);
+create_attr(int value);
 
 ast_exp *
 create_id(char* value, struct symbol_table *top);

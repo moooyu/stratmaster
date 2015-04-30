@@ -927,12 +927,12 @@ void* ex_exp(ast_exp *p)
 					ret = (void*)algo_data;
 					break;
 				case OP_ATTR:
-					printf("--------------------------> Operator FUNC\n");
+					printf("--------------------------> Operator ATTR\n");
 					ret = (void*)"123.00";
 					break;
 
 				default:
-					printf("---------------------------> Operator is not recognized\n");
+					printf("---------------------------> Operator is not recognized: %d\n", p->oper.oper);
 			}
 		break;
 

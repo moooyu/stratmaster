@@ -21,6 +21,7 @@
 #define IOBUFSIZE  4096   /* size of read buffer */
 
 /******** Enumerations **********/
+typedef enum { SEC_T, AMT_T, PRC_T, POS_T, AVAIL_CASH_T, NEXT_T} attribute;
 typedef enum { FALSE_T, TRUE_T } boolean;
 typedef enum { EQTY_T = 2, BOND_T } security_type;
 typedef enum { BUY_ORDER = 4, SELL_ORDER } order_type;
