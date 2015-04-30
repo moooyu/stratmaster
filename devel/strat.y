@@ -69,7 +69,6 @@ ast_statement *statement;
 
 
 %type <int_val> order_type;
-%type <use_list> use_list;
 %type <algorithm_list> algorithm_list;
 %type <algorithm_header> algorithm_header;
 %type <algorithm_function> algorithm_definition;
@@ -131,9 +130,9 @@ use_list	: USE  variable_declaration		{ }
 		| use_list USE variable_declaration 
 		;
 
-process_list	: strategy_list 			{$$ = create_program(NULL, NULL, $1, top);}
+process_list	: strategy_list 			{$$ = create_program(NULL, $1, top);}
 	     	| function_list strategy_list		{ }
-		| algorithm_list strategy_list 		{$$ = create_program(NULL, $1, $2, top);}
+		| algorithm_list strategy_list 		{$$ = create_program($1, $2, top);}
 		| function_list algorithm_list strategy_list	{ }
 		;	     	
 
