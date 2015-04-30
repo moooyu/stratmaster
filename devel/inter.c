@@ -577,7 +577,7 @@ void *algorithm_handler(void *arg)
 	ca.f = algo->d->fp; */
 	pthread_cleanup_push(cleanup_algorithm, &ca);
 
-	int keep_running = 1;
+	int keep_running = 10;
 
 	while( keep_running )
 	{
@@ -614,7 +614,6 @@ void *algorithm_handler(void *arg)
 				
 				pthread_cond_wait(&algo->cond_true, &algo->mutex);
 				
-				keep_running--;
 				
 				pthread_mutex_unlock(&algo->mutex);
 	               }
@@ -624,6 +623,7 @@ void *algorithm_handler(void *arg)
 			//}
 			memset(buf, 0, IOBUFSIZE);
 			usleep(interval);
+			keep_running--;
 		}
 	//	else
 	//	{
@@ -878,6 +878,11 @@ void* ex_exp(ast_exp *p)
 
 		case typeOper:
 			switch(p->oper.oper) {
+				case OP_LT:
+					printf("--------------------------> Operator <\n");
+					ret = (void*)(intptr_t)1;
+					break;
+
 				case OP_ASSIGN:
 					printf("--------------------------> Operator =\n");
 					struct symbol_value* symval;
@@ -920,6 +925,10 @@ void* ex_exp(ast_exp *p)
 					algo_data->algo_ptr = sym_entry->nodePtr;
 
 					ret = (void*)algo_data;
+					break;
+				case OP_ATTR:
+					printf("--------------------------> Operator FUNC\n");
+					ret = (void*)"123.00";
 					break;
 
 				default:

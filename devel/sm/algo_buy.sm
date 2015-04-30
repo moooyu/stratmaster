@@ -7,14 +7,12 @@ USE DATAFEED df_ZBRA;
 
 ALGORITHM al_Buy_Something(DATAFEED quotes, CURRENCY #buy_price)
 {
-    SET  { /*buy_price = quotes.NEXT.PRC*/
-         buy_price = 200.00 }
+    SET  { buy_price = quotes.NEXT.PRC }
     IF:
     {
-         /*quotes.NEXT.SEC IS EQTY(ZBRA)
+         quotes.NEXT.SEC IS EQTY(ZBRA)
          AND
-         quotes.NEXT.PRC < 27.00*/
-         False
+         quotes.NEXT.PRC < 90.00
     }
 }
 
