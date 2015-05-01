@@ -37,6 +37,10 @@ void *order_handler(void *arg);
 void *process_handler(void *arg);
 void cleanup_algorithm(void *arg);
 void *algorithm_handler(void *arg);
+void* ex_exp(ast_exp *p);
+void* ex_stmt (ast_statement *statement);
+
+
 /*     Global Variables    */
 static struct queue order_queue;
 static pthread_t order_handler_thread;
@@ -423,7 +427,10 @@ void *algorithm_handler(void *arg)
 
 		/* Check if types are the same */
 		if( algo_param->type_specifier != strat_argu->type_specifier )
+		{
+			//TODO: we shouldn't die here; need to return error message
 			die("paramater type mismatch");
+		}
 
 		/* make the assignment to effect the link */
 		algo_param->nodePtr = strat_argu->nodePtr;
@@ -442,7 +449,6 @@ void *algorithm_handler(void *arg)
 	set_stmt = &(algo_node->statement[i]->set_statement);
 	num_stmt_in_set = set_stmt->argu_list->argu_list.num_of_argument_expression_list;
 	PRINTI(("---------------------> number of stmt in set statement is %d\n", num_stmt_in_set));
-
 
 
 
