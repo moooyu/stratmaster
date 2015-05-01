@@ -15,4 +15,8 @@ This is our presentation slide.
 
 https://docs.google.com/presentation/d/1vf4vorrELb7zvqXus0XhvtqVaEISIkwvRo_PReIPANk/edit?usp=sharing
 
+This is our final report.
+
+https://docs.google.com/document/d/1hckOFgBbNlMLm6azv0cg1xiAc8eaKqmrQxwMactVMHo/edit?usp=sharing
+
 See `CONTRIBUTING.md` for guidelines on the github workflow. 
