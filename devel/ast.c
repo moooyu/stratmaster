@@ -982,7 +982,7 @@ int install_symbol(int id_type, const char *id, struct symbol_table *symtab)
 	  		ret = symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id, id_type));
 			break;
 		case CURRENCY_T:
-			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_ast_currency(id_type, NULL));
+			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_ast_currency(USD_T, NULL));
 			break;
 		case SECURITY_T:
 			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_security(id_type, NULL));

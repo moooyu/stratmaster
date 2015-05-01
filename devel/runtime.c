@@ -171,12 +171,7 @@ struct currency *create_currency(int type, const char *prc)
 		copy_name(new_curr->p, prc);
 	
 	/* set currency type */
-	if( type == 0 )
-	{     /* Default currency: USD */
-		new_curr->curr_t = USD_T;
-	}
-	else
-		new_curr->curr_t = type;
+	new_curr->curr_t = type;
 
 	return new_curr;
 }
