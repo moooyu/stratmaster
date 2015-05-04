@@ -1,11 +1,13 @@
-#  StratMaster Hello World makefile
+#  StratMaster development makefile
 
 #Name of the binary make will create
 PROGRAM = strat.out 
 #Name of lex file
-LEXFILE = hello.l
+# LEXFILE = hello.l
+LEXFILE = strat.l
 #Name of yacc file
-YACCFILE = hello.y
+# YACCFILE = hello.y
+YACCFILE = strat.y
 #Compiler flags
 CFLAGS = -g -Wall
 #Compiler
@@ -15,11 +17,11 @@ LEXER = lex
 PARSER = yacc
 LDFLAGS = -ly -pthread `pkg-config --cflags --libs glib-2.0`
 LEXFLAGS = --yylineno
-YACCFLAGS = -d
+YACCFLAGS = -d --verbose
 
 # all of the .o files that the program needs
-OBJECTS = y.tab.o lex.yy.o inter.o ast.o rtfunc.o symtab.o
-
+# OBJECTS = y.tab.o lex.yy.o inter.o ast.o symtab.o
+OBJECTS = y.tab.o lex.yy.o inter.o ast.o symtab.o runtime.o
 # Make strat.out
 ${PROGRAM} : ${OBJECTS}
 	${CC} ${CFLAGS} ${OBJECTS} -o ${PROGRAM} ${LDFLAGS}
@@ -36,22 +38,24 @@ parser.h: y.tab.h
 lex.yy.c : ${LEXFILE}
 	${LEXER} ${LEXFLAGS} ${LEXFILE}
 lex.yy.o: lex.yy.c
-	${CC} -g -c lex.yy.c
+	${CC} -g -c lex.yy.c ${LDFLAGS}
 
 inter.o: inter.c
-	${CC} -g -c inter.c
+	${CC} -g -c inter.c ${LDFLAGS}
 
-ast.o: ast.c
-	${CC} -g -c ast.c
+runtime.o: runtime.c
+	${CC} -g -c runtime.c ${LDFLAGS}
 
-rtfunc.o: rtfunc.c
-	${CC} -g -c rtfunc.c 
+ast.o: ast.c 
+	${CC} -g -c ast.c ${LDFLAGS}
 
 symtab.o: symtab.c
 	${CC} -g -c symtab.c ${LDFLAGS}
 
+
 clean:
-	/bin/rm -f *.o *.out lex.yy.c y.tab.c y.tab.h core *~
+	rm -f *.o *.out lex.yy.c y.tab.c y.tab.h core *~ y.output
 
-
+run:
+	./strat.out < sm/algo_buy.sm
 

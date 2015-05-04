@@ -1,0 +1,28 @@
+/*  StratMaster: Simple Algorithm
+ *  Conforms to revised grammar [VM]
+ */
+
+USE ACCOUNT ac_master;
+USE DATAFEED df_ZBRA;
+
+ALGORITHM al_Buy_Something(DATAFEED quotes, CURRENCY #buy_price)
+{
+    SET  { buy_price = quotes.NEXT.PRC }
+    IF:
+    {
+         quotes.NEXT.SEC IS EQTY(ZBRA)
+         AND
+         quotes.NEXT.PRC < 90.00
+    }
+}
+
+STRATEGY my_buy_strat
+{
+    CURRENCY zbra_price;
+
+    WHEN( al_Buy_Something(df_ZBRA, #zbra_price) IS TRUE )
+    {
+         BUY  {  WHAT : SECURITY( EQTY(ZBRA) ).AMOUNT(100).PRICE(zbra_price);}
+    }
+
+}

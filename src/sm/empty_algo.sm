@@ -1,0 +1,23 @@
+/*   StratMaster Test Case
+ *   Empty algorithm
+ */
+
+USE ACCOUNT ac_master;
+
+ALGORITHM al_empty(/*DATAFEED some_feed, */CURRENCY #p1, CURRENCY #p2, CURRENCY #p3)
+{
+
+}
+
+STRATEGY hello
+{
+	CURRENCY zbra_price;
+	CURRENCY cat_price;
+	CURRENCY rabbit_price;
+	WHEN ( al(#zbra_price, #cat_price, #rabbit_price) IS TRUE ) 
+	{
+		BUY { WHAT : SECURITY( EQTY(hi0) ).AMOUNT(100).PRICE(10.00); }
+ 		BUY { WHAT : SECURITY( EQTY(hi1) ).AMOUNT(101).PRICE(10.01); }
+		BUY { WHAT : SECURITY( EQTY(hi2) ).AMOUNT(102).PRICE(10.02); }
+	}
+}

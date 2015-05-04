@@ -1,0 +1,29 @@
+/*   StratMaster Test Case
+ *   ALGORITHM with single param 
+ *   REVISED order item [VM]
+ */
+
+USE ACCOUNT ac_master;
+USE DATAFEED df_ZBRA;
+
+ALGORITHM al_coolness(CURRENCY #buy_price, CURRENCY #sell_price)
+{
+	SET { buy_price = 200.00,
+              sell_price = 33.33 }
+	IF:
+	{
+		TRUE
+	}
+}
+
+STRATEGY hello
+{
+	CURRENCY zbra_price;
+	CURRENCY intc_price;
+
+	WHEN ( al_coolness(#zbra_price, #intc_price) IS TRUE ) 
+	{
+		 BUY { WHAT : SECURITY( EQTY( ZBRA ) ).AMOUNT( 10000).PRICE(zbra_price); }
+                 SELL{ WHAT : SECURITY( EQTY(INTC) ).AMOUNT(1000).PRICE( intc_price ); }
+	}
+}

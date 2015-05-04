@@ -1,0 +1,42 @@
+/* StratMaster hello world test */
+
+USE ACCOUNT ac_MASTER
+USE DATABASE some_dataBASE
+USE DATAFEED some_dataBASE1
+ALGORITHM my_algo(DATAFEED some_data_feed PRICE hi)
+{
+	PRICE hihi;
+	PRICE bee;
+	SET {id1 = id2}
+	SET {id1 = id2}
+     	SET {id1 = id2}
+	IF :
+	{
+		id5 = id6,
+		id7
+	}
+}
+
+STRATEGY some_strategy
+{
+	PRICE name;
+	PRICE name2;	
+	BUY
+	{
+		 WHAT : EQTY(name).AMOUNT(100).PRICE(999.99);
+	}
+	WHEN(d=e)
+	{
+		BUY
+		{
+		 	WHAT : EQTY(name).AMOUNT(100).PRICE(999.99);
+		}
+	}
+	WHEN(d=e)
+	{
+		BUY
+		{
+		 	WHAT : EQTY(name).AMOUNT(100).PRICE(999.99);
+		}
+	} UNTIL (a1 = a2)
+}

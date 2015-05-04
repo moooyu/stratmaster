@@ -1,0 +1,27 @@
+/*   StratMaster Test Case
+ *   ALGORITHM with single param 
+ *   REVISED order item [VM]
+ */
+
+USE ACCOUNT ac_master;
+
+ALGORITHM al_coolness(CURRENCY #buy_price)
+{
+	SET { buy_price = 200.00 }
+	IF:
+	{
+		TRUE	
+	}
+}
+
+STRATEGY hello
+{
+	CURRENCY zbra_price;
+
+	WHEN ( al_coolness(#zbra_price) IS TRUE ) 
+	{
+		 BUY { WHAT : SECURITY( EQTY(ZBRA) ).AMOUNT(100).PRICE(zbra_price); }
+                 SELL{ WHAT : SECURITY( EQTY(INTC) ).AMOUNT(1000).PRICE( JPY(233.11) ); }
+                 BUY { WHAT: SECURITY( EQTY(SHAK) ).AMOUNT(440).PRICE( 44.44 ); }
+	}
+}
