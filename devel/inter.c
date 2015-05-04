@@ -195,7 +195,6 @@ PRINTI(("before create order: %s\n",  temp_item->prc->curr->p));
 
 		temp_order = create_order(temp_item->sec->sec, temp_item->number->con.int_value->value, temp_item->prc->curr, temp_item->type);
 		
-		PRINTI(("after create order\n"));	
 		queue_put_order(&order_queue, temp_order, args->strat_name);
 
 	//	fprintf(stderr, "[INFO] Starting balance in ac_master: %ld\n", get_available_cash(ac_master)); 
@@ -246,11 +245,9 @@ void *strategy_process_handler(void *arg)
 
 
 	/* Check if value was set */
-
-
 	PRINTI(("[INFO] Return from process statement: Retrieving argument...\n"));
 	struct symbol_value *param_val = symbol_table_get_value(symtable, 0, "zbra_price");
-	PRINTI(("[INFO] Parameter %s is now set to: %s\n", param_val->identifier , ((struct currency *)param_val->nodePtr)->p ));	
+	PRINTI(("[INFO] Parameter %s is now set to: %s\n", param_val->identifier, ((ast_currency *)param_val->nodePtr)->curr->p));
 	PRINTI(("[INFO] Exiting STRATEGY process thread\n"));
 	return (void *)0;
 }
@@ -264,7 +261,7 @@ void *process_handler(void *arg)
 	PRINTI(("[INFO] Executing process statement.\n"));
 	void *result;
 	int retval;
-	int counter = 3;	
+	int repeat = 0;       //TODO: only works without UNTIL()
 	pthread_t algo_thread;
 	pthread_t order_thread;
 
@@ -314,9 +311,6 @@ void *process_handler(void *arg)
 		if( algo_data->is_dead )
 			break;
 
-		/* Release lock */
-		pthread_mutex_unlock(&algo_data->mutex);
-
 		/* Send orders to action-list thread */
 		struct action_list_args *args = (struct action_list_args *)malloc(sizeof(struct action_list_args));
 		if( args == NULL )
@@ -334,33 +328,37 @@ void *process_handler(void *arg)
 		PRINTI(("Action list bf order: %s\n", proc_st->action_list->order[0]->prc->curr->p));
 
 		struct symbol_value *param_val = symbol_table_get_value(symtable, 0, "zbra_price");
-		PRINTI(("[INFO] Parameter %s is now set to: %s\n", param_val->identifier , ((struct currency *)param_val->nodePtr)->p ));
+		PRINTI(("[INFO] Parameter %s is now set to: %s\n", param_val->identifier , ((ast_currency *)param_val->nodePtr)->curr->p));
 		
 		
 		if( pthread_create(&order_thread, NULL, strategy_action_list_handler, args) != 0 )
 			die("action-list thread create fail");
 		if( pthread_join(order_thread, NULL) != 0 )
 			perror("action_list join");
-	} while( counter-- > 0 );
+
+		/* Release lock */
+		pthread_mutex_unlock(&algo_data->mutex);
+
+	} while( repeat );
 
 	if( algo_data->is_dead )
 	{	/* Release lock */
 		pthread_mutex_unlock(&algo_data->mutex);
+		retval = pthread_join(algo_thread, &result);
+		if( retval != 0 )
+			perror("thread join");
+	}
+	else
+	{   /* ALGO is not dead; need to cancel */
+		if( pthread_cancel(algo_thread) != 0 )
+			perror("thread cancellation");
+		retval = pthread_join(algo_thread, &result);
+		if( retval != 0 )
+			perror("thread join");
+		if( result != PTHREAD_CANCELED )
+			perror("thread was not canceled");
 	}
 
-	if( pthread_join(algo_thread, NULL) != 0 )
-		perror("algorithm thread join");
-
-
-	if( pthread_cancel(order_handler_thread) != 0 )
-		perror("order_handler_thread cancellation");
-
-	retval = pthread_join(order_handler_thread, &result);
-	if( retval != 0 )
-		perror("order_handler_thread join");
-
-	if( result != PTHREAD_CANCELED )
-		perror("order_handler_thread was not canceled");
 	pthread_mutex_destroy(&algo_data->mutex);
 	pthread_cond_destroy(&algo_data->cond_true);
 
@@ -429,7 +427,7 @@ void *algorithm_handler(void *arg)
 		if( algo_param->type_specifier != strat_argu->type_specifier )
 		{
 			//TODO: we shouldn't die here; need to return error message
-			die("paramater type mismatch");
+			die("parameter type mismatch");
 		}
 
 		/* make the assignment to effect the link */
@@ -450,8 +448,6 @@ void *algorithm_handler(void *arg)
 	num_stmt_in_set = set_stmt->argu_list->argu_list.num_of_argument_expression_list;
 	PRINTI(("---------------------> number of stmt in set statement is %d\n", num_stmt_in_set));
 
-
-
 	char *token_separators = "\t \n";
 	char *ticker;
 	char *date;
@@ -468,12 +464,13 @@ void *algorithm_handler(void *arg)
 	
 /*	struct security *next_sec = create_security(EQTY, "TEST");
 	struct security *test_sec = create_security(EQTY, "ZBRA");
-	ca.n = next_sec;
-	ca.t = test_sec;
-	ca.f = algo->d->fp; */
+*/
+//	ca.n = next_sec;
+//	ca.t = test_sec;
+	ca.f = algo->d->fp;
 	pthread_cleanup_push(cleanup_algorithm, &ca);
 
-	int keep_running = 10;
+	int keep_running = 1;
 
 	while( keep_running )
 	{
@@ -482,57 +479,57 @@ void *algorithm_handler(void *arg)
 			ticker = strtok_r(buf, token_separators, &bk);
 			date   = strtok_r(NULL, token_separators, &bk);
 			price  = strtok_r(NULL, token_separators, &bk);
-                        PRINTI(("ticker is %s\n", ticker));
-                        PRINTI(("price is %s\n", price));
-                        PRINTI(("date is %s\n", date));
+			PRINTI(("ticker is %s\n", ticker));
+			PRINTI(("price is %s\n", price));
+			PRINTI(("date is %s\n", date));
 
-		//	copy_name(next_sec->sym, ticker);
-		//	long pr = price_to_long(price);
+			//	copy_name(next_sec->sym, ticker);
+			//	long pr = price_to_long(price);
 
 			/* DO TEST */
-		//	if( (is_equal_sec(next_sec, test_sec) == TRUE) && (pr < 2700) )
-		//	{
-		//		keep_running = FALSE;
-		//		fprintf(stderr, "[INFO] ALGO FOUND A PRICE TARGET: $%s\n", price);
-				/* Set argument value to new price for return to STRATEGY */
-		//		copy_name(((struct price *)algo->args)->p, price);
+			//	if( (is_equal_sec(next_sec, test_sec) == TRUE) && (pr < 2700) )
+			//	{
+			//		keep_running = FALSE;
+			//		fprintf(stderr, "[INFO] ALGO FOUND A PRICE TARGET: $%s\n", price);
+			/* Set argument value to new price for return to STRATEGY */
+			//		copy_name(((struct price *)algo->args)->p, price);
 			strcpy(algo->d->current_data.eqty, ticker);
 			strcpy(algo->d->current_data.date, date);
 			strcpy(algo->d->current_data.price, price);
-	              if (ex_exp(set_stmt->exp)) {
-		           for (i = 0 ; i < num_stmt_in_set; i++) {
-			        ex_exp(set_stmt->argu_list->argu_list.exp[i]);
-		           }
-                           sleep(3);
-				
+			if (ex_exp(set_stmt->exp)) 
+			{
+				keep_running = 0;
+
+				for (i = 0 ; i < num_stmt_in_set; i++) 
+				{
+					ex_exp(set_stmt->argu_list->argu_list.exp[i]);
+				}
+
 				pthread_cond_signal(&algo->cond_true);
 
 				pthread_mutex_lock(&algo->mutex);
 
 				pthread_testcancel();
-				
+
 				pthread_cond_wait(&algo->cond_true, &algo->mutex);
-				
-				
+
+				keep_running = 1;
+
 				pthread_mutex_unlock(&algo->mutex);
-	               }
-		
+			}
 
-
-			//}
 			memset(buf, 0, IOBUFSIZE);
 			usleep(interval);
-	//		keep_running--;
 		}
-	//	else
-	//	{
-	//		keep_running = FALSE;
-	//	}
+		else
+		{
+			keep_running = 0;
+		}
 	}
 	algo->is_dead = 1;
-/*	if( next_sec != NULL )
+	/*	if( next_sec != NULL )
 		free(next_sec);
-	if( test_sec != NULL )
+		if( test_sec != NULL )
 		free(test_sec); */
 
 	if( algo->d->fp )
