@@ -204,11 +204,6 @@ PRINTI(("before create order: %s\n",  temp_item->prc->curr->p));
 	return (void *)0;
 }
 
-
-
-/* TODO: pass a pointer to strategy symtab more nicely*/
-struct symbol_table *strat_symtab; 
-
 /*
  *   Handler for STRATEGY with process statements.
  */
@@ -233,7 +228,6 @@ void *strategy_process_handler(void *arg)
 		args->procst = strategy->process_statement[i];
 		args->strat = strategy;
 		args->symtable = strategy->sym;
-		strat_symtab = strategy->sym;
 		copy_name(args->name, strategy->name);
 
 		/*  execute process statements */
@@ -531,7 +525,7 @@ int call_algo(ast_exp *p)
 		algo_data->args     = algo_args.exp;
 		sym_entry = (struct symbol_value*)ex_exp(p->oper.op1);
 		algo_data->algo_ptr = sym_entry->nodePtr;
-		algo_data->sym = strat_symtab;
+		algo_data->sym = p->oper.op1->id.sym;
 
 		if( pthread_cond_init(&(algo_data->cond_true), NULL) != 0 )
 			die("in process_handler:error initializing cond var");
