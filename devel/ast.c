@@ -406,7 +406,7 @@ create_ast_currency(int type, char *price)
 
 
 ast_security *
-create_ast_security(int sec_type, char * name)
+create_ast_security(int sec_type, const char * name)
 {
 	ast_security *security_node = malloc( sizeof(ast_security) );
 	if ( security_node == NULL )
@@ -993,7 +993,7 @@ int install_symbol(int id_type, const char *id, struct symbol_table *symtab)
 			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_ast_currency(USD_T, NULL));
 			break;
 		case SECURITY_T:
-			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_security(id_type, NULL));
+			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_ast_security(0, id));
 			break;
 		case INT_T:
 			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_integer(0));
