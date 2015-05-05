@@ -276,7 +276,7 @@ void *process_handler(void *arg)
 		if ( ex_exp(args->procst->expression)) {
 			ex_action_list(args->procst->action_list);
 		}
-	} while (0); /* TODO: just run ex_exp for until statement */
+	} while (ex_exp(args->procst->until_exp)); /* TODO: just run ex_exp for until statement */
 
 	return (void *)0;
 }

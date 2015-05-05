@@ -785,7 +785,7 @@ create_process_statement(ast_exp *expression, ast_action_list *action_list)
    /* process_statement->type = type;*/
     process_statement->expression = expression;
     process_statement->action_list = action_list;
-  /*  process_statement->expression2 = expression2;  */
+    process_statement->until_exp = NULL;
     
     PRINT(("%s\n", __func__));
     

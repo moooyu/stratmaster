@@ -184,6 +184,7 @@ typedef struct {
    /* int type;*/
     ast_exp *expression;
     ast_action_list *action_list;
+    ast_exp *until_exp;
    /* ast_expression *expression2; */
 }ast_process_statement;
 
