@@ -256,6 +256,18 @@ void *strategy_process_handler(void *arg)
 	return (void *)0;
 }
 
+void ex_action_list(ast_action_list *actions)
+{
+	ast_order_item *temp_item;
+	int i = 0;
+	struct order *temp_order;
+
+	for(i = 0; i < actions->num_of_orders; i++) {
+		temp_item = actions->order[i];
+		temp_order = create_order(temp_item->sec->sec, temp_item->number->con.int_value->value, temp_item->prc->curr, temp_item->type);
+		queue_put_order(&order_queue, temp_order, "TODO startname");
+	}
+}
 
 /*
  *  Handler for a process (WHEN) statement.
@@ -265,19 +277,10 @@ void *process_handler(void *arg)
 	PRINTI(("[INFO] Executing process statement.\n"));
 
 	struct proc_args *args = (struct proc_args *)arg;
-	int i = 0;
 	
 	do {
 		if ( ex_exp(args->procst->expression)) {
-			ast_action_list *actions = args->procst->action_list;
-
-			ast_order_item *temp_item;
-			struct order *temp_order;
-			for(i = 0; i < actions->num_of_orders; i++) {
-				temp_item = actions->order[i];
-				temp_order = create_order(temp_item->sec->sec, temp_item->number->con.int_value->value, temp_item->prc->curr, temp_item->type);
-				queue_put_order(&order_queue, temp_order, "TODO startname");
-			}
+			ex_action_list(args->procst->action_list);
 		}
 	} while (0); /* TODO: just run ex_exp for until statement */
 
