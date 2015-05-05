@@ -61,6 +61,11 @@ void print_account_positions(struct account *acct)
 	}
 }
 
+GHashTable *algo_map;
+int algo_map_init()
+{
+	algo_map = g_hash_table_new(g_str_hash, g_str_equal);
+}
 
 void run_interp(ast_program * program)
 {
@@ -73,6 +78,7 @@ void run_interp(ast_program * program)
 	pthread_t strat_thread[MAX_STRATEGIES];
 	pthread_t algo_thread[MAX_ALGORITHMS];
 
+	algo_map_init();
 
 	/* initialize the order queue */
 	order_queue_init(&order_queue);
@@ -250,7 +256,7 @@ void *strategy_process_handler(void *arg)
 	return (void *)0;
 }
 
-void ex_action_list(ast_action_list *actions)
+void ex_action_list(ast_action_list *actions, char * strat_name)
 {
 	ast_order_item *temp_item;
 	int i = 0;
@@ -259,8 +265,38 @@ void ex_action_list(ast_action_list *actions)
 	for(i = 0; i < actions->num_of_orders; i++) {
 		temp_item = actions->order[i];
 		temp_order = create_order(temp_item->sec->sec, temp_item->number->con.int_value->value, temp_item->prc->curr, temp_item->type);
-		queue_put_order(&order_queue, temp_order, "TODO startname");
+		queue_put_order(&order_queue, temp_order, strat_name);
 	}
+}
+
+void terminate_algo_thread(struct algorithm *algo_data)
+{
+	void *result;
+	int retval;
+
+	if (!algo_data)
+		return;
+
+	if( algo_data->is_dead )
+	{	/* Release lock */
+		pthread_mutex_unlock(&algo_data->mutex);
+		retval = pthread_join(algo_data->algo_thread, &result);
+		if( retval != 0 )
+			perror("thread join");
+	}
+	else
+	{   /* ALGO is not dead; need to cancel */
+		if( pthread_cancel(algo_data->algo_thread) != 0 )
+			perror("thread cancellation");
+		retval = pthread_join(algo_data->algo_thread, &result);
+		if( retval != 0 )
+			perror("thread join");
+		if( result != PTHREAD_CANCELED )
+			perror("thread was not canceled");
+	}
+
+	pthread_mutex_destroy(&algo_data->mutex);
+	pthread_cond_destroy(&algo_data->cond_true);
 }
 
 /*
@@ -271,12 +307,23 @@ void *process_handler(void *arg)
 	PRINTI(("[INFO] Executing process statement.\n"));
 
 	struct proc_args *args = (struct proc_args *)arg;
+	char* algo_id;
+	struct algorithm *algo_data;
+
+	algo_id = args->procst->expression->oper.op1->oper.op1->id.value;
 	
 	do {
 		if ( ex_exp(args->procst->expression)) {
-			ex_action_list(args->procst->action_list);
+			/* algo_data is created only after the first call to algo */
+			algo_data = g_hash_table_lookup(algo_map, algo_id);
+			if (algo_data->is_dead)
+				break;
+			ex_action_list(args->procst->action_list, args->strat->name);
 		}
-	} while (ex_exp(args->procst->until_exp)); /* TODO: just run ex_exp for until statement */
+	} while (ex_exp(args->procst->until_exp));
+	
+	terminate_algo_thread(algo_data);
+	free(args);
 
 	return (void *)0;
 }
@@ -499,22 +546,15 @@ void* ex_stmt (ast_statement *statement)
 	return NULL;
 }
 
-int algo_running = 0;
-
-/* TODO: make a map. Key is algo name and data is a pointer to struct algorithm */
-struct algorithm *algo_data = NULL;
-
 /* Caller is thread which handles WHEN statement*/
 int call_algo(ast_exp *p)
 {
 	int ret = 1; /* Algorithm returns 1 always */
 	struct symbol_value* sym_entry;
-	pthread_t algo_thread;
-
-	/* TODO: check if algo thread is running correctly */
-	if (!algo_running) {
-		/* TODO: use correct datafeed*/
-		PRINTI(("--------------------------> let's make algo \n"));
+	struct algorithm *algo_data;
+	char* algo_id = p->oper.op1->id.value;
+	algo_data = g_hash_table_lookup(algo_map, algo_id);
+	if (!algo_data) {
 		algo_data = create_algorithm(df1);
 
 		/* Get argument expr list */
@@ -526,6 +566,7 @@ int call_algo(ast_exp *p)
 		sym_entry = (struct symbol_value*)ex_exp(p->oper.op1);
 		algo_data->algo_ptr = sym_entry->nodePtr;
 		algo_data->sym = p->oper.op1->id.sym;
+		algo_data->is_dead = 0;
 
 		if( pthread_cond_init(&(algo_data->cond_true), NULL) != 0 )
 			die("in process_handler:error initializing cond var");
@@ -535,12 +576,10 @@ int call_algo(ast_exp *p)
 			die("in process_handler: error initializing mutex");
 		}
 
-		PRINTI(("--------------------------> algo go! \n"));
-		if( pthread_create(&algo_thread, NULL, algorithm_handler, algo_data) != 0 )
+		if( pthread_create(&algo_data->algo_thread, NULL, algorithm_handler, algo_data) != 0 )
 			die("algorithm thread create fail");
 
-		PRINTI(("--------------------------> algo after! %x\n", algo_data));
-		algo_running = 1;
+		g_hash_table_insert(algo_map, (gpointer) algo_id, algo_data);
 	}
 
 	pthread_mutex_lock(&algo_data->mutex);

@@ -392,7 +392,6 @@ void ex_order_item(ast_order_item * order_item);
 void *order_handler(void *arg);
 void ex_process_statement(ast_process_statement * process_statement);
 void *algorithm_handler(void *arg);
-void ex_action_list(ast_action_list * action_list);
 
 //#define DEBUG 1
 

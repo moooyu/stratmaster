@@ -105,6 +105,7 @@ struct order_item {
 struct algorithm {
 	pthread_mutex_t mutex;         /* lock */
 	pthread_cond_t cond_true;      /* condition variable */
+	pthread_t algo_thread;
 	struct data *d;                /* the data source */
 	int  is_dead;                  /* is algorithm dead? */
 	int  num_args;                 /* number of arguments */
