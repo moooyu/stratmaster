@@ -773,7 +773,7 @@ add_process_statement_list(ast_process_statement_list * list, ast_process_statem
 }
 
 ast_process_statement *
-create_process_statement(ast_exp *expression, ast_action_list *action_list)
+create_process_statement(ast_exp *expression, ast_action_list *action_list, ast_exp* until_exp)
 {
     ast_process_statement * process_statement;
     
@@ -782,16 +782,18 @@ create_process_statement(ast_exp *expression, ast_action_list *action_list)
         printf("out of memory in %s\n", __func__);
         return NULL;
     }
-   /* process_statement->type = type;*/
+    /*process_statement->type = type;*/
     process_statement->expression = expression;
     process_statement->action_list = action_list;
-  /*  process_statement->expression2 = expression2;  */
+    process_statement->until_exp = until_exp;
     
     PRINT(("%s\n", __func__));
     
     return process_statement;
     
 }
+
+
 
 void print_ast(ast_program *program)
 {	
@@ -926,6 +928,12 @@ void print_process_statement(ast_process_statement * process_statement)
 		printf("ORDER %d:\n", i );
 		print_order(process_statement->action_list->order[i]);
 	}
+	if (process_statement->until_exp)
+	{
+		printf("================>Until Expression tree:\n");
+		print_exp(process_statement->until_exp);
+		printf("================>End of Until Expression tree:\n");
+	}
 }
 
 void print_exp(ast_exp *exp)
@@ -976,10 +984,10 @@ int install_symbol(int id_type, const char *id, struct symbol_table *symtab)
 			return symbol_table_put_value(symtab, id_type, id, (void*)create_account());
 			break;
 		case DATAFEED_T:
-			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id, id_type));
+			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id));
 			break;
 		case DATABASE_T:
-	  		ret = symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id, id_type));
+	  		ret = symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id));
 			break;
 		case CURRENCY_T:
 			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_ast_currency(USD_T, NULL));

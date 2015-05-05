@@ -9,7 +9,7 @@
 #define MAX_STRATEGIES 8
 #define MAX_ALGORITHMS 8
 #define MAX_PROCSTATEMENTS 8
-
+#define NUMPRICES 100
 
 struct proc_args {
 	char name[NAMEBUF];
@@ -19,8 +19,8 @@ struct proc_args {
 };
 
 struct action_list_args {
-	char *strat_name;
-	ast_action_list *actions;
+	char strat_name[NAMEBUF];
+	ast_action_list *order_list;
 };
 
 
@@ -47,20 +47,15 @@ static pthread_t order_handler_thread;
 static struct account *ac_master;
 static struct data *df1;
 static struct cleanup_args ca;
+struct symbol_table *global_symtable;
+static struct data *db_prices;
+static struct position pricedata[NUMPRICES];
 
-
-void print_account_positions(struct account *acct)
+GHashTable *algo_map;
+int algo_map_init()
 {
-	int i;
-	int num = acct->num_positions;
-	fprintf(stderr, "[ACCT-INFO] ac_master: Num. of positions: %d\n", acct->num_positions);
-	for(i = 0; i < num; i++)
-	{
-		fprintf(stderr, "[ACCT-INFO] %s: Num. of shares: %d Cost: %s\n", acct->positions[i].sec.sym,
-				acct->positions[i].amt, acct->positions[i].purch_price.p);
-	}
+	algo_map = g_hash_table_new(g_str_hash, g_str_equal);
 }
-
 
 void run_interp(ast_program * program)
 {
@@ -72,7 +67,32 @@ void run_interp(ast_program * program)
 	void *result;
 	pthread_t strat_thread[MAX_STRATEGIES];
 	pthread_t algo_thread[MAX_ALGORITHMS];
+	setlocale(LC_NUMERIC, "");
 
+	algo_map_init();
+
+	db_prices = create_data_source("../data/db_prices");
+
+	/* Load prices */
+	char *token_separators = "\t \n";
+	char *ticker;
+	char *price;
+	char buf[IOBUFSIZE];
+	memset(buf, 0, IOBUFSIZE);
+	int index = 0;
+	while(  (fgets(buf, sizeof(buf), db_prices->fp) != NULL) && index < NUMPRICES )
+	{
+		ticker = strtok(buf, token_separators);
+		price  = strtok(NULL, token_separators);
+
+		pricedata[index].sec = *create_security(0, ticker);
+		pricedata[index].total_cost = price_to_long(price);
+		index++;
+		memset(buf, 0, IOBUFSIZE);
+	}
+
+	char pricebuf[NAMEBUF];
+	memset(pricebuf, 0, NAMEBUF);
 
 	/* initialize the order queue */
 	order_queue_init(&order_queue);
@@ -86,13 +106,12 @@ void run_interp(ast_program * program)
 	 *        USE-LIST 
 	 * *************************/
 	/* Create account */
-	// ac_master = create_account(); 
 	ac_master = (struct account *)(symbol_table_get_value(program->sym, ACCOUNT_T, "ac_master")->nodePtr);
 
 	//print_account_positions(ac_master);
 	/* Create data source */
-	if( (df1 = create_data_source("../data/olddata/df_ZBRA", DATAFEED)) == NULL )
-	  	die("error creating data source");
+//	if( (df1 = create_data_source("../data/olddata/df_ZBRA", DATAFEED)) == NULL )
+//	  	die("error creating data source");
 
 	/* ************************
 	 *    EXECUTE STRATEGIES 
@@ -136,7 +155,8 @@ void run_interp(ast_program * program)
 		perror("order_handler_thread was not canceled");
 
 	queue_destroy(&order_queue);	
-
+	/* Print account summary before exit */
+	print_account_summary(ac_master, "ac_master", pricedata, NUMPRICES);
 	/* free account */
 	if( ac_master != NULL)
 		free(ac_master);
@@ -170,41 +190,6 @@ void *strategy_order_handler(void *arg)
 	}
 	return (void *)0;
 }
-
-
-/*
- *  Handler for STRATEGY action list.
- */
-void *strategy_action_list_handler(void *arg)
-{
-	PRINTI(("[INFO] Starting STRATEGY action list handler thread.\n"));
-	struct action_list_args *args = (struct action_list_args *) arg;
-	ast_action_list *actions = args->actions;
-
-	int i;
-	ast_order_item *temp_item;
-	struct order *temp_order;
-	////iterating over orders
-	for(i = 0; i < actions->num_of_orders; i++)
-	{
-		temp_item = actions->order[i];
-PRINTI(("before create order: %s \n", temp_item->sec->sec->sym));
-PRINTI(("before create order: %d\n",  temp_item->number->con.int_value->value));
-PRINTI(("before create order: %s\n",  temp_item->prc->curr->p));
-
-
-		temp_order = create_order(temp_item->sec->sec, temp_item->number->con.int_value->value, temp_item->prc->curr, temp_item->type);
-		
-		queue_put_order(&order_queue, temp_order, args->strat_name);
-
-	//	fprintf(stderr, "[INFO] Starting balance in ac_master: %ld\n", get_available_cash(ac_master)); 
-	//	print_account_positions(ac_master);
-	}
-	free(args);
-	return (void *)0;
-}
-
-
 
 /*
  *   Handler for STRATEGY with process statements.
@@ -252,107 +237,40 @@ void *strategy_process_handler(void *arg)
 	return (void *)0;
 }
 
-
-/*
- *  Handler for a process (WHEN) statement.
- */
-void *process_handler(void *arg)
+void ex_action_list(ast_action_list *actions, char * strat_name)
 {
-	PRINTI(("[INFO] Executing process statement.\n"));
+	ast_order_item *temp_item;
+	int i = 0;
+	struct order *temp_order;
+
+	for(i = 0; i < actions->num_of_orders; i++) {
+		temp_item = actions->order[i];
+		temp_order = create_order(temp_item->sec->sec, temp_item->number->con.int_value->value, temp_item->prc->curr, temp_item->type);
+		queue_put_order(&order_queue, temp_order, strat_name);
+	}
+}
+
+void terminate_algo_thread(struct algorithm *algo_data)
+{
 	void *result;
 	int retval;
-	int repeat = 0;       //TODO: only works without UNTIL()
-	pthread_t algo_thread;
-	pthread_t order_thread;
 
-	/* Retrieve args: STRATEGY + symbol table + argument list */
-	struct proc_args *args = (struct proc_args *)arg;
-	struct symbol_table *symtable = args->symtable;	
-	ast_strategy *strat = args->strat;
-	ast_process_statement *proc_st = args->procst;
-	
-	/* We assume that we only call Algorithm at this point */
-
-	struct algorithm *algo_data;
-	algo_data = (struct algorithm*) ex_exp(args->procst->expression);
-	algo_data->sym = symtable; /* This is dirty, but no way to get symtable in the ex_exp */
-
-	/* Initialize lock & condition variable */
-	if( pthread_cond_init(&(algo_data->cond_true), NULL) != 0 )
-		die("in process_handler:error initializing cond var");
-
-	if( pthread_mutex_init(&(algo_data->mutex), NULL) != 0 )
-	{
-		pthread_cond_destroy(&algo_data->cond_true);
-		die("in process_handler: error initializing mutex");
-	}
-
-	/* Spin up algorithm thread */
-	if( pthread_create(&algo_thread, NULL, algorithm_handler, algo_data) != 0 )
-		die("algorithm thread create fail");
-
-	/*****************************************************
-	 *                UNTIL STATEMENT
-	 *****************************************************/
-	do
-	{	/************************************** 
-		 *       Execute WHEN statement 
-		 **************************************/
-		pthread_mutex_lock(&algo_data->mutex);
-		pthread_cond_wait(&algo_data->cond_true, &algo_data->mutex);
-
-		/*******************************
-		 *  STRATEGY BLOCK: action-list
-		 ******************************/
-		/* 
-		 * If we get here, the ALGORITHM has sent a "true" signal 
-		 * First check if algorithm is still alive
-		 */
-		if( algo_data->is_dead )
-			break;
-
-		/* Send orders to action-list thread */
-		struct action_list_args *args = (struct action_list_args *)malloc(sizeof(struct action_list_args));
-		if( args == NULL )
-			die("malloc failed making action_list_args\n");
-		args->strat_name = strat->name;
-		args->actions = proc_st->action_list;
-
-		/* Looking at action list */
-		PRINTI(("Action list bf order: %s\n", proc_st->action_list->order[0]->sec->sec->sym)); 
-		PRINTI(("Action list bf order: %d\n", proc_st->action_list->order[0]->number->con.int_value->value));
-
-		if(proc_st->action_list->order[0]->prc->curr->p == NULL)
-			fprintf(stderr, "CURR object is null\n");	
-
-		PRINTI(("Action list bf order: %s\n", proc_st->action_list->order[0]->prc->curr->p));
-
-		struct symbol_value *param_val = symbol_table_get_value(symtable, 0, "zbra_price");
-		PRINTI(("[INFO] Parameter %s is now set to: %s\n", param_val->identifier , ((ast_currency *)param_val->nodePtr)->curr->p));
-		
-		
-		if( pthread_create(&order_thread, NULL, strategy_action_list_handler, args) != 0 )
-			die("action-list thread create fail");
-		if( pthread_join(order_thread, NULL) != 0 )
-			perror("action_list join");
-
-		/* Release lock */
-		pthread_mutex_unlock(&algo_data->mutex);
-
-	} while( repeat );
+	if (!algo_data)
+		return;
 
 	if( algo_data->is_dead )
-	{	/* Release lock */
-		pthread_mutex_unlock(&algo_data->mutex);
-		retval = pthread_join(algo_thread, &result);
+	{
+		PRINTI(("[INFO] ALGORITHM thread has died.\n"));
+		retval = pthread_join(algo_data->algo_thread, &result);
 		if( retval != 0 )
 			perror("thread join");
 	}
 	else
-	{   /* ALGO is not dead; need to cancel */
-		if( pthread_cancel(algo_thread) != 0 )
+	{      /* ALGO is not dead; need to cancel */
+		PRINTI(("[INFO] Canceling ALGORITHM thread.\n"));
+		if( pthread_cancel(algo_data->algo_thread) != 0 )
 			perror("thread cancellation");
-		retval = pthread_join(algo_thread, &result);
+		retval = pthread_join(algo_data->algo_thread, &result);
 		if( retval != 0 )
 			perror("thread join");
 		if( result != PTHREAD_CANCELED )
@@ -360,9 +278,37 @@ void *process_handler(void *arg)
 	}
 
 	pthread_mutex_destroy(&algo_data->mutex);
-	pthread_cond_destroy(&algo_data->cond_true);
+	pthread_cond_destroy(&algo_data->algo_stop);
+	pthread_cond_destroy(&algo_data->algo_go);
+}
 
+/*
+ *  Handler for a process (WHEN) statement.
+ */
+void *process_handler(void *arg)
+{
+	PRINTI(("[INFO] Executing process statement.\n"));
+
+	struct proc_args *args = (struct proc_args *)arg;
+	char* algo_id;
+	struct algorithm *algo_data;
+
+	algo_id = args->procst->expression->oper.op1->oper.op1->id.value;
+
+	do {
+		if ( ex_exp(args->procst->expression) ) {
+			/* algo_data is created only after the first call to algo */
+			algo_data = g_hash_table_lookup(algo_map, algo_id);
+			//Check that ALGORITHM has a result for us AND is still alive
+			if (algo_data->has_result && !algo_data->is_dead)
+				ex_action_list(args->procst->action_list, args->strat->name);
+
+		}
+	} while ( !algo_data->is_dead && ex_exp(args->procst->until_exp) );
+	
+	terminate_algo_thread(algo_data);
 	free(args);
+
 	return (void *)0;
 }
 
@@ -469,12 +415,20 @@ void *algorithm_handler(void *arg)
 //	ca.t = test_sec;
 	ca.f = algo->d->fp;
 	pthread_cleanup_push(cleanup_algorithm, &ca);
-
-	int keep_running = 1;
-
-	while( keep_running )
+	int found;
+	while( 1 )
 	{
-		if( fgets(buf, sizeof(buf), algo->d->fp) != NULL )
+		//Start of ALGORITHM (producer) sequence
+		pthread_mutex_lock(&algo->mutex);
+		pthread_testcancel();
+		algo->has_result = 0;
+		while( !algo->can_run )
+			pthread_cond_wait(&algo->algo_go, &algo->mutex);
+
+		//if we get here, ALGORITHM was told to go ahead by STRATEGY
+		memset(buf, 0, IOBUFSIZE);
+		found = 0;
+		while( !found && (fgets(buf, sizeof(buf), algo->d->fp) != NULL) )
 		{	
 			ticker = strtok_r(buf, token_separators, &bk);
 			date   = strtok_r(NULL, token_separators, &bk);
@@ -483,50 +437,36 @@ void *algorithm_handler(void *arg)
 			PRINTI(("price is %s\n", price));
 			PRINTI(("date is %s\n", date));
 
-			//	copy_name(next_sec->sym, ticker);
-			//	long pr = price_to_long(price);
-
-			/* DO TEST */
-			//	if( (is_equal_sec(next_sec, test_sec) == TRUE) && (pr < 2700) )
-			//	{
-			//		keep_running = FALSE;
-			//		fprintf(stderr, "[INFO] ALGO FOUND A PRICE TARGET: $%s\n", price);
-			/* Set argument value to new price for return to STRATEGY */
-			//		copy_name(((struct price *)algo->args)->p, price);
 			strcpy(algo->d->current_data.eqty, ticker);
 			strcpy(algo->d->current_data.date, date);
 			strcpy(algo->d->current_data.price, price);
 			if (ex_exp(set_stmt->exp)) 
 			{
-				keep_running = 0;
 
 				for (i = 0 ; i < num_stmt_in_set; i++) 
 				{
 					ex_exp(set_stmt->argu_list->argu_list.exp[i]);
 				}
 
-				pthread_cond_signal(&algo->cond_true);
-
-				pthread_mutex_lock(&algo->mutex);
-
-				pthread_testcancel();
-
-				pthread_cond_wait(&algo->cond_true, &algo->mutex);
-
-				keep_running = 1;
-
+				algo->is_dead = 0;
+				algo->has_result = 1;
+				pthread_cond_signal(&algo->algo_stop);
 				pthread_mutex_unlock(&algo->mutex);
+				found = 1;
 			}
 
 			memset(buf, 0, IOBUFSIZE);
 			usleep(interval);
 		}
-		else
+
+		//Check if we reached EOF
+		if( feof(algo->d->fp) > 0 )
 		{
-			keep_running = 0;
+			PRINTI(("Reached EOF in ALGORITHM\n"));
+			break;
 		}
 	}
-	algo->is_dead = 1;
+
 	/*	if( next_sec != NULL )
 		free(next_sec);
 		if( test_sec != NULL )
@@ -534,8 +474,15 @@ void *algorithm_handler(void *arg)
 
 	if( algo->d->fp )
 		fclose(algo->d->fp);
-	pthread_cond_signal(&algo->cond_true);
+	//Need to set has_result = 1 since STRATEGY is sitting
+	//on a while loop checking this variable
+	algo->has_result = 1;
+	algo->is_dead = 1;
+	//Signal STRATEGY and unlock mutex
+	pthread_cond_signal(&algo->algo_stop);
+	pthread_mutex_unlock(&algo->mutex);
 	pthread_cleanup_pop(0);
+	PRINTI(("Returning from ALGORITHM handler: ALGORITHM has died\n"));
 	return (void *)0;
 }
 
@@ -548,26 +495,34 @@ void *order_handler(void *arg)
 	{
 		/* Wait for order */
 		next_order = queue_get_order(&order_queue);
-	//	long res = can_add_position(ac_master, next_order->ord);
-	//	if( res >= 0 )
-	//	{
-			/* Issue the order */
-			PRINTI(("[INFO] ISSUING ORDER.\n"));
-			emit_order(next_order);
-			/* add the position to the account */
-	/*		long res = add_position(ac_master, next_order->ord);
-			if( res < 0 )
-				fprintf(stderr, "ERROR: negative cash balance: order should not have gone through\n");
-			fprintf(stderr, "[INFO] Account balance after order: %ld\n", get_available_cash(ac_master));
-		}
-		else
+
+		switch( next_order->ord->order_t )
 		{
-			fprintf(stderr, "ERROR: not enough available cash--order rejected\n");
+			case BUY_ORDER:
+				if( can_add_position(ac_master, next_order->ord) < 0 )
+					fprintf(stderr, "ERROR: cannot add position\n");
+				else
+				{
+					/* Issue the order */
+					PRINTI(("[INFO] ISSUING ORDER.\n"));
+					emit_order(next_order);
+					add_position(ac_master, next_order->ord);
+				}
+				break;
+
+			case SELL_ORDER:
+				if( can_sell_position(ac_master, next_order->ord) < 0 )
+					fprintf(stderr, "ERROR: cannot sell position\n");
+				else
+				{
+					/* Issue the order */
+					PRINTI(("[INFO] ISSUING ORDER.\n"));
+					emit_order(next_order);
+					subtract_position(ac_master, next_order->ord);
+				}
+				break;
+			default: fprintf(stderr, "ERROR: unknown order type.\n"); break;
 		}
-
-
-		print_account_positions(ac_master);
-	*/			
 		/* free order_item structures */
 		if( next_order->ord != NULL )
 			free(next_order->ord);
@@ -582,6 +537,70 @@ void *order_handler(void *arg)
 void* ex_stmt (ast_statement *statement)
 {
 	return NULL;
+}
+
+/* Caller is thread which handles WHEN statement*/
+int call_algo(ast_exp *p)
+{
+	int ret = 1; /* Algorithm returns 1 always */
+	struct symbol_value* sym_entry;
+	struct algorithm *algo_data;
+	char* algo_id = p->oper.op1->id.value;
+	algo_data = g_hash_table_lookup(algo_map, algo_id);
+	if (!algo_data) {
+		algo_data = create_algorithm(df1);
+
+		/* Get argument expr list */
+		ast_argument_expression_list algo_args = p->oper.op2->argu_list;
+
+		/* Set number of args , argument list pointer, & pointer to ALGORITHM AST node */
+		algo_data->num_args = algo_args.num_of_argument_expression_list;
+		algo_data->args     = algo_args.exp;
+		sym_entry = (struct symbol_value*)ex_exp(p->oper.op1);
+		algo_data->algo_ptr = sym_entry->nodePtr;
+		algo_data->sym = p->oper.op1->id.sym;
+
+		if( pthread_create(&algo_data->algo_thread, NULL, algorithm_handler, algo_data) != 0 )
+			die("algorithm thread create fail");
+
+		g_hash_table_insert(algo_map, (gpointer) algo_id, algo_data);
+	}
+
+	//This is STRATEGY (consumer) side
+	pthread_mutex_lock(&algo_data->mutex);
+	//Let ALGORITHM know it's OK to run
+	algo_data->can_run = 1;
+	pthread_cond_signal(&algo_data->algo_go);
+
+	while( !algo_data->has_result )
+		pthread_cond_wait(&algo_data->algo_stop, &algo_data->mutex);
+
+	//if we get here, ALGORITHM has signaled TRUE
+	algo_data->can_run = 0;
+	//But check if ALGORITHM thread died; if alive
+	//we need to unlock mutex
+	if( !algo_data->is_dead )
+		pthread_mutex_unlock(&algo_data->mutex);
+
+	return ret;
+}
+
+/* return 1 if this exp is algo.
+ * return 0 otherwise
+ */
+int is_algo(ast_exp *p)
+{
+	if (p->type == typeOper) {
+		if (p->oper.oper == OP_FUNC) {
+			int type;
+			struct symbol_value* sym_entry;
+			sym_entry = (struct symbol_value*)ex_exp(p->oper.op1);
+			type = sym_entry->type_specifier;
+			if (type == ALGORITHM_T)
+				return 1;
+		}
+	}
+	return 0;
 }
 
 void* ex_exp(ast_exp *p)
@@ -634,6 +653,19 @@ void* ex_exp(ast_exp *p)
 
 					break;
 
+				case OP_GT:
+					PRINTI(("--------------------------> Operator <\n"));
+					/* TODO: type check */
+
+					if (price_to_long((char*)ex_exp(p->oper.op1))> price_to_long((char*)ex_exp(p->oper.op2)))
+						ret = (void*)(intptr_t)1;
+					else
+						ret = (void*)(intptr_t)0;
+
+					break;
+
+
+
 				case OP_ASSIGN:
 					PRINTI(("--------------------------> Operator =\n"));
 					struct symbol_value* symval;
@@ -644,18 +676,10 @@ void* ex_exp(ast_exp *p)
 				case OP_IS:
 					PRINTI(("--------------------------> Operator IS\n"));
 
-					/* If IS is used for algo call, we do not compare op1 and op2 */
-					if (p->oper.op1->type == typeOper) {
-						if (p->oper.op1->oper.oper == OP_FUNC) {
-							int type;
-							sym_entry = (struct symbol_value*)ex_exp(p->oper.op1->oper.op1);
-							type = sym_entry->type_specifier;
-							if (type == ALGORITHM_T) {
-								ret = ex_exp(p->oper.op1);
-								PRINTI(("--------------------------> Right child of IS is FUNC ALGO Operator\n"));
-								break;
-							}
-						}
+					if(is_algo(p->oper.op1)) {
+						ret = ex_exp(p->oper.op1);
+						PRINTI(("--------------------------> Left child of IS is FUNC ALGO Operator\n"));
+						break;
 					}
 
                                         if (strcmp((char*)ex_exp(p->oper.op1), (char*)ex_exp(p->oper.op2)) == 0){
@@ -666,37 +690,20 @@ void* ex_exp(ast_exp *p)
                                          }
 
 					break;
+
 				case OP_FUNC:
 					PRINTI(("--------------------------> Operator FUNC\n"));
 					int type;
 					sym_entry = (struct symbol_value*)ex_exp(p->oper.op1);
 					type = sym_entry->type_specifier;
-					if (type == ALGORITHM_T)
+					if (type == ALGORITHM_T) {
 						PRINTI(("--------------------------> This is ALGO call to %s\n", sym_entry->identifier));
-					else
-						PRINTI(("--------------------------> This is Function call???\n"));
+						ret = (void*)(intptr_t)call_algo(p);
+					}
+					/* TODO: handle function */
 
-					/* Create algorithm data structure */
-					struct algorithm *algo_data = create_algorithm(df1);
-
-					/* Get argument expr list */
-					ast_argument_expression_list algo_args = p->oper.op2->argu_list;
-					PRINTI(("[INFO] Number of args: %d.\n", algo_args.num_of_argument_expression_list));
-
-
-					PRINTI(("[INFO] arg1 is : %d.\n", algo_args.exp[0]->type));
-					///fprintf(stderr, "[INFO] arg1 is : %d.\n", algo_args.exp[0]->oper.oper);
-					//ast_exp *node = algo_args.exp[0]->oper.op1;
-					//fprintf(stderr, "[INFO] node type is : %d.\n", node->type);
-					//fprintf(stderr, "[INFO] node type name is : %s.\n", node->id.value);
-
-					/* Set number of args , argument list pointer, & pointer to ALGORITHM AST node */
-					algo_data->num_args = algo_args.num_of_argument_expression_list;
-					algo_data->args     = algo_args.exp;
-					algo_data->algo_ptr = sym_entry->nodePtr;
-
-					ret = (void*)algo_data;
 					break;
+
 				case OP_ATTR:
 
 					/*

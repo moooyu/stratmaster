@@ -181,10 +181,10 @@ typedef struct {
 }ast_action_list;
 
 typedef struct {
-   /* int type;*/
+    /*int type;*/
     ast_exp *expression;
     ast_action_list *action_list;
-   /* ast_expression *expression2; */
+    ast_exp *until_exp; 
 }ast_process_statement;
 
 typedef struct {
@@ -369,7 +369,7 @@ add_process_statement_list(ast_process_statement_list * list, ast_process_statem
 create_process_statement(int type, ast_expression *expression, ast_action_list *action_list, ast_expression *expression2);*/
 
 ast_process_statement *
-create_process_statement(ast_exp *expression, ast_action_list *action_list);
+create_process_statement(ast_exp *expression, ast_action_list *action_list, ast_exp *until_exp);
 
 void print_ast(ast_program *program);
 void print_strategy(ast_strategy * strategy);
@@ -391,9 +391,8 @@ void ex_order_item(ast_order_item * order_item);
 void *order_handler(void *arg);
 void ex_process_statement(ast_process_statement * process_statement);
 void *algorithm_handler(void *arg);
-void ex_action_list(ast_action_list * action_list);
 
-//#define DEBUG 1
+#define DEBUG 1
 
 #ifdef DEBUG
 #define PRINT(x)  do { if (DEBUG) dbg_printf x; } while (0)
@@ -402,7 +401,7 @@ void ex_action_list(ast_action_list * action_list);
 #endif
 
 
-#define DEBUGI 0
+#define DEBUGI 1
 
 #ifdef DEBUGI
 #define PRINTI(x)  do { if (DEBUGI) dbg_printf x; } while (0)
