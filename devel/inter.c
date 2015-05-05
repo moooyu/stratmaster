@@ -177,39 +177,6 @@ void *strategy_order_handler(void *arg)
 	return (void *)0;
 }
 
-
-/*
- *  Handler for STRATEGY action list.
- */
-void *strategy_action_list_handler(void *arg)
-{
-	PRINTI(("[INFO] Starting STRATEGY action list handler thread.\n"));
-	struct action_list_args *args = (struct action_list_args *) arg;
-	ast_action_list *actions = args->actions;
-
-	int i;
-	ast_order_item *temp_item;
-	struct order *temp_order;
-	////iterating over orders
-	for(i = 0; i < actions->num_of_orders; i++)
-	{
-		temp_item = actions->order[i];
-PRINTI(("before create order: %s \n", temp_item->sec->sec->sym));
-PRINTI(("before create order: %d\n",  temp_item->number->con.int_value->value));
-PRINTI(("before create order: %s\n",  temp_item->prc->curr->p));
-
-
-		temp_order = create_order(temp_item->sec->sec, temp_item->number->con.int_value->value, temp_item->prc->curr, temp_item->type);
-		
-		queue_put_order(&order_queue, temp_order, args->strat_name);
-
-	//	fprintf(stderr, "[INFO] Starting balance in ac_master: %ld\n", get_available_cash(ac_master)); 
-	//	print_account_positions(ac_master);
-	}
-	free(args);
-	return (void *)0;
-}
-
 /*
  *   Handler for STRATEGY with process statements.
  */
