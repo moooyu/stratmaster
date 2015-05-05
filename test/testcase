@@ -1,4 +1,37 @@
 /*<1>empty Algo*/
+/*<2>empty Strat*/
+
+
+
+
+
+
+
+/*<1>empty Algo*/
+/*still core dump, when unexpected error*/
+USE ACCOUNT ac_master;
+ALGORITHM al()
+{
+}
+
+STRATEGY hello
+{
+BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
+}
+
+/*<2>empty Strat*/
+/*also cause core dump*/
+USE ACCOUNT ac_master;
+ALGORITHM al(CURRENCY hello) /*what types are accepted here!*/
+{
+}
+
+STRATEGY hello
+{
+/*BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }*/
+}
+
+/*<2>empty Algo*/
 USE ACCOUNT ac_master;
 ALGORITHM al()
 {
@@ -11,6 +44,7 @@ STRATEGY hello
 		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
 	}
 }
+
 /*<2>Only Strat*/
 USE ACCOUNT myAccount;
 STRATEGY hello
