@@ -656,7 +656,7 @@ void* ex_exp(ast_exp *p)
 					type = sym_entry->type_specifier;
 					if (type == ALGORITHM_T) {
 						PRINTI(("--------------------------> This is ALGO call to %s\n", sym_entry->identifier));
-						ret = (void*)call_algo(p);
+						ret = (void*)(intptr_t)call_algo(p);
 					}
 					/* TODO: handle function */
 
