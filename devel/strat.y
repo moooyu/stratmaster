@@ -234,7 +234,7 @@ int_expr	: INTEGER				{ $$ = create_integer_const($1); }
 $$ = (ast_exp *)val->nodePtr; } 
 		;
 
-curr_expr	: PRICESTRING				{ $$ = create_ast_currency(0, $<str>1); }
+curr_expr	: PRICESTRING				{ $$ = create_ast_currency(USD_T, $<str>1); }
 		| currency				{ $$ = $1; }
 		| IDENTIFIER				{ struct symbol_value *val = symbol_table_get_value(top, CURRENCY_T, $1);
 $$ = (ast_currency *)val->nodePtr; }
