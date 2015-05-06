@@ -635,9 +635,8 @@ void* ex_exp(ast_exp *p)
 					PRINTI(("--------------------------> Operator IS\n"));
 
 					if(is_algo(p->oper.op1)) {
-						ex_exp(p->oper.op1);
+						ret = ex_exp(p->oper.op1);
 						PRINTI(("--------------------------> Right child of IS is FUNC ALGO Operator\n"));
-						ret = (void*)(intptr_t)1; /* Algo call is always true */
 						break;
 					}
 
