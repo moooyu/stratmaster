@@ -104,10 +104,14 @@ struct order_item {
 
 struct algorithm {
 	pthread_mutex_t mutex;         /* lock */
-	pthread_cond_t cond_true;      /* condition variable */
+//	pthread_cond_t cond_true;      /* condition variable */
+	pthread_cond_t algo_stop;      /* condition variable for STRATEGY (consumer) */
+	pthread_cond_t algo_go;        /* condition variable for ALGORITHM (producer) */
 	pthread_t algo_thread;
 	struct data *d;                /* the data source */
 	int  is_dead;                  /* is algorithm dead? */
+	int  can_run;                  /* STRATEGY flag to tell ALGORITHM to run */
+	int  has_result;               /* ALGORITHM flag to tell STRATEGY it found something */
 	int  num_args;                 /* number of arguments */
 	void *args;                    /* list of arguments to ALGORITHM */
         void *algo_ptr;      	      /* Pointer to ast node*/

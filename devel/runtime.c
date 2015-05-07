@@ -389,18 +389,23 @@ struct algorithm *create_algorithm(struct data *data_src)
 		die("malloc fail");
 	memset(new_algo, 0, sizeof(struct algorithm));
 
-	if( pthread_cond_init(&(new_algo->cond_true), NULL) != 0 )
-		die("error initializing cond var");
+	if( pthread_cond_init(&(new_algo->algo_stop), NULL) != 0 )
+		die("create_algorithm:error initializing cond var");
 
-	if( pthread_mutex_init(&(new_algo->mutex), NULL) != 0 )
-	{
-		pthread_cond_destroy(&new_algo->cond_true);
-		die("error initializing mutex");
+	if( pthread_cond_init(&(new_algo->algo_go), NULL) != 0 )
+		die("create_algorithm:error initializing cond var");
+
+	if( pthread_mutex_init(&(new_algo->mutex), NULL) != 0 ) {
+		pthread_cond_destroy(&new_algo->algo_stop);
+		pthread_cond_destroy(&new_algo->algo_go);
+		die("in process_handler: error initializing mutex");
 	}
 
 	new_algo->d = data_src;
 	new_algo->num_args = 0;
 	new_algo->is_dead = 0;
+	new_algo->has_result = 0;
+	new_algo->can_run = 0;
 	new_algo->args = NULL;
         new_algo->algo_ptr = NULL;
 	

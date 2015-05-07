@@ -245,14 +245,15 @@ void terminate_algo_thread(struct algorithm *algo_data)
 		return;
 
 	if( algo_data->is_dead )
-	{	/* Release lock */
-		pthread_mutex_unlock(&algo_data->mutex);
+	{
+		PRINTI(("[INFO] ALGORITHM thread has died.\n"));
 		retval = pthread_join(algo_data->algo_thread, &result);
 		if( retval != 0 )
 			perror("thread join");
 	}
 	else
-	{   /* ALGO is not dead; need to cancel */
+	{      /* ALGO is not dead; need to cancel */
+		PRINTI(("[INFO] Canceling ALGORITHM thread.\n"));
 		if( pthread_cancel(algo_data->algo_thread) != 0 )
 			perror("thread cancellation");
 		retval = pthread_join(algo_data->algo_thread, &result);
@@ -263,7 +264,8 @@ void terminate_algo_thread(struct algorithm *algo_data)
 	}
 
 	pthread_mutex_destroy(&algo_data->mutex);
-	pthread_cond_destroy(&algo_data->cond_true);
+	pthread_cond_destroy(&algo_data->algo_stop);
+	pthread_cond_destroy(&algo_data->algo_go);
 }
 
 /*
@@ -278,16 +280,17 @@ void *process_handler(void *arg)
 	struct algorithm *algo_data;
 
 	algo_id = args->procst->expression->oper.op1->oper.op1->id.value;
-	
+
 	do {
-		if ( ex_exp(args->procst->expression)) {
+		if ( ex_exp(args->procst->expression) ) {
 			/* algo_data is created only after the first call to algo */
 			algo_data = g_hash_table_lookup(algo_map, algo_id);
-			if (algo_data->is_dead)
-				break;
-			ex_action_list(args->procst->action_list, args->strat->name);
+			//Check that ALGORITHM has a result for us AND is still alive
+			if (algo_data->has_result && !algo_data->is_dead)
+				ex_action_list(args->procst->action_list, args->strat->name);
+
 		}
-	} while (ex_exp(args->procst->until_exp));
+	} while ( !algo_data->is_dead && ex_exp(args->procst->until_exp) );
 	
 	terminate_algo_thread(algo_data);
 	free(args);
@@ -398,12 +401,20 @@ void *algorithm_handler(void *arg)
 //	ca.t = test_sec;
 	ca.f = algo->d->fp;
 	pthread_cleanup_push(cleanup_algorithm, &ca);
-
-	int keep_running = 1;
-
-	while( keep_running )
+	int found;
+	while( 1 )
 	{
-		if( fgets(buf, sizeof(buf), algo->d->fp) != NULL )
+		//Start of ALGORITHM (producer) sequence
+		pthread_mutex_lock(&algo->mutex);
+		pthread_testcancel();
+		algo->has_result = 0;
+		while( !algo->can_run )
+			pthread_cond_wait(&algo->algo_go, &algo->mutex);
+
+		//if we get here, ALGORITHM was told to go ahead by STRATEGY
+		memset(buf, 0, IOBUFSIZE);
+		found = 0;
+		while( !found && (fgets(buf, sizeof(buf), algo->d->fp) != NULL) )
 		{	
 			ticker = strtok_r(buf, token_separators, &bk);
 			date   = strtok_r(NULL, token_separators, &bk);
@@ -412,50 +423,36 @@ void *algorithm_handler(void *arg)
 			PRINTI(("price is %s\n", price));
 			PRINTI(("date is %s\n", date));
 
-			//	copy_name(next_sec->sym, ticker);
-			//	long pr = price_to_long(price);
-
-			/* DO TEST */
-			//	if( (is_equal_sec(next_sec, test_sec) == TRUE) && (pr < 2700) )
-			//	{
-			//		keep_running = FALSE;
-			//		fprintf(stderr, "[INFO] ALGO FOUND A PRICE TARGET: $%s\n", price);
-			/* Set argument value to new price for return to STRATEGY */
-			//		copy_name(((struct price *)algo->args)->p, price);
 			strcpy(algo->d->current_data.eqty, ticker);
 			strcpy(algo->d->current_data.date, date);
 			strcpy(algo->d->current_data.price, price);
 			if (ex_exp(set_stmt->exp)) 
 			{
-				keep_running = 0;
 
 				for (i = 0 ; i < num_stmt_in_set; i++) 
 				{
 					ex_exp(set_stmt->argu_list->argu_list.exp[i]);
 				}
 
-				pthread_cond_signal(&algo->cond_true);
-
-				pthread_mutex_lock(&algo->mutex);
-
-				pthread_testcancel();
-
-				pthread_cond_wait(&algo->cond_true, &algo->mutex);
-
-				keep_running = 1;
-
+				algo->is_dead = 0;
+				algo->has_result = 1;
+				pthread_cond_signal(&algo->algo_stop);
 				pthread_mutex_unlock(&algo->mutex);
+				found = 1;
 			}
 
 			memset(buf, 0, IOBUFSIZE);
 			usleep(interval);
 		}
-		else
+
+		//Check if we reached EOF
+		if( feof(algo->d->fp) > 0 )
 		{
-			keep_running = 0;
+			PRINTI(("Reached EOF in ALGORITHM\n"));
+			break;
 		}
 	}
-	algo->is_dead = 1;
+
 	/*	if( next_sec != NULL )
 		free(next_sec);
 		if( test_sec != NULL )
@@ -463,8 +460,15 @@ void *algorithm_handler(void *arg)
 
 	if( algo->d->fp )
 		fclose(algo->d->fp);
-	pthread_cond_signal(&algo->cond_true);
+	//Need to set has_result = 1 since STRATEGY is sitting
+	//on a while loop checking this variable
+	algo->has_result = 1;
+	algo->is_dead = 1;
+	//Signal STRATEGY and unlock mutex
+	pthread_cond_signal(&algo->algo_stop);
+	pthread_mutex_unlock(&algo->mutex);
 	pthread_cleanup_pop(0);
+	PRINTI(("Returning from ALGORITHM handler: ALGORITHM has died\n"));
 	return (void *)0;
 }
 
@@ -533,15 +537,6 @@ int call_algo(ast_exp *p)
 		sym_entry = (struct symbol_value*)ex_exp(p->oper.op1);
 		algo_data->algo_ptr = sym_entry->nodePtr;
 		algo_data->sym = p->oper.op1->id.sym;
-		algo_data->is_dead = 0;
-
-		if( pthread_cond_init(&(algo_data->cond_true), NULL) != 0 )
-			die("in process_handler:error initializing cond var");
-
-		if( pthread_mutex_init(&(algo_data->mutex), NULL) != 0 ) {
-			pthread_cond_destroy(&algo_data->cond_true);
-			die("in process_handler: error initializing mutex");
-		}
 
 		if( pthread_create(&algo_data->algo_thread, NULL, algorithm_handler, algo_data) != 0 )
 			die("algorithm thread create fail");
@@ -549,9 +544,21 @@ int call_algo(ast_exp *p)
 		g_hash_table_insert(algo_map, (gpointer) algo_id, algo_data);
 	}
 
+	//This is STRATEGY (consumer) side
 	pthread_mutex_lock(&algo_data->mutex);
-	pthread_cond_wait(&algo_data->cond_true, &algo_data->mutex);
-	pthread_mutex_unlock(&algo_data->mutex);
+	//Let ALGORITHM know it's OK to run
+	algo_data->can_run = 1;
+	pthread_cond_signal(&algo_data->algo_go);
+
+	while( !algo_data->has_result )
+		pthread_cond_wait(&algo_data->algo_stop, &algo_data->mutex);
+
+	//if we get here, ALGORITHM has signaled TRUE
+	algo_data->can_run = 0;
+	//But check if ALGORITHM thread died; if alive
+	//we need to unlock mutex
+	if( !algo_data->is_dead )
+		pthread_mutex_unlock(&algo_data->mutex);
 
 	return ret;
 }
@@ -636,7 +643,7 @@ void* ex_exp(ast_exp *p)
 
 					if(is_algo(p->oper.op1)) {
 						ret = ex_exp(p->oper.op1);
-						PRINTI(("--------------------------> Right child of IS is FUNC ALGO Operator\n"));
+						PRINTI(("--------------------------> Left child of IS is FUNC ALGO Operator\n"));
 						break;
 					}
 
