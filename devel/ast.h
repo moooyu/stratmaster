@@ -401,7 +401,7 @@ void *algorithm_handler(void *arg);
 #endif
 
 
-#define DEBUGI 0
+#define DEBUGI 1
 
 #ifdef DEBUGI
 #define PRINTI(x)  do { if (DEBUGI) dbg_printf x; } while (0)

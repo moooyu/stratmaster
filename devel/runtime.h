@@ -15,6 +15,7 @@
 #include <signal.h>     /* for signal() */
 #include <sys/stat.h>   /* for stat() */
 #include <pthread.h>    /* for threads */
+#include <locale.h>
 #include "ast.h"
 
 #define NAMEBUF    32      /* Max size of an identifier or name */
@@ -59,18 +60,34 @@ struct security {
 	char  sym[NAMEBUF];     /* ticker symbol */
 };
 
+/*
 struct position {
-	struct security sec;            /* the security object  */
-	int    amt;                     /* quantity (e.g. number of shares) */
-	struct currency purch_price;       /* purchase price of this position */
+	struct security sec;            // the security object
+	int    amt;                     // quantity (e.g. number of shares)
+	struct currency purch_price;    // purchase price of this position 
+};
+*/
+
+struct position {
+	struct security sec;               /* the security object  */
+	int    total_shares;               /* total number of shares of this security */
+	long   total_cost;                 /* total amount paid for this position as a long */
+	struct position *next;             /* the next position in a list */
 };
 
 struct account {
-	int    num_positions;           /* number of positions  */
-	struct position *positions;     /* array of position objects */
-	struct currency avail_cash;     /* available cash to buy securities */
+	struct position *positions;          /* list of all positions */
+	struct currency avail_cash;          /* cash balance: what is available cash to buy securities */
+	long   cash_bal;                     /* cash balance: as a long */
 };
 
+/*
+struct account {
+	int    num_positions;           // number of positions  
+	struct position *positions;     // array of position objects 
+	struct currency avail_cash;     // available cash to buy securities
+};
+*/
 struct datafeed_item {
 	char eqty[NAMEBUF];
 	char date[NAMEBUF];
@@ -104,10 +121,14 @@ struct order_item {
 
 struct algorithm {
 	pthread_mutex_t mutex;         /* lock */
-	pthread_cond_t cond_true;      /* condition variable */
+//	pthread_cond_t cond_true;      /* condition variable */
+	pthread_cond_t algo_stop;      /* condition variable for STRATEGY (consumer) */
+	pthread_cond_t algo_go;        /* condition variable for ALGORITHM (producer) */
 	pthread_t algo_thread;
 	struct data *d;                /* the data source */
 	int  is_dead;                  /* is algorithm dead? */
+	int  can_run;                  /* STRATEGY flag to tell ALGORITHM to run */
+	int  has_result;               /* ALGORITHM flag to tell STRATEGY it found something */
 	int  num_args;                 /* number of arguments */
 	void *args;                    /* list of arguments to ALGORITHM */
         void *algo_ptr;      	      /* Pointer to ast node*/
@@ -144,11 +165,17 @@ struct currency *create_currency(int type, const char *prc);
 struct security *create_security(int type, const char *ticker);
 struct position *create_position(struct security *s, int amt, struct currency *p);
 struct account *create_account();
-long get_available_cash(struct account *acct);
+long get_cash_balance(struct account *acct);
 long can_add_position(struct account *acct, struct order *order);
-long add_position(struct account *acct, struct order *order);
+void add_position(struct account *acct, struct order *order);
+int can_sell_position(struct account *acct, struct order *order);
+struct position *get_position(struct account *acct, struct security *sec);
+void subtract_position(struct account *acct, struct order *order);
+struct position *remove_position(struct account *acct, struct security *sec);
+void print_account_summary(struct account *acct, const char *name, struct position *pricedata, int num);
+long get_curr_price(struct security *sec, struct position *pricedata, int num);
 struct algorithm *create_algorithm(struct data *data_src);
-struct data *create_data_source(const char *fname, int data_type);
+struct data *create_data_source(const char *dfname);
 struct order *create_order(struct security *security, int amount, struct currency *price, int order_type);
 void emit_order(struct order_item *my_order);
 /*  Order queue functions */
