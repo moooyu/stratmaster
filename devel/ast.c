@@ -976,10 +976,10 @@ int install_symbol(int id_type, const char *id, struct symbol_table *symtab)
 			return symbol_table_put_value(symtab, id_type, id, (void*)create_account());
 			break;
 		case DATAFEED_T:
-			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id, id_type));
+			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id));
 			break;
 		case DATABASE_T:
-	  		ret = symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id, id_type));
+	  		ret = symbol_table_put_value(symtab, id_type, id, (void*)create_data_source(id));
 			break;
 		case CURRENCY_T:
 			ret = symbol_table_put_value(symtab, id_type, id, (void*)create_ast_currency(USD_T, NULL));

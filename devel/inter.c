@@ -9,7 +9,7 @@
 #define MAX_STRATEGIES 8
 #define MAX_ALGORITHMS 8
 #define MAX_PROCSTATEMENTS 8
-
+#define NUMPRICES 100
 
 struct proc_args {
 	char name[NAMEBUF];
@@ -19,8 +19,8 @@ struct proc_args {
 };
 
 struct action_list_args {
-	char *strat_name;
-	ast_action_list *actions;
+	char strat_name[NAMEBUF];
+	ast_action_list *order_list;
 };
 
 
@@ -47,19 +47,9 @@ static pthread_t order_handler_thread;
 static struct account *ac_master;
 static struct data *df1;
 static struct cleanup_args ca;
-
-
-void print_account_positions(struct account *acct)
-{
-	int i;
-	int num = acct->num_positions;
-	fprintf(stderr, "[ACCT-INFO] ac_master: Num. of positions: %d\n", acct->num_positions);
-	for(i = 0; i < num; i++)
-	{
-		fprintf(stderr, "[ACCT-INFO] %s: Num. of shares: %d Cost: %s\n", acct->positions[i].sec.sym,
-				acct->positions[i].amt, acct->positions[i].purch_price.p);
-	}
-}
+struct symbol_table *global_symtable;
+static struct data *db_prices;
+static struct position pricedata[NUMPRICES];
 
 GHashTable *algo_map;
 int algo_map_init()
@@ -77,8 +67,32 @@ void run_interp(ast_program * program)
 	void *result;
 	pthread_t strat_thread[MAX_STRATEGIES];
 	pthread_t algo_thread[MAX_ALGORITHMS];
+	setlocale(LC_NUMERIC, "");
 
 	algo_map_init();
+
+	db_prices = create_data_source("../data/db_prices");
+
+	/* Load prices */
+	char *token_separators = "\t \n";
+	char *ticker;
+	char *price;
+	char buf[IOBUFSIZE];
+	memset(buf, 0, IOBUFSIZE);
+	int index = 0;
+	while(  (fgets(buf, sizeof(buf), db_prices->fp) != NULL) && index < NUMPRICES )
+	{
+		ticker = strtok(buf, token_separators);
+		price  = strtok(NULL, token_separators);
+
+		pricedata[index].sec = *create_security(0, ticker);
+		pricedata[index].total_cost = price_to_long(price);
+		index++;
+		memset(buf, 0, IOBUFSIZE);
+	}
+
+	char pricebuf[NAMEBUF];
+	memset(pricebuf, 0, NAMEBUF);
 
 	/* initialize the order queue */
 	order_queue_init(&order_queue);
@@ -92,13 +106,12 @@ void run_interp(ast_program * program)
 	 *        USE-LIST 
 	 * *************************/
 	/* Create account */
-	// ac_master = create_account(); 
 	ac_master = (struct account *)(symbol_table_get_value(program->sym, ACCOUNT_T, "ac_master")->nodePtr);
 
 	//print_account_positions(ac_master);
 	/* Create data source */
-	if( (df1 = create_data_source("../data/olddata/df_ZBRA", DATAFEED)) == NULL )
-	  	die("error creating data source");
+//	if( (df1 = create_data_source("../data/olddata/df_ZBRA", DATAFEED)) == NULL )
+//	  	die("error creating data source");
 
 	/* ************************
 	 *    EXECUTE STRATEGIES 
@@ -142,7 +155,8 @@ void run_interp(ast_program * program)
 		perror("order_handler_thread was not canceled");
 
 	queue_destroy(&order_queue);	
-
+	/* Print account summary before exit */
+	print_account_summary(ac_master, "ac_master", pricedata, NUMPRICES);
 	/* free account */
 	if( ac_master != NULL)
 		free(ac_master);
@@ -481,26 +495,34 @@ void *order_handler(void *arg)
 	{
 		/* Wait for order */
 		next_order = queue_get_order(&order_queue);
-	//	long res = can_add_position(ac_master, next_order->ord);
-	//	if( res >= 0 )
-	//	{
-			/* Issue the order */
-			PRINTI(("[INFO] ISSUING ORDER.\n"));
-			emit_order(next_order);
-			/* add the position to the account */
-	/*		long res = add_position(ac_master, next_order->ord);
-			if( res < 0 )
-				fprintf(stderr, "ERROR: negative cash balance: order should not have gone through\n");
-			fprintf(stderr, "[INFO] Account balance after order: %ld\n", get_available_cash(ac_master));
-		}
-		else
+
+		switch( next_order->ord->order_t )
 		{
-			fprintf(stderr, "ERROR: not enough available cash--order rejected\n");
+			case BUY_ORDER:
+				if( can_add_position(ac_master, next_order->ord) < 0 )
+					fprintf(stderr, "ERROR: cannot add position\n");
+				else
+				{
+					/* Issue the order */
+					PRINTI(("[INFO] ISSUING ORDER.\n"));
+					emit_order(next_order);
+					add_position(ac_master, next_order->ord);
+				}
+				break;
+
+			case SELL_ORDER:
+				if( can_sell_position(ac_master, next_order->ord) < 0 )
+					fprintf(stderr, "ERROR: cannot sell position\n");
+				else
+				{
+					/* Issue the order */
+					PRINTI(("[INFO] ISSUING ORDER.\n"));
+					emit_order(next_order);
+					subtract_position(ac_master, next_order->ord);
+				}
+				break;
+			default: fprintf(stderr, "ERROR: unknown order type.\n"); break;
 		}
-
-
-		print_account_positions(ac_master);
-	*/			
 		/* free order_item structures */
 		if( next_order->ord != NULL )
 			free(next_order->ord);
@@ -630,6 +652,19 @@ void* ex_exp(ast_exp *p)
 						ret = (void*)(intptr_t)0;
 
 					break;
+
+				case OP_GT:
+					PRINTI(("--------------------------> Operator <\n"));
+					/* TODO: type check */
+
+					if (price_to_long((char*)ex_exp(p->oper.op1))> price_to_long((char*)ex_exp(p->oper.op2)))
+						ret = (void*)(intptr_t)1;
+					else
+						ret = (void*)(intptr_t)0;
+
+					break;
+
+
 
 				case OP_ASSIGN:
 					PRINTI(("--------------------------> Operator =\n"));

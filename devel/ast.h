@@ -393,7 +393,7 @@ void *order_handler(void *arg);
 void ex_process_statement(ast_process_statement * process_statement);
 void *algorithm_handler(void *arg);
 
-//#define DEBUG 1
+#define DEBUG 1
 
 #ifdef DEBUG
 #define PRINT(x)  do { if (DEBUG) dbg_printf x; } while (0)
@@ -402,7 +402,7 @@ void *algorithm_handler(void *arg);
 #endif
 
 
-#define DEBUGI 0
+#define DEBUGI 1
 
 #ifdef DEBUGI
 #define PRINTI(x)  do { if (DEBUGI) dbg_printf x; } while (0)
