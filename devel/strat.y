@@ -123,9 +123,9 @@ ast_statement *statement;
 program		: { PRINTI(("STARTING PARSE\n")); parent = NULL; top = symbol_table_create(parent); } 
 	 	  use_list process_list 
 		{ $$=$3; PRINTI(("ENDING PARSE\n")); 
-#ifdef DEBUG
+//#ifdef DEBUG
 		print_ast($$);
-#endif
+//#endif
 		print_symtab(top);
 		root = $$;}
 	 	;
@@ -149,7 +149,7 @@ algorithm_list 	: algorithm_definition			{ $$ = create_algorithm_list($1);}
 		;
 
 strategy_list 	: strategy_definition				{ $$ = create_strategy_list($1); }
-		| strategy_list strategy_definition		{ }
+		| strategy_list strategy_definition		{ $$ = add_strategy_list($1, $2); }
 		;
 
 function_definition : function_header compound_statement
@@ -198,11 +198,11 @@ strategy_block	:  action_list			{ $$ = create_strategy_block(0, $1, NULL); }
 		;
 
 process_statement_list : process_statement   { $$ = create_process_statement_list($1);}
-		| process_statement_list process_statement
+		| process_statement_list process_statement { $$ = add_process_statement_list($1, $2); }
 		;
 
-process_statement : WHEN '(' expression ')' '{' process_body '}' UNTIL '(' expression ')' { } 
-		| WHEN '(' expression ')' '{' process_body '}'				{ $$ = create_process_statement($3,$6);}
+process_statement : WHEN '(' expression ')' '{' process_body '}' UNTIL '(' expression ')' { $$ = create_process_statement($3, $6, $10); } 
+		| WHEN '(' expression ')' '{' process_body '}'				{ $$ = create_process_statement($3,$6,NULL);}
 		;
 
 process_body	: action_list { $$ = $1; }

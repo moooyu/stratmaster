@@ -23,6 +23,8 @@ STRATEGY my_buy_strat
     WHEN( al_Buy_Something(df_ZBRA, #zbra_price) IS TRUE )
     {
          BUY  {  WHAT : SECURITY( EQTY(ZBRA) ).AMOUNT(100).PRICE(zbra_price);}
-    }
+    } 
+   
 
 }
+
