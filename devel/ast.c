@@ -928,9 +928,12 @@ void print_process_statement(ast_process_statement * process_statement)
 		printf("ORDER %d:\n", i );
 		print_order(process_statement->action_list->order[i]);
 	}
-	printf("================>Until Expression tree:\n");
-	print_exp(process_statement->until_exp);
-	printf("================>End of Until Expression tree:\n");
+	if (process_statement->until_exp)
+	{
+		printf("================>Until Expression tree:\n");
+		print_exp(process_statement->until_exp);
+		printf("================>End of Until Expression tree:\n");
+	}
 }
 
 void print_exp(ast_exp *exp)

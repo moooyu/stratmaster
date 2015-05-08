@@ -145,7 +145,7 @@ function_list	: function_definition			{ }
 		;
 
 algorithm_list 	: algorithm_definition			{ $$ = create_algorithm_list($1);}
-		| algorithm_list algorithm_definition	{  }
+		| algorithm_list algorithm_definition	{ $$ = add_algorithm_list($1, $2); }
 		;
 
 strategy_list 	: strategy_definition				{ $$ = create_strategy_list($1); }
