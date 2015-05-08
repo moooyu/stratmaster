@@ -82,7 +82,7 @@ void long_to_price(long value, char *buf)
 	long dollars = value / 100L;
 	long cents   = value - (dollars * 100L);
 	//fprintf(stderr, "DOLLARS = %ld CENTS = %02ld\n", dollars, cents);	
-	sprintf(resultbuf, "%ld.", dollars);
+	sprintf(resultbuf, "%'ld.", dollars);
 	sprintf(tempbuf, "%02ld", cents);
         strcat(resultbuf, tempbuf);
 
@@ -207,7 +207,7 @@ struct security *create_security(int type, const char *ticker)
 /*
  *   Create a new position object.
  */
-
+/*
 struct position *create_position(struct security *s, int amt, struct currency *p)
 {
 	struct position *new_pos = (struct position *)malloc(sizeof(struct position));
@@ -219,7 +219,20 @@ struct position *create_position(struct security *s, int amt, struct currency *p
 
 	return new_pos;
 }
+*/
 
+struct position *create_position(struct security *s, int amt, struct currency *p)
+{
+	struct position *new_pos = (struct position *)malloc(sizeof(struct position));
+	if( new_pos == NULL )
+		die("error mallocing new position");
+	memcpy((void*)&(new_pos->sec), (void*)s, sizeof(struct security));
+	new_pos->total_shares = amt;
+	new_pos->total_cost = amt * price_to_long(p->p);
+	new_pos-> next = NULL;
+
+	return new_pos;
+}
 
 
 /*
@@ -231,12 +244,12 @@ struct account *create_account()
 	if( new_acct == NULL )
 		die("malloc failed");
 
-	/* We generously give each account $10,000 to play with. */
-	struct currency *cash = create_currency(0, "10000.00");
+	/* We generously give each account $100,000,000 to play with. */
+	struct currency *cash = create_currency(0, "100000000.00");
 	new_acct->avail_cash = *cash;
 	free(cash);
+	new_acct->cash_bal = price_to_long(new_acct->avail_cash.p);
 
-	new_acct->num_positions = 0;
 	new_acct->positions = NULL;
 
 	return new_acct;
@@ -247,9 +260,9 @@ struct account *create_account()
  *  Return value: the numerical amount of cash as a long
  *  (NOTE: this does not check currency type).
  */
-long get_available_cash(struct account *acct)
+long get_cash_balance(struct account *acct)
 {
-	return price_to_long(acct->avail_cash.p);
+	return acct->cash_bal;
 }
 
 /*
@@ -260,80 +273,209 @@ long get_available_cash(struct account *acct)
  */
 long can_add_position(struct account *acct, struct order *order)
 {
-	long cash_bal = get_available_cash(acct);
-	return cash_bal - (order->amt * price_to_long(order->pr.p));
+	return get_cash_balance(acct) - (order->amt * price_to_long(order->pr.p));
+}
+
+/*
+ *  Determine if you can sell a position from an account.
+ *  Return value: the number of shares left if you sold
+ *  this position. A negative value indicates rejection of
+ *  the order, as you either don't own the security or are
+ *  trying to sell more shares than you own. 
+ */
+int can_sell_position(struct account *acct, struct order *order)
+{
+	int shares_left = -1;
+
+	struct position *temp_pos = create_position(&order->sec, order->amt, &order->pr);
+	temp_pos = get_position(acct, &temp_pos->sec);
+	if( temp_pos != NULL  )
+		shares_left = temp_pos->total_shares - order->amt;
+
+	return shares_left;
 }
 
 /*
  *  Add a position to an account.
  */
-long add_position(struct account *acct, struct order *order)
+void add_position(struct account *acct, struct order *order)
 {
-	int i = acct->num_positions;
+	struct position *existing_pos = NULL;	
+	struct position *new_pos = create_position(&order->sec, order->amt, &order->pr);
+	
+	/* Update account's cash balance */
+	acct->cash_bal = acct->cash_bal -  new_pos->total_cost;
+	long_to_price(acct->cash_bal, acct->avail_cash.p);
 
-	if( i == 0 )
-	{    /* need to create a brand new position */
-		acct->positions = (struct position *)malloc(sizeof(struct position));
-		if( acct->positions == NULL )
-			die("malloc failed in add_position\n");
-
-		memcpy(&(acct->positions[0].sec), &order->sec, sizeof(struct security));
-		memcpy(&(acct->positions[0].amt), &order->amt, sizeof(int));
-		memcpy(&(acct->positions[0].purch_price), &order->pr, sizeof(struct currency));
-		fprintf(stderr, "[INFO] New position added: %s : %d shares at %s\n", acct->positions[0].sec.sym, acct->positions[0].amt, acct->positions[0].purch_price.p);
+	/* Add this position to the account */
+	if( acct->positions == NULL )
+	{
+		acct->positions = new_pos; 
 	}
 	else
-	{      /* Search for an existing position with this security */
-		int found = 0;
-		struct position *temp_pos;
-		while( i > 0 )
+	{  //There are existing positions; check if we already own this security
+		existing_pos = get_position(acct, &(new_pos->sec)); 
+		if( existing_pos )
 		{
-			if( is_equal_sec(&acct->positions[i].sec, &order->sec) )
-			{
-				temp_pos = &acct->positions[i];
-				found = 1;
-				break;
-			}
-			i--;
-		}
-
-		if( found )
-		{  /* add to an existing position */
-			temp_pos->amt += order->amt;
-			copy_name(temp_pos->purch_price.p, order->pr.p);
-
+			existing_pos->total_shares += new_pos->total_shares;
+			existing_pos->total_cost   += new_pos->total_cost;
+			free(new_pos);
 		}
 		else
-		{  /* need to add a brand new position */
-			int size = acct->num_positions + 1;
-			acct->positions = (struct position *)realloc(acct->positions, sizeof(struct position) * size);
-			if( acct->positions == NULL )
-				die("malloc failed in add_position\n");
-
-			memcpy(&(acct->positions[acct->num_positions].sec), &order->sec, sizeof(struct security));
-			memcpy(&(acct->positions[acct->num_positions].amt), &order->amt, sizeof(int));
-			memcpy(&(acct->positions[acct->num_positions].purch_price), &order->pr, sizeof(struct currency));
-			fprintf(stderr, "[INFO] New position added: %s : %d shares at %s\n", acct->positions[acct->num_positions].sec.sym, 
-					acct->positions[acct->num_positions].amt, acct->positions[acct->num_positions].purch_price.p);
-
+		{
+			//We don't own this position, so add to end of list	
+			struct position *curr_pos = acct->positions;
+			while( curr_pos->next != NULL )
+			{
+				curr_pos = curr_pos->next;
+			}
+			curr_pos->next = new_pos;
 		}
-
 	}
+	//Calculate cost
+	char buf[NAMEBUF];
+	memset(buf, 0, NAMEBUF);
+	long cost = order->amt * price_to_long(order->pr.p);
+	long_to_price(cost, buf);
+	fprintf(stdout, ">>>> Adding Position: %'d shares of %s at %s     COST: %12s\n", order->amt, order->sec.sym, order->pr.p, buf);
+}
 
-	acct->num_positions++;
+/*
+ *  Get a position from an account.
+ *  Returns, but does not remove, the position.
+ *  Returns NULL if position is not in the account, or there are no positions.
+ */
+struct position *get_position(struct account *acct, struct security *sec)
+{
+	if( acct->positions == NULL )
+		return NULL;
 
-	/* update account available cash balance */
-	long new_bal = get_available_cash(acct) - (order->amt * price_to_long(order->pr.p)); 
-	long_to_price(new_bal, acct->avail_cash.p);
+	struct position *pos = NULL;
 
-	return new_bal;
+	pos = acct->positions;
+
+	while( pos )
+	{
+		if( !is_equal_sec(&(pos->sec), sec) )
+			pos = pos->next;
+		else
+			break;
+	}
+	return pos;
+}
+
+/*
+ *  Subtract from an existing position.
+ *  Called when a SELL order is placed.
+ *  PRECONDITION: we own this position with enough shares to sell.
+ *  MUST CHECK WITH can_sell_position() first.
+ *  If position completely sold off, then we remove the position 
+ *  from the account.
+ */
+void subtract_position(struct account *acct, struct order *order)
+{
+	struct position *curr_pos = get_position(acct, &order->sec);
+	/* Update number of shares */
+	curr_pos->total_shares -= order->amt;
+	if( curr_pos->total_shares == 0 )
+		remove_position(acct, &order->sec);
+	/* Update account's cash balance */
+	long proceeds = order->amt * price_to_long(order->pr.p);
+	acct->cash_bal = acct->cash_bal + proceeds;
+	long_to_price(acct->cash_bal, acct->avail_cash.p);
+
+	char buf[NAMEBUF];
+	memset(buf, 0, NAMEBUF);
+	long_to_price(proceeds, buf);
+	fprintf(stdout, ">>>> Selling Position: %'d shares of %s at %s PROCEEDS: %12s\n", order->amt, order->sec.sym, order->pr.p, buf);
+}
+
+/*
+ *  Remove this position from the account.
+ */
+struct position *remove_position(struct account *acct, struct security *sec)
+{
+	if( acct->positions == NULL || get_position(acct, sec) == NULL )
+		return NULL;
+
+	//We know this position exists; now we find & return it	
+	struct position *curr_pos = acct->positions;
+	struct position *prev_pos = acct->positions;
+
+	if ( is_equal_sec(&(curr_pos->sec), sec) )
+	{  //remove first item
+		acct->positions = curr_pos->next;
+	}
+	else
+	{  //it's somewhere down the list
+		while( curr_pos )
+		{
+			if( !is_equal_sec(&curr_pos->sec, sec) )
+			{
+				prev_pos = curr_pos;
+				curr_pos = curr_pos->next;
+			}
+			else
+			{
+				prev_pos->next = curr_pos->next;
+				break;
+			}
+		}
+	}
+	//Update account's cash balance
+//	acct->cash_bal = acct->cash_bal + curr_pos->total_cost;
+//	long_to_price(acct->cash_bal, acct->avail_cash.p);
+
+	return curr_pos;
+}
+
+
+/*
+ *  Print summary of account holdings.
+ */
+void print_account_summary(struct account *acct, const char *name, struct position *pricedata, int num)
+{
+	fprintf(stdout, "ACCOUNT summary for %s:\n", name);
+	
+	char valuebuf[NAMEBUF];              //value of securities
+	char cashbuf[NAMEBUF];               //cash balance remaining
+	char acctbuf[NAMEBUF];               //total acct value
+	memset(valuebuf, 0, NAMEBUF);
+	memset(cashbuf, 0, NAMEBUF);
+	memset(acctbuf, 0, NAMEBUF);
+	long total_value = 0L;
+	long curr_value = 0L;
+	int secnum = 1;
+
+	struct position *curr = acct->positions;
+	if( curr == NULL )
+		fprintf(stdout, "              ****** NO POSITIONS IN ACCOUNT *******\n");
+	//Iterate over all positions	
+	while( curr )
+	{
+		curr_value = curr->total_shares * get_curr_price(&curr->sec, pricedata, num);
+		total_value += curr_value;
+		long_to_price(curr_value, valuebuf);
+		
+		fprintf(stdout, "[%3d] %4s: Total Shares: %'6d Current Value: %14s\n", secnum++, curr->sec.sym, curr->total_shares, valuebuf);
+		memset(valuebuf, 0, NAMEBUF);
+		curr = curr->next;
+	}
+	long_to_price(total_value, valuebuf);
+	long_to_price(get_cash_balance(acct), cashbuf);
+	long_to_price(total_value + get_cash_balance(acct), acctbuf);
+
+	fprintf(stdout, "\n                 Total Value of Securities: %18s\n", valuebuf);
+	fprintf(stdout, "                    Cash Balance Remaining: %18s\n", cashbuf);
+	fprintf(stdout, "                                           -------------------\n");
+	fprintf(stdout, "                       Total Account Value: %18s\n", acctbuf);
 }
 
 
 /*
  *   Create a data source object.
  */
-struct data *create_data_source(const char *dfname, int data_type)
+struct data *create_data_source(const char *dfname)
 {
 	char fname[NAMEBUF];
 	memset(fname, 0, NAMEBUF);
@@ -353,7 +495,7 @@ struct data *create_data_source(const char *dfname, int data_type)
 		die("could not malloc new data source");
 
 	/* fill in data structure */
-	new_data_source->data_t = data_type;
+	//new_data_source->data_t = data_type;
 	copy_name(new_data_source->df_filename, fname);
 	new_data_source->fp = datafp;
 
@@ -389,18 +531,23 @@ struct algorithm *create_algorithm(struct data *data_src)
 		die("malloc fail");
 	memset(new_algo, 0, sizeof(struct algorithm));
 
-	if( pthread_cond_init(&(new_algo->cond_true), NULL) != 0 )
-		die("error initializing cond var");
+	if( pthread_cond_init(&(new_algo->algo_stop), NULL) != 0 )
+		die("create_algorithm:error initializing cond var");
 
-	if( pthread_mutex_init(&(new_algo->mutex), NULL) != 0 )
-	{
-		pthread_cond_destroy(&new_algo->cond_true);
-		die("error initializing mutex");
+	if( pthread_cond_init(&(new_algo->algo_go), NULL) != 0 )
+		die("create_algorithm:error initializing cond var");
+
+	if( pthread_mutex_init(&(new_algo->mutex), NULL) != 0 ) {
+		pthread_cond_destroy(&new_algo->algo_stop);
+		pthread_cond_destroy(&new_algo->algo_go);
+		die("in process_handler: error initializing mutex");
 	}
 
 	new_algo->d = data_src;
 	new_algo->num_args = 0;
 	new_algo->is_dead = 0;
+	new_algo->has_result = 0;
+	new_algo->can_run = 0;
 	new_algo->args = NULL;
         new_algo->algo_ptr = NULL;
 	
@@ -672,4 +819,26 @@ char *oper_type_tostring(int t)
 
 	return str;
 }
+
+/*
+ *  Get the current market price of a security from the price database.
+ *  Returns the price as a long of the security.
+ */
+long get_curr_price(struct security *sec, struct position *pricedata, int num)
+{
+	long price = -1L;
+	int i = 0;
+	int found = 0;
+	while( !found && i < num )
+	{
+		if( is_equal_sec( &pricedata[i].sec, sec ) )
+		{
+			price = pricedata[i].total_cost;
+			found = 1;
+		}
+		i++;
+	}
+	return price;
+}
+
 
