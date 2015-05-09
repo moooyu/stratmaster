@@ -82,7 +82,7 @@ void long_to_price(long value, char *buf)
 	long dollars = value / 100L;
 	long cents   = value - (dollars * 100L);
 	//fprintf(stderr, "DOLLARS = %ld CENTS = %02ld\n", dollars, cents);	
-	sprintf(resultbuf, "%'ld.", dollars);
+	sprintf(resultbuf, "%ld.", dollars);
 	sprintf(tempbuf, "%02ld", cents);
         strcat(resultbuf, tempbuf);
 
@@ -245,7 +245,7 @@ struct account *create_account()
 		die("malloc failed");
 
 	/* We generously give each account $100,000,000 to play with. */
-	struct currency *cash = create_currency(0, "10000000.00");
+	struct currency *cash = create_currency(0, "890100.00");
 	new_acct->avail_cash = *cash;
 	free(cash);
 	new_acct->cash_bal = price_to_long(new_acct->avail_cash.p);

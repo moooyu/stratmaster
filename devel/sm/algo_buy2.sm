@@ -26,6 +26,6 @@ STRATEGY my_buy_strat
     {
          BUY  {  WHAT : SECURITY( buy_sec ).AMOUNT(10000).PRICE( buy_prc );}
     }
-   /* UNTIL( ac_master.AVAIL_CASH < 99000000.00 )*/
+    UNTIL( ac_master.AVAIL_CASH < 1.00)
 
 }
