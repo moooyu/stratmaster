@@ -245,7 +245,7 @@ struct account *create_account()
 		die("malloc failed");
 
 	/* We generously give each account $100,000,000 to play with. */
-	struct currency *cash = create_currency(0, "100000000.00");
+	struct currency *cash = create_currency(0, "10000000.00");
 	new_acct->avail_cash = *cash;
 	free(cash);
 	new_acct->cash_bal = price_to_long(new_acct->avail_cash.p);
