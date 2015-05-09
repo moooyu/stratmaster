@@ -513,7 +513,6 @@ struct order *create_order(struct security *security, int amount, struct currenc
 		die("malloc failed");
 	
 	new_order->sec = *security;
-	free(security);
 	new_order->amt = amount;
 	new_order->pr = *price;
 	new_order->order_t = order_type;
