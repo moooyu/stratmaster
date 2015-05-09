@@ -347,7 +347,7 @@ ast_currency *
 create_ast_currency(int type, char *price);
 
 ast_security *
-create_ast_security(int sec_type, char * name);
+create_ast_security(int sec_type, const char * name);
 
 ast_position *
 create_ast_position(ast_security *astsec, int amt, ast_currency *astpr);
@@ -392,7 +392,7 @@ void *order_handler(void *arg);
 void ex_process_statement(ast_process_statement * process_statement);
 void *algorithm_handler(void *arg);
 
-#define DEBUG 1
+//#define DEBUG 1
 
 #ifdef DEBUG
 #define PRINT(x)  do { if (DEBUG) dbg_printf x; } while (0)
@@ -401,7 +401,7 @@ void *algorithm_handler(void *arg);
 #endif
 
 
-#define DEBUGI 1
+#define DEBUGI 0
 
 #ifdef DEBUGI
 #define PRINTI(x)  do { if (DEBUGI) dbg_printf x; } while (0)

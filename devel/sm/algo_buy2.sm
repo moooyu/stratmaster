@@ -1,0 +1,31 @@
+/*  StratMaster: Simple Algorithm
+ *  Conforms to revised grammar [VM]
+ */
+
+USE ACCOUNT ac_master;
+USE DATAFEED df_quotes;
+
+
+ALGORITHM al_low(DATAFEED quotes, SECURITY #buy_tgt, CURRENCY #pr)
+{
+    SET  { buy_tgt = quotes.NEXT.SEC,
+           pr = quotes.NEXT.PRC  }
+    IF:
+    {
+         quotes.NEXT.PRC < 50.00
+    }
+}
+
+
+STRATEGY my_buy_strat
+{
+    SECURITY buy_sec;
+    CURRENCY buy_prc;
+
+    WHEN( al_low(df_quotes, #buy_sec, #buy_prc) IS TRUE )
+    {
+         BUY  {  WHAT : SECURITY( buy_sec ).AMOUNT(10000).PRICE( buy_prc );}
+    }
+   /* UNTIL( ac_master.AVAIL_CASH < 99000000.00 )*/
+
+}

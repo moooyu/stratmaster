@@ -228,11 +228,6 @@ void *strategy_process_handler(void *arg)
 			perror("strategy_handler join");
 	}
 
-
-	/* Check if value was set */
-	PRINTI(("[INFO] Return from process statement: Retrieving argument...\n"));
-	struct symbol_value *param_val = symbol_table_get_value(symtable, 0, "zbra_price");
-	PRINTI(("[INFO] Parameter %s is now set to: %s\n", param_val->identifier, ((ast_currency *)param_val->nodePtr)->curr->p));
 	PRINTI(("[INFO] Exiting STRATEGY process thread\n"));
 	return (void *)0;
 }
@@ -297,14 +292,18 @@ void *process_handler(void *arg)
 
 	do {
 		if ( ex_exp(args->procst->expression) ) {
+			
 			/* algo_data is created only after the first call to algo */
 			algo_data = g_hash_table_lookup(algo_map, algo_id);
 			//Check that ALGORITHM has a result for us AND is still alive
+
 			if (algo_data->has_result && !algo_data->is_dead)
+			{
 				ex_action_list(args->procst->action_list, args->strat->name);
+			}
 
 		}
-	} while ( !algo_data->is_dead && ex_exp(args->procst->until_exp) );
+	} while ( !algo_data->is_dead && (args->procst->until_exp != NULL) && !ex_exp(args->procst->until_exp) );
 	
 	terminate_algo_thread(algo_data);
 	free(args);
@@ -327,8 +326,8 @@ void cleanup_algorithm(void *arg)
 		free(cargs.n);
 	if( cargs.t != NULL )
 		free(cargs.t);
-	if( cargs.f )
-		fclose(cargs.f);
+//	if( cargs.f )
+//`		fclose(cargs.f);
 }
 
 /*
@@ -406,7 +405,7 @@ void *algorithm_handler(void *arg)
 	 *   Sleep interval in microseconds.
 	 *   This is 1 sec per year of data.
 	 */ 
-	unsigned int interval = 2740;
+	unsigned int interval = 5000;
 	
 /*	struct security *next_sec = create_security(EQTY, "TEST");
 	struct security *test_sec = create_security(EQTY, "ZBRA");
@@ -422,6 +421,7 @@ void *algorithm_handler(void *arg)
 		pthread_mutex_lock(&algo->mutex);
 		pthread_testcancel();
 		algo->has_result = 0;
+
 		while( !algo->can_run )
 			pthread_cond_wait(&algo->algo_go, &algo->mutex);
 
@@ -442,7 +442,6 @@ void *algorithm_handler(void *arg)
 			strcpy(algo->d->current_data.price, price);
 			if (ex_exp(set_stmt->exp)) 
 			{
-
 				for (i = 0 ; i < num_stmt_in_set; i++) 
 				{
 					ex_exp(set_stmt->argu_list->argu_list.exp[i]);
@@ -472,8 +471,8 @@ void *algorithm_handler(void *arg)
 		if( test_sec != NULL )
 		free(test_sec); */
 
-	if( algo->d->fp )
-		fclose(algo->d->fp);
+//	if( algo->d->fp )
+//		fclose(algo->d->fp);
 	//Need to set has_result = 1 since STRATEGY is sitting
 	//on a while loop checking this variable
 	algo->has_result = 1;
@@ -524,10 +523,11 @@ void *order_handler(void *arg)
 			default: fprintf(stderr, "ERROR: unknown order type.\n"); break;
 		}
 		/* free order_item structures */
-		if( next_order->ord != NULL )
-			free(next_order->ord);
-		if( next_order != NULL )
-			free(next_order);
+//		if( next_order->ord != NULL )
+//`			free(next_order->ord);
+//		if( next_order != NULL )
+//			free(next_order);
+	
 	}
 	return (void *)0;
 }
@@ -654,7 +654,7 @@ void* ex_exp(ast_exp *p)
 					break;
 
 				case OP_GT:
-					PRINTI(("--------------------------> Operator <\n"));
+					PRINTI(("--------------------------> Operator >\n"));
 					/* TODO: type check */
 
 					if (price_to_long((char*)ex_exp(p->oper.op1))> price_to_long((char*)ex_exp(p->oper.op2)))
@@ -719,6 +719,13 @@ void* ex_exp(ast_exp *p)
 							ret = (void*)((struct data*)sym_entry->nodePtr)->current_data.price;
 							PRINTI(("------------------------------> PRC will be %s\n", (char*) ret));
 							break;
+						case AVAIL_CASH_T:
+							
+							sym_entry = (struct symbol_value*)ex_exp(p->oper.op1);
+							ret = (void*)((struct account*)sym_entry->nodePtr)->avail_cash.p;
+							PRINTI(("--------------------------> AVAIL_CASH_T %s\n", (char*)ret));
+							break;
+
 						case NEXT_T:
 							ret = (void*)ex_exp(p->oper.op1);
 							break;
