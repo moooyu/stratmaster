@@ -1,0 +1,68 @@
+/*  StratMaster: Simple Algorithm
+ *  Conforms to revised grammar [VM]
+ */
+
+USE ACCOUNT ac_master;
+USE DATAFEED df_quotes;
+
+
+ALGORITHM al_low(DATAFEED quotes, SECURITY #buy_tgt, CURRENCY #pr)
+{
+    SET  { buy_tgt = quotes.NEXT.SEC,
+           pr = quotes.NEXT.PRC  }
+    IF:
+    {
+         quotes.NEXT.PRC < 30.00
+    }
+}
+
+
+
+ALGORITHM al_high(DATAFEED quotes, SECURITY #sell_tgt, CURRENCY #pr)
+{
+    SET  { sell_tgt = quotes.NEXT.SEC,
+           pr = quotes.NEXT.PRC   }
+    IF:
+    {
+         quotes.NEXT.PRC > 30.00
+    }
+}
+
+STRATEGY my_buy_strat
+{
+    SECURITY buy_sec;
+    SECURITY sell_sec;
+    CURRENCY buy_prc;
+    CURRENCY sell_prc;
+
+    WHEN( al_low(df_quotes, #buy_sec, #buy_prc) IS TRUE )
+    {
+         BUY  {  WHAT : SECURITY( buy_sec ).AMOUNT(100).PRICE( buy_prc );}
+    }
+/*
+    WHEN( al_high(df_quotes, #sell_sec, #sell_prc) IS TRUE )
+    {
+         BUY  {  WHAT : SECURITY( sell_sec ).AMOUNT(100).PRICE( sell_prc );}
+    }
+*/
+}
+
+
+STRATEGY my_sell_strat
+{
+    SECURITY buy_sec;
+    SECURITY sell_sec;
+    CURRENCY buy_prc;
+    CURRENCY sell_prc;
+/*
+    WHEN( al_low(df_quotes, #buy_sec, #buy_prc) IS TRUE )
+    {
+         BUY  {  WHAT : SECURITY( buy_sec ).AMOUNT(100).PRICE( buy_prc );}
+    }
+*/
+    WHEN( al_high(df_quotes, #sell_sec, #sell_prc) IS TRUE )
+    {
+         BUY  {  WHAT : SECURITY( sell_sec ).AMOUNT(100).PRICE( sell_prc );}
+    }
+
+}
