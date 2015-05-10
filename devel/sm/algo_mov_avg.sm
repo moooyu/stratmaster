@@ -1,0 +1,30 @@
+/*  StratMaster: Simple Algorithm
+ *  Conforms to revised grammar [VM]
+ */
+
+USE ACCOUNT ac_master;
+USE DATAFEED df_XLNX;
+
+FUNCTION Get_Mov_Avg() RETURNS VOID { }
+
+ALGORITHM al_movavg(DATAFEED quotes, CURRENCY #pr)
+{
+    SET  { pr = quotes.NEXT.PRC  }
+    IF:
+    {
+         quotes.NEXT.PRC > Get_Mov_Avg(XLNX, 50)
+    }
+}
+
+
+STRATEGY my_buy_strat
+{
+    CURRENCY buy_prc;
+
+    WHEN( al_movavg(df_XLNX, #buy_prc) IS TRUE )
+    {
+         BUY  {  WHAT : SECURITY( EQTY(XLNX) ).AMOUNT(10000).PRICE( buy_prc );}
+    }
+    UNTIL( ac_master.AVAIL_CASH < 99000000.00)
+
+}

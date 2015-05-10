@@ -50,6 +50,8 @@ static struct cleanup_args ca;
 struct symbol_table *global_symtable;
 static struct data *db_prices;
 static struct position pricedata[NUMPRICES];
+char *tk; //ticker
+char *dt; //date
 
 GHashTable *algo_map;
 int algo_map_init()
@@ -107,6 +109,13 @@ void run_interp(ast_program * program)
 	 * *************************/
 	/* Create account */
 	ac_master = (struct account *)(symbol_table_get_value(program->sym, ACCOUNT_T, "ac_master")->nodePtr);
+	//initialize mutex in account
+	if( pthread_mutex_init(&(ac_master->lock), NULL) != 0 ) 
+	{
+		free(ac_master);
+		die("initializing ac_master lock");
+	}
+
 
 	//print_account_positions(ac_master);
 	/* Create data source */
@@ -157,6 +166,7 @@ void run_interp(ast_program * program)
 	queue_destroy(&order_queue);	
 	/* Print account summary before exit */
 	print_account_summary(ac_master, "ac_master", pricedata, NUMPRICES);
+	pthread_mutex_destroy(&ac_master->lock);
 	/* free account */
 	if( ac_master != NULL)
 		free(ac_master);
@@ -183,10 +193,36 @@ void *strategy_order_handler(void *arg)
 	{
 		temp_item = strategy->order_list[i];
 		temp_order = create_order(temp_item->sec->sec, temp_item->number->con.int_value->value, temp_item->prc->curr, temp_item->type);
-		queue_put_order(&order_queue, temp_order, strategy->name);
+		//queue_put_order(&order_queue, temp_order, strategy->name);
 
-	//	fprintf(stderr, "[INFO] Starting balance in ac_master: %ld\n", get_available_cash(ac_master)); 
-	//	print_account_positions(ac_master);
+		//Check if we can place the order
+		switch( temp_order->order_t )
+		{
+			case BUY_ORDER:
+				if( can_add_position(ac_master, temp_order) < 0 )
+					fprintf(stderr, "ERROR: cannot add position\n");
+				else
+				{
+					pthread_mutex_lock(&ac_master->lock);
+					add_position(ac_master, temp_order);
+					pthread_mutex_unlock(&ac_master->lock);
+					queue_put_order(&order_queue, temp_order, strategy->name);
+				}
+				break;
+
+			case SELL_ORDER:
+				if( can_sell_position(ac_master, temp_order) < 0 )
+					fprintf(stderr, "ERROR: cannot sell position\n");
+				else
+				{
+					pthread_mutex_lock(&ac_master->lock);	
+					subtract_position(ac_master, temp_order);
+					pthread_mutex_unlock(&ac_master->lock);
+					queue_put_order(&order_queue, temp_order, strategy->name);
+				}
+				break;
+			default: fprintf(stderr, "ERROR: unknown order type.\n"); break;
+		}
 	}
 	return (void *)0;
 }
@@ -235,14 +271,40 @@ void *strategy_process_handler(void *arg)
 void ex_action_list(ast_action_list *actions, char * strat_name)
 {
 	ast_order_item *temp_item;
+	//int ret = 0;
 	int i = 0;
 	struct order *temp_order;
 
 	for(i = 0; i < actions->num_of_orders; i++) {
 		temp_item = actions->order[i];
 		temp_order = create_order(temp_item->sec->sec, temp_item->number->con.int_value->value, temp_item->prc->curr, temp_item->type);
-		queue_put_order(&order_queue, temp_order, strat_name);
+
+		//Check if we can place the order
+		switch( temp_order->order_t )
+		{
+			case BUY_ORDER:
+				if( can_add_position(ac_master, temp_order) < 0 )
+					/*fprintf(stderr, "ERROR: cannot add position\n")*/;
+				else
+				{
+					add_position(ac_master, temp_order);
+					queue_put_order(&order_queue, temp_order, strat_name);
+				}
+				break;
+
+			case SELL_ORDER:
+				if( can_sell_position(ac_master, temp_order) < 0 )
+					/* fprintf(stderr, "ERROR: cannot sell position\n") */;
+				else
+				{
+					subtract_position(ac_master, temp_order);
+					queue_put_order(&order_queue, temp_order, strat_name);
+				}
+				break;
+			default: fprintf(stderr, "ERROR: unknown order type.\n"); break;
+		}	
 	}
+
 }
 
 void terminate_algo_thread(struct algorithm *algo_data)
@@ -284,6 +346,7 @@ void *process_handler(void *arg)
 {
 	PRINTI(("[INFO] Executing process statement.\n"));
 
+	int retval;
 	struct proc_args *args = (struct proc_args *)arg;
 	char* algo_id;
 	struct algorithm *algo_data;
@@ -296,12 +359,17 @@ void *process_handler(void *arg)
 			/* algo_data is created only after the first call to algo */
 			algo_data = g_hash_table_lookup(algo_map, algo_id);
 			//Check that ALGORITHM has a result for us AND is still alive
-
 			if (algo_data->has_result && !algo_data->is_dead)
 			{
+				//Set has_result to 0 so we don't keep
+				//issuing orders before ALGO thread resumes
+				algo_data->has_result = 0;
+				pthread_mutex_lock(&ac_master->lock);
 				ex_action_list(args->procst->action_list, args->strat->name);
+				pthread_mutex_unlock(&ac_master->lock);
+				//NOW we release the lock--after issuing the orders
+				pthread_mutex_unlock(&algo_data->mutex);
 			}
-
 		}
 	} while ( !algo_data->is_dead && (args->procst->until_exp != NULL) && !ex_exp(args->procst->until_exp) );
 	
@@ -437,6 +505,9 @@ void *algorithm_handler(void *arg)
 			PRINTI(("price is %s\n", price));
 			PRINTI(("date is %s\n", date));
 
+			tk = ticker;
+			dt = date;
+
 			strcpy(algo->d->current_data.eqty, ticker);
 			strcpy(algo->d->current_data.date, date);
 			strcpy(algo->d->current_data.price, price);
@@ -450,6 +521,9 @@ void *algorithm_handler(void *arg)
 				algo->is_dead = 0;
 				algo->has_result = 1;
 				pthread_cond_signal(&algo->algo_stop);
+				//Set can_run to 0 so ALGO doesn't keep
+				//running before STRATEGY can reset this
+				algo->can_run = 0;
 				pthread_mutex_unlock(&algo->mutex);
 				found = 1;
 			}
@@ -494,34 +568,9 @@ void *order_handler(void *arg)
 	{
 		/* Wait for order */
 		next_order = queue_get_order(&order_queue);
+		PRINTI(("[INFO] ISSUING ORDER.\n"));
+		emit_order(next_order);
 
-		switch( next_order->ord->order_t )
-		{
-			case BUY_ORDER:
-				if( can_add_position(ac_master, next_order->ord) < 0 )
-					fprintf(stderr, "ERROR: cannot add position\n");
-				else
-				{
-					/* Issue the order */
-					PRINTI(("[INFO] ISSUING ORDER.\n"));
-					emit_order(next_order);
-					add_position(ac_master, next_order->ord);
-				}
-				break;
-
-			case SELL_ORDER:
-				if( can_sell_position(ac_master, next_order->ord) < 0 )
-					fprintf(stderr, "ERROR: cannot sell position\n");
-				else
-				{
-					/* Issue the order */
-					PRINTI(("[INFO] ISSUING ORDER.\n"));
-					emit_order(next_order);
-					subtract_position(ac_master, next_order->ord);
-				}
-				break;
-			default: fprintf(stderr, "ERROR: unknown order type.\n"); break;
-		}
 		/* free order_item structures */
 //		if( next_order->ord != NULL )
 //`			free(next_order->ord);
@@ -562,26 +611,26 @@ int call_algo(ast_exp *p)
 
 		if( pthread_create(&algo_data->algo_thread, NULL, algorithm_handler, algo_data) != 0 )
 			die("algorithm thread create fail");
-
+		
 		g_hash_table_insert(algo_map, (gpointer) algo_id, algo_data);
 	}
 
-	//This is STRATEGY (consumer) side
 	pthread_mutex_lock(&algo_data->mutex);
 	//Let ALGORITHM know it's OK to run
 	algo_data->can_run = 1;
 	pthread_cond_signal(&algo_data->algo_go);
-
 	while( !algo_data->has_result )
 		pthread_cond_wait(&algo_data->algo_stop, &algo_data->mutex);
 
 	//if we get here, ALGORITHM has signaled TRUE
 	algo_data->can_run = 0;
+
 	//But check if ALGORITHM thread died; if alive
 	//we need to unlock mutex
-	if( !algo_data->is_dead )
-		pthread_mutex_unlock(&algo_data->mutex);
+//	if( !algo_data->is_dead )
+//		pthread_mutex_unlock(&algo_data->mutex);
 
+	
 	return ret;
 }
 
@@ -607,6 +656,9 @@ void* ex_exp(ast_exp *p)
 {
 	void* ret = NULL;
 	struct symbol_value* sym_entry;
+	char buf[NAMEBUF];
+	memset(buf, 0, NAMEBUF);
+	int days = 0;
 	if (!p) return 0;
 	switch(p->type)
 	{
@@ -614,7 +666,10 @@ void* ex_exp(ast_exp *p)
 			PRINTI(("--------------------------> This exp is ID\n"));
 			ret = (void*)symbol_table_get_value(p->id.sym, 0, p->id.value);
 			return ret;
-			
+			break;
+		case typeIntegerConst:
+			PRINTI(("--------------------------> This exp is IntegerConst: %d\n", p->con.int_value->value));
+			ret = (void*)(intptr_t)p->con.int_value->value;
 			break;
 		case typeBooleanConst:
 			PRINTI(("--------------------------> This exp is BooleanConst: %d\n", p->con.bool_value->value));
@@ -624,12 +679,20 @@ void* ex_exp(ast_exp *p)
 			PRINTI(("--------------------------> This exp is PriceConst: %s\n", p->con.price_value->price ));
 			ret = (void*)p->con.price_value->price;
 			break;
+		case typeCurrencyConst:
+			PRINTI(("--------------------------> This exp is CurrencyConst: %s\n", p->con.curr_value->p ));
+			ret = (void*)p->con.curr_value->p;
+			break;
 		case typeKeyword:
 			PRINTI(("--------------------------> This exp is KEYword\n"));
 			break;
                 case typeSec:
                         PRINTI(("--------------------------> This exp is Security: %s\n", p->security.sec->sym));
                         ret = (void*)p->security.sec->sym;
+                        break;
+		case typePos:
+                        PRINTI(("--------------------------> This exp is Position: %s\n", p->position.pos->sec.sym));
+                        ret = (void*)p->position.pos->sec.sym;
                         break;
 		case typeOper:
 			switch(p->oper.oper) {
@@ -656,14 +719,16 @@ void* ex_exp(ast_exp *p)
 				case OP_GT:
 					PRINTI(("--------------------------> Operator >\n"));
 					/* TODO: type check */
-
-					if (price_to_long((char*)ex_exp(p->oper.op1))> price_to_long((char*)ex_exp(p->oper.op2)))
+					if( p->oper.op2->type == typeIntegerConst )
+					{
+						return (void*)(intptr_t) ( ex_exp(p->oper.op1) > ex_exp(p->oper.op2) ) ;
+					}
+					else if (price_to_long((char*)ex_exp(p->oper.op1))> price_to_long((char*)ex_exp(p->oper.op2)))
 						ret = (void*)(intptr_t)1;
 					else
 						ret = (void*)(intptr_t)0;
 
 					break;
-
 
 
 				case OP_ASSIGN:
@@ -700,8 +765,21 @@ void* ex_exp(ast_exp *p)
 						PRINTI(("--------------------------> This is ALGO call to %s\n", sym_entry->identifier));
 						ret = (void*)(intptr_t)call_algo(p);
 					}
-					/* TODO: handle function */
-
+					if( type == FUNC_SYM )
+					{
+						PRINTI(("--------------------------> This is FUNCTION call to %s\n", sym_entry->identifier));
+						if( strcmp( "Get_Mov_Avg", sym_entry->identifier) == 0 )
+						{
+							days = (intptr_t)p->oper.op2->argu_list.exp[1]->con.int_value->value;
+							long_to_price(get_moving_avg(tk, days, dt), buf);
+							ret = (void*)buf;
+							if( ret < 0 )
+								fprintf(stderr, "UNABLE TO GET MOVING AVGS\n");
+						}
+						else
+							ret = (void*)0;
+					}				
+					
 					break;
 
 				case OP_ATTR:
@@ -711,6 +789,8 @@ void* ex_exp(ast_exp *p)
 					   - if op2 is NEXT, then return op1
 					   - if op2 is PRC, then return value in ex_exp(op1)->price
 					   - if op2 is SEC, then return value in ex_exp(op1)->eqty
+					   - if op2 is POS, then call get_position
+					   - if op2 is AMT, then get total_shares from position
 					   */
 					switch(p->oper.op2->attr.value){
 						case PRC_T:
@@ -734,7 +814,18 @@ void* ex_exp(ast_exp *p)
 							ret = (void*)((struct data*)sym_entry->nodePtr)->current_data.eqty;
 							PRINTI(("------------------------------> SEC will be %s\n", (char*) ret));
 							break;
+						case POS_T:
+							pthread_mutex_lock(&ac_master->lock);
+				//			fprintf(stderr,"in POS_T: %s\n",  (p->oper.op2->position).pos->sec.sym);
+				//			ret = (void*)(struct position *)get_position(ac_master, &(p->oper.op2->position).pos); 
+							pthread_mutex_unlock(&ac_master->lock);
+				//			PRINTI(("------------------------------> POS will be %s\n", (char*)((struct position *)ret)->sec.sym ));
+							break;
 
+						case AMT_T:
+							//fprintf(stderr, "the type of op1= %s op2 = %s\n",node_type_tostring(p->oper->type));
+							//ret = (void*)(intptr_t)p->oper.op1->position.pos->total_shares;
+							break;
 						default:
 							PRINTI(("---------------------------> ATTR operator is not recognized\n"));
 					}

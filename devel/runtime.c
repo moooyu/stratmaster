@@ -71,6 +71,28 @@ long price_to_long(const char *pr)
 }
 
 /*
+ *  Convert a long to a price string with commas for display purposes.
+ */
+void long_to_price_display(long value, char *buf)
+{
+	memset(buf, 0, sizeof(buf));
+	char resultbuf[NAMEBUF];
+	char tempbuf[NAMEBUF];
+
+	long dollars = value / 100L;
+	long cents   = value - (dollars * 100L);
+	//fprintf(stderr, "DOLLARS = %ld CENTS = %02ld\n", dollars, cents);	
+	sprintf(resultbuf, "%'ld.", dollars);
+	sprintf(tempbuf, "%02ld", cents);
+        strcat(resultbuf, tempbuf);
+
+	//fprintf(stderr, "DOLLARS = %s CENTS = %s\n", resultbuf, tempbuf);
+	copy_name(buf, resultbuf);
+}
+
+
+
+/*
  * Convert a long to a price string.
  */
 void long_to_price(long value, char *buf)
@@ -82,7 +104,7 @@ void long_to_price(long value, char *buf)
 	long dollars = value / 100L;
 	long cents   = value - (dollars * 100L);
 	//fprintf(stderr, "DOLLARS = %ld CENTS = %02ld\n", dollars, cents);	
-	sprintf(resultbuf, "%'ld.", dollars);
+	sprintf(resultbuf, "%ld.", dollars);
 	sprintf(tempbuf, "%02ld", cents);
         strcat(resultbuf, tempbuf);
 
@@ -226,10 +248,14 @@ struct position *create_position(struct security *s, int amt, struct currency *p
 	struct position *new_pos = (struct position *)malloc(sizeof(struct position));
 	if( new_pos == NULL )
 		die("error mallocing new position");
+
 	memcpy((void*)&(new_pos->sec), (void*)s, sizeof(struct security));
 	new_pos->total_shares = amt;
-	new_pos->total_cost = amt * price_to_long(p->p);
-	new_pos-> next = NULL;
+	if( p == NULL )
+		new_pos->total_cost = 0L;
+	else
+		new_pos->total_cost = amt * price_to_long(p->p);
+	new_pos->next = NULL;
 
 	return new_pos;
 }
@@ -336,7 +362,7 @@ void add_position(struct account *acct, struct order *order)
 	char buf[NAMEBUF];
 	memset(buf, 0, NAMEBUF);
 	long cost = order->amt * price_to_long(order->pr.p);
-	long_to_price(cost, buf);
+	long_to_price_display(cost, buf);
 	fprintf(stdout, ">>>> Adding Position: %'d shares of %s at %s     COST: %12s\n", order->amt, order->sec.sym, order->pr.p, buf);
 }
 
@@ -386,7 +412,7 @@ void subtract_position(struct account *acct, struct order *order)
 
 	char buf[NAMEBUF];
 	memset(buf, 0, NAMEBUF);
-	long_to_price(proceeds, buf);
+	long_to_price_display(proceeds, buf);
 	fprintf(stdout, ">>>> Selling Position: %'d shares of %s at %s PROCEEDS: %12s\n", order->amt, order->sec.sym, order->pr.p, buf);
 }
 
@@ -455,15 +481,15 @@ void print_account_summary(struct account *acct, const char *name, struct positi
 	{
 		curr_value = curr->total_shares * get_curr_price(&curr->sec, pricedata, num);
 		total_value += curr_value;
-		long_to_price(curr_value, valuebuf);
+		long_to_price_display(curr_value, valuebuf);
 		
 		fprintf(stdout, "[%3d] %4s: Total Shares: %'6d Current Value: %14s\n", secnum++, curr->sec.sym, curr->total_shares, valuebuf);
 		memset(valuebuf, 0, NAMEBUF);
 		curr = curr->next;
 	}
-	long_to_price(total_value, valuebuf);
-	long_to_price(get_cash_balance(acct), cashbuf);
-	long_to_price(total_value + get_cash_balance(acct), acctbuf);
+	long_to_price_display(total_value, valuebuf);
+	long_to_price_display(get_cash_balance(acct), cashbuf);
+	long_to_price_display(total_value + get_cash_balance(acct), acctbuf);
 
 	fprintf(stdout, "\n                 Total Value of Securities: %18s\n", valuebuf);
 	fprintf(stdout, "                    Cash Balance Remaining: %18s\n", cashbuf);
@@ -503,6 +529,92 @@ struct data *create_data_source(const char *dfname)
 }
 
 
+long get_moving_avg(const char *secname, int days, const char *d)
+{
+	long movavg = 0L;
+	char buf[IOBUFSIZE];
+	memset(buf, 0, IOBUFSIZE);
+	char fname[NAMEBUF];
+	memset(fname, 0, NAMEBUF);
+	char pricebuf[NAMEBUF];
+	memset(pricebuf, 0, NAMEBUF);
+	strcpy(fname, "../data/");
+	strcat(fname, secname);
+	char *ext = ".dat";
+	strcat(fname, ext);
+//	fprintf(stderr, "Mov avg file name: %s\n", fname);
+	/* Open data file for reading */
+	FILE *fp = fopen(fname, "r");
+	if( fp == NULL )
+		die("error opening data file");
+
+	char *token_separators = "\t \n";
+	char *ticker;
+	char *date;
+	char *price;
+	char *bk;
+	
+	long sum = 0L;
+	int date_found = 0;
+	int counter = 0;
+
+	//read in file past the first days
+	while( counter < days && fgets(buf, sizeof(buf), fp) != NULL )
+	{	
+		counter++;	
+	}	
+
+//fprintf(stderr, "counter = %d\n", counter);
+	counter = 0;
+	memset(buf, 0, IOBUFSIZE);
+//fprintf(stderr, "days = %d\n", days);
+	while( counter < days && fgets(buf, sizeof(buf), fp) != NULL )
+	{	
+		ticker = strtok_r(buf, token_separators, &bk);
+		date   = strtok_r(NULL, token_separators, &bk);
+		price  = strtok_r(NULL, token_separators, &bk);
+//		fprintf(stderr, "movavg: ticker %s\n", ticker);
+//		fprintf(stderr, "movavg: date %s\n", date);
+//		fprintf(stderr, "movavg: price %s\n", price);
+
+		if( !date_found )
+		{
+			if( strcmp(d, date) == 0 )
+			{
+				sprintf(pricebuf, "%s", price);
+				date_found = 1;
+				sum += price_to_long(price);
+				counter++;
+			}
+		}
+		
+		if( date_found )
+		{
+			sprintf(pricebuf, "%s", price);
+			sum += price_to_long(price);
+			counter++;	
+		}
+		memset(pricebuf, 0, NAMEBUF);
+		memset(buf, 0, IOBUFSIZE);
+	}
+
+	//Check if we reached EOF
+	if( feof(fp) > 0 )
+	{
+		movavg = -1;
+	}
+	else
+	{
+		movavg = sum / days;
+	}
+//fprintf(stderr, "movavg = %ld\n", movavg);
+	if(fp)
+		fclose(fp);
+	return movavg;
+}
+
+
+
 /*
  *   Create a new order.
  */
@@ -513,7 +625,6 @@ struct order *create_order(struct security *security, int amount, struct currenc
 		die("malloc failed");
 	
 	new_order->sec = *security;
-	free(security);
 	new_order->amt = amount;
 	new_order->pr = *price;
 	new_order->order_t = order_type;
@@ -589,7 +700,7 @@ void emit_order(struct order_item *my_order)
 
 	/* Print confirmation */
 	printf("++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++\n");
-	printf("[%s] YOU %s: %d SHARES OF %s AT %s %s\n", buf, order_type, my_order->ord->amt, 
+	printf("[%s] YOU %s: %'d SHARES OF %s AT %s %s\n", buf, order_type, my_order->ord->amt, 
 			my_order->ord->sec.sym, curr_type, my_order->ord->pr.p);
 	printf(" >>>>>> ORDER PLACED BY %s\n", my_order->strat);
 	printf("++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++\n\n");
@@ -785,6 +896,8 @@ char *node_type_tostring(int t)
 		case typeID: str = "ID"; break;
 		case typeKeyword: str = "KEYWORD"; break;
 		case typeArgulist: str = "ARGUMENT LIST"; break;
+		case typePos: str = "POSITION"; break;
+		case typeCurrencyConst: str = "CURRENCY"; break;
 		default: str = "UNKNOWN EXP NODE TYPE";
 	}
 
