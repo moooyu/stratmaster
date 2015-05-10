@@ -1,0 +1,22 @@
+/*<38>SET IF*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_ZBRA;
+
+ALGORITHM al_Buy_Something(DATAFEED quotes, CURRENCY #buy_price)
+{
+    SET  { buy_price = df_ZBRA.NEXT.PRC }
+    IF:
+    {
+    	 quotes.NEXT.SEC IS EQTY(ZBRA)
+         AND
+         quotes.NEXT.PRC < 90
+    }
+}
+
+
+STRATEGY my_buy_strat2
+{
+
+         BUY  {  WHAT : SECURITY( EQTY(ZBRA) ).AMOUNT(100).PRICE(11.11);}
+
+}

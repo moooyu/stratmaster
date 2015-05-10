@@ -206,7 +206,7 @@ process_statement : WHEN '(' expression ')' '{' process_body '}' UNTIL '(' expre
 		;
 
 process_body	: action_list { $$ = $1; }
-	     	| action_list statement_list
+	     	| action_list statement_list   // delete this plz
 		;
 
 action_list	: order_type '{' constraint_list '}'				{ $$ = create_action_list($1,$3);}

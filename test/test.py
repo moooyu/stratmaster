@@ -7,6 +7,50 @@ import argparse
 from pipes import *
 
 
+result = ["85 shares of ZBRA",
+	"85 shares of ZBRA",
+	"85 shares of ZBRA",
+	"Account not found",
+	"85 shares of ZBRA",
+	"error opening data file",
+	"85 shares of ZBRA",
+	"error opening data file",
+	"error opening account",	#9
+	"error",
+	"error",
+	"85 shares of",
+	"85 shares of",
+	"85 shares of",
+	"85 shares of",
+	"85 shares of",
+	"85 shares of",
+	"85 shares of",
+	"85 shares of",
+	"syntax error",			#20
+	"85 shares of",	
+	"85 shares of",
+	"85 shares of",
+	"85 shares of",
+	"already in use",
+	"not found",
+	"85 shares of",
+	"85 shares of",
+	"invalid",
+	"invalid",
+	"85 shares of",
+	"85 shares of",
+	"85 shares of",
+	"shares",			#34
+	"syntax error",
+	"syntax error"
+	"shares of",
+	"shares of"			#38
+	]
+	
+	
+	
+	
+	
 
 parser = argparse.ArgumentParser(prog='PLT FINAL',description=
                 "python test.py or python test.py --case number")
@@ -90,38 +134,31 @@ subprocess.call("./test.sh")
 feed = feed[1:]
 
 s,e = 0,len(feed)
-if args.case != None:  s = int(args.case); e = s+1
+if args.case != None:  s = int(args.case)-1; e = s+1
 info = []
 count = 0
 fail = []
 for line in feed[s:e]:
-	
 	with open('test.sm','w') as f:f.write(line)
-	exe = subprocess.Popen("./strat.out",stdin=open('test.sm','r'), stdout = subprocess.PIPE , stderr=subprocess.PIPE)
+	exe = subprocess.Popen("../devel/strat.out",stdin=open('test.sm','r'), stdout = subprocess.PIPE , stderr=subprocess.PIPE)
 	out =  [exe.stdout.read(),exe.stderr.read()]
 	res = 'pass'
-	if count < 30:
-		expected = re.findall('[0-9]*\.?[0-9]+',line)[1:]
-		for x in expected:
-			if x not in out[0]: 
-				res = 'fail'
-				break
-		if 'syntax' in out[1]:res = 'fail'
-	else:
-		expected = line.split('\n')[1].strip('*/')
-		if expected not in out[1]: res = 'fail'
+		#expected = re.findall('[0-9]*\.?[0-9]+',line)[1:]
+	if result[count] not in out[0] and result[count] not in out[1]: 
+		res = 'fail'
+
 	
-	info.append([line,out[0]+out[1],expected])
-	if res == 'pass': print "case",count,':',info[count][0].split('*/')[0],'\n','------->',res
+	info.append([line,out[0]+out[1],result[count]])
+	if res == 'pass': print "case",count+1,':',info[count][0].split('*/')[0],'\n','------->',res
 	elif res == 'fail':
 		fail.append(count)
-		print "case",count,':',info[count][0].split('*/')[0],'\n','------->',res
+		print "case",count+1,':',info[count][0].split('*/')[0],'\n','------->',res
 	count += 1
 print "/*************summary**************/"
-print 'pass: ',count - len(fail),'/',count
+print 'pass: ',count + 1 - len(fail),'/',count+1
 for i in fail:
-	print 'fail case',i,': ',info[i][0].split('*/')[0]
-n = int(raw_input('type the fail case number: '))
+	print 'fail case',i+1,': ',info[i][0].split('*/')[0]
+n = int(raw_input('type the fail case number: '))-1
 print "/*************Source Code**************/"
 print info[n][0]
 print "\n/*****************Program Output****************/"
