@@ -12,7 +12,7 @@ ALGORITHM al_low(DATAFEED quotes, SECURITY #buy_tgt, CURRENCY #pr)
            pr = quotes.NEXT.PRC  }
     IF:
     {
-         quotes.NEXT.PRC < 50.00
+         quotes.NEXT.PRC < 30.00
     }
 }
 
@@ -24,8 +24,8 @@ STRATEGY my_buy_strat
 
     WHEN( al_low(df_quotes, #buy_sec, #buy_prc) IS TRUE )
     {
-         BUY  {  WHAT : SECURITY( buy_sec ).AMOUNT(10000).PRICE( buy_prc );}
+         BUY  {  WHAT : SECURITY( buy_sec ).AMOUNT(100).PRICE( buy_prc );}
     }
-    UNTIL( ac_master.AVAIL_CASH < 1.00)
+    UNTIL( ac_master.AVAIL_CASH < 1000.00)
 
 }

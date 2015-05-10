@@ -183,10 +183,32 @@ void *strategy_order_handler(void *arg)
 	{
 		temp_item = strategy->order_list[i];
 		temp_order = create_order(temp_item->sec->sec, temp_item->number->con.int_value->value, temp_item->prc->curr, temp_item->type);
-		queue_put_order(&order_queue, temp_order, strategy->name);
+		//queue_put_order(&order_queue, temp_order, strategy->name);
 
-	//	fprintf(stderr, "[INFO] Starting balance in ac_master: %ld\n", get_available_cash(ac_master)); 
-	//	print_account_positions(ac_master);
+		//Check if we can place the order
+		switch( temp_order->order_t )
+		{
+			case BUY_ORDER:
+				if( can_add_position(ac_master, temp_order) < 0 )
+					fprintf(stderr, "ERROR: cannot add position\n");
+				else
+				{
+					add_position(ac_master, temp_order);
+					queue_put_order(&order_queue, temp_order, strategy->name);
+				}
+				break;
+
+			case SELL_ORDER:
+				if( can_sell_position(ac_master, temp_order) < 0 )
+					fprintf(stderr, "ERROR: cannot sell position\n");
+				else
+				{
+					subtract_position(ac_master, temp_order);
+					queue_put_order(&order_queue, temp_order, strategy->name);
+				}
+				break;
+			default: fprintf(stderr, "ERROR: unknown order type.\n"); break;
+		}
 	}
 	return (void *)0;
 }
@@ -235,14 +257,40 @@ void *strategy_process_handler(void *arg)
 void ex_action_list(ast_action_list *actions, char * strat_name)
 {
 	ast_order_item *temp_item;
+	//int ret = 0;
 	int i = 0;
 	struct order *temp_order;
 
 	for(i = 0; i < actions->num_of_orders; i++) {
 		temp_item = actions->order[i];
 		temp_order = create_order(temp_item->sec->sec, temp_item->number->con.int_value->value, temp_item->prc->curr, temp_item->type);
-		queue_put_order(&order_queue, temp_order, strat_name);
+
+		//Check if we can place the order
+		switch( temp_order->order_t )
+		{
+			case BUY_ORDER:
+				if( can_add_position(ac_master, temp_order) < 0 )
+					fprintf(stderr, "ERROR: cannot add position\n");
+				else
+				{
+					add_position(ac_master, temp_order);
+					queue_put_order(&order_queue, temp_order, strat_name);
+				}
+				break;
+
+			case SELL_ORDER:
+				if( can_sell_position(ac_master, temp_order) < 0 )
+					fprintf(stderr, "ERROR: cannot sell position\n");
+				else
+				{
+					subtract_position(ac_master, temp_order);
+					queue_put_order(&order_queue, temp_order, strat_name);
+				}
+				break;
+			default: fprintf(stderr, "ERROR: unknown order type.\n"); break;
+		}	
 	}
+
 }
 
 void terminate_algo_thread(struct algorithm *algo_data)
@@ -284,6 +332,7 @@ void *process_handler(void *arg)
 {
 	PRINTI(("[INFO] Executing process statement.\n"));
 
+	int retval;
 	struct proc_args *args = (struct proc_args *)arg;
 	char* algo_id;
 	struct algorithm *algo_data;
@@ -296,12 +345,15 @@ void *process_handler(void *arg)
 			/* algo_data is created only after the first call to algo */
 			algo_data = g_hash_table_lookup(algo_map, algo_id);
 			//Check that ALGORITHM has a result for us AND is still alive
-
 			if (algo_data->has_result && !algo_data->is_dead)
 			{
+				//Set has_result to 0 so we don't keep
+				//issuing orders before ALGO thread resumes
+				algo_data->has_result = 0;
 				ex_action_list(args->procst->action_list, args->strat->name);
+				//NOW we release the lock--after issuing the orders
+				pthread_mutex_unlock(&algo_data->mutex);
 			}
-
 		}
 	} while ( !algo_data->is_dead && (args->procst->until_exp != NULL) && !ex_exp(args->procst->until_exp) );
 	
@@ -450,6 +502,9 @@ void *algorithm_handler(void *arg)
 				algo->is_dead = 0;
 				algo->has_result = 1;
 				pthread_cond_signal(&algo->algo_stop);
+				//Set can_run to 0 so ALGO doesn't keep
+				//running before STRATEGY can reset this
+				algo->can_run = 0;
 				pthread_mutex_unlock(&algo->mutex);
 				found = 1;
 			}
@@ -494,34 +549,9 @@ void *order_handler(void *arg)
 	{
 		/* Wait for order */
 		next_order = queue_get_order(&order_queue);
+		PRINTI(("[INFO] ISSUING ORDER.\n"));
+		emit_order(next_order);
 
-		switch( next_order->ord->order_t )
-		{
-			case BUY_ORDER:
-				if( can_add_position(ac_master, next_order->ord) < 0 )
-					fprintf(stderr, "ERROR: cannot add position\n");
-				else
-				{
-					/* Issue the order */
-					PRINTI(("[INFO] ISSUING ORDER.\n"));
-					emit_order(next_order);
-					add_position(ac_master, next_order->ord);
-				}
-				break;
-
-			case SELL_ORDER:
-				if( can_sell_position(ac_master, next_order->ord) < 0 )
-					fprintf(stderr, "ERROR: cannot sell position\n");
-				else
-				{
-					/* Issue the order */
-					PRINTI(("[INFO] ISSUING ORDER.\n"));
-					emit_order(next_order);
-					subtract_position(ac_master, next_order->ord);
-				}
-				break;
-			default: fprintf(stderr, "ERROR: unknown order type.\n"); break;
-		}
 		/* free order_item structures */
 //		if( next_order->ord != NULL )
 //`			free(next_order->ord);
@@ -562,26 +592,26 @@ int call_algo(ast_exp *p)
 
 		if( pthread_create(&algo_data->algo_thread, NULL, algorithm_handler, algo_data) != 0 )
 			die("algorithm thread create fail");
-
+		
 		g_hash_table_insert(algo_map, (gpointer) algo_id, algo_data);
 	}
 
-	//This is STRATEGY (consumer) side
 	pthread_mutex_lock(&algo_data->mutex);
 	//Let ALGORITHM know it's OK to run
 	algo_data->can_run = 1;
 	pthread_cond_signal(&algo_data->algo_go);
-
 	while( !algo_data->has_result )
 		pthread_cond_wait(&algo_data->algo_stop, &algo_data->mutex);
 
 	//if we get here, ALGORITHM has signaled TRUE
 	algo_data->can_run = 0;
+
 	//But check if ALGORITHM thread died; if alive
 	//we need to unlock mutex
-	if( !algo_data->is_dead )
-		pthread_mutex_unlock(&algo_data->mutex);
+//	if( !algo_data->is_dead )
+//		pthread_mutex_unlock(&algo_data->mutex);
 
+	
 	return ret;
 }
 

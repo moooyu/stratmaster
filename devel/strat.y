@@ -299,15 +299,15 @@ statement_list	: statement			{ $$ = create_statement_list($1); }
 		;
 
 selection_statement : IF '(' expression ')' statement   { $$ = create_selection_statement($3, $5); 
-							if  (Stack_Top(stack) != BOOLEAN_T)
-							strat_error_msg("invalid operation IF, the type in if is not boolean", 1, yylineno);}
+							/*if  (Stack_Top(stack) != BOOLEAN_T)
+							strat_error_msg("invalid operation IF, the type in if is not boolean", 1, yylineno);*/}
 		;
 
 iteration_statement : WHILE '(' expression ')' statement
 		;
 
 set_statement 	: SET '{' argument_expression_list '}' IF ':' '{' expression '}'	{ /* $$ = create_set_statement(0,$3,$8); */
-											if  (Stack_Top(stack) != BOOLEAN_T) 												strat_error_msg("invalid operation IF, the type in if is not boolean", 1, yylineno);
+											/*if  (Stack_Top(stack) != BOOLEAN_T) 												strat_error_msg("invalid operation IF, the type in if is not boolean", 1, yylineno); */
 											$$ = create_set_statement($3,$8);  }
 		;
 
@@ -333,10 +333,10 @@ equality_expression : relation_expression 				{ $$ = $1;}
 		;
 
 relation_expression :  additive_expression 				{ $$ = $1;}
-	        | relation_expression '<' additive_expression		{ semantic_check(OP_LT,2);$$ = create_opr(OP_LT, 2, $1, $3); }
-       		| relation_expression '>' additive_expression		{ semantic_check(OP_GT,2);$$ = create_opr(OP_GT, 2, $1, $3); }
-       		| relation_expression '<''=' additive_expression	{ semantic_check(OP_LTEQ,2);$$ = create_opr(OP_LTEQ, 2, $1, $4); }
-        	| relation_expression '>''=' additive_expression	{ semantic_check(OP_LTEQ,2);$$ = create_opr(OP_GTEQ, 2, $1, $4); }
+	        | relation_expression '<' additive_expression		{ /* semantic_check(OP_LT,2); */ $$ = create_opr(OP_LT, 2, $1, $3); }
+       		| relation_expression '>' additive_expression		{ /* semantic_check(OP_GT,2); */ $$ = create_opr(OP_GT, 2, $1, $3); }
+       		| relation_expression '<''=' additive_expression	{ /* semantic_check(OP_LTEQ,2); */ $$ = create_opr(OP_LTEQ, 2, $1, $4); }
+        	| relation_expression '>''=' additive_expression	{ /* semantic_check(OP_LTEQ,2); */ $$ = create_opr(OP_GTEQ, 2, $1, $4); }
 		;
 
 additive_expression : multiplicative_expression				{ $$ = $1; }
@@ -350,7 +350,7 @@ multiplicative_expression : unary_expression { $$ = $1; }
 		;
 	
 unary_expression : postfix_expression { $$ = $1;}
-		| unary_operator unary_expression { semantic_check($1,1);$$ = create_opr($1,1,$2,NULL);}
+		| unary_operator unary_expression {/* semantic_check($1,1);  */ $$ = create_opr($1,1,$2,NULL);}
 		;
 
 unary_operator 	: '-'  { $$ = OP_UNARY_MINUS; }
@@ -396,12 +396,12 @@ security	: security_type '(' IDENTIFIER ')' { $$ = create_ast_security($<int_val
 currency	: currency_type '(' PRICESTRING ')'    { $$ = create_ast_currency($<int_val>1, $<str>3); }
 	 	;
 
-attribute	: SEC			{ semantic_check(SEC_T,1);$$ = create_attr(SEC_T);}
-	  	| AMT			{ semantic_check(AMT_T,1);$$ = create_attr(AMT_T);}
-		| PRC			{ semantic_check(PRC_T,1);$$ = create_attr(PRC_T);}
-		| POS			{ semantic_check(POS_T,1);$$ = create_attr(POS_T);}
-		| AVAIL_CASH		{ semantic_check(AVAIL_CASH_T,1);$$ = create_attr(AVAIL_CASH_T);}
-		| NEXT			{ semantic_check(NEXT_T,1);$$ = create_attr(NEXT_T);}
+attribute	: SEC			{ /* semantic_check(SEC_T,1); */ $$ = create_attr(SEC_T);}
+	  	| AMT			{ /* semantic_check(AMT_T,1); */ $$ = create_attr(AMT_T);}
+		| PRC			{ /* semantic_check(PRC_T,1); */ $$ = create_attr(PRC_T);}
+		| POS			{ /* semantic_check(POS_T,1); */ $$ = create_attr(POS_T);}
+		| AVAIL_CASH		{ /* semantic_check(AVAIL_CASH_T,1); */ $$ = create_attr(AVAIL_CASH_T);}
+		| NEXT			{ /* semantic_check(NEXT_T,1); */ $$ = create_attr(NEXT_T);}
 		;
 
 %%
