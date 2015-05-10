@@ -71,6 +71,28 @@ long price_to_long(const char *pr)
 }
 
 /*
+ *  Convert a long to a price string with commas for display purposes.
+ */
+void long_to_price_display(long value, char *buf)
+{
+	memset(buf, 0, sizeof(buf));
+	char resultbuf[NAMEBUF];
+	char tempbuf[NAMEBUF];
+
+	long dollars = value / 100L;
+	long cents   = value - (dollars * 100L);
+	//fprintf(stderr, "DOLLARS = %ld CENTS = %02ld\n", dollars, cents);	
+	sprintf(resultbuf, "%'ld.", dollars);
+	sprintf(tempbuf, "%02ld", cents);
+        strcat(resultbuf, tempbuf);
+
+	//fprintf(stderr, "DOLLARS = %s CENTS = %s\n", resultbuf, tempbuf);
+	copy_name(buf, resultbuf);
+}
+
+
+
+/*
  * Convert a long to a price string.
  */
 void long_to_price(long value, char *buf)
@@ -245,7 +267,7 @@ struct account *create_account()
 		die("malloc failed");
 
 	/* We generously give each account $100,000,000 to play with. */
-	struct currency *cash = create_currency(0, "12000.00");
+	struct currency *cash = create_currency(0, "100000000.00");
 	new_acct->avail_cash = *cash;
 	free(cash);
 	new_acct->cash_bal = price_to_long(new_acct->avail_cash.p);
@@ -336,7 +358,7 @@ void add_position(struct account *acct, struct order *order)
 	char buf[NAMEBUF];
 	memset(buf, 0, NAMEBUF);
 	long cost = order->amt * price_to_long(order->pr.p);
-	long_to_price(cost, buf);
+	long_to_price_display(cost, buf);
 	fprintf(stdout, ">>>> Adding Position: %'d shares of %s at %s     COST: %12s\n", order->amt, order->sec.sym, order->pr.p, buf);
 }
 
@@ -455,15 +477,15 @@ void print_account_summary(struct account *acct, const char *name, struct positi
 	{
 		curr_value = curr->total_shares * get_curr_price(&curr->sec, pricedata, num);
 		total_value += curr_value;
-		long_to_price(curr_value, valuebuf);
+		long_to_price_display(curr_value, valuebuf);
 		
 		fprintf(stdout, "[%3d] %4s: Total Shares: %'6d Current Value: %14s\n", secnum++, curr->sec.sym, curr->total_shares, valuebuf);
 		memset(valuebuf, 0, NAMEBUF);
 		curr = curr->next;
 	}
-	long_to_price(total_value, valuebuf);
-	long_to_price(get_cash_balance(acct), cashbuf);
-	long_to_price(total_value + get_cash_balance(acct), acctbuf);
+	long_to_price_display(total_value, valuebuf);
+	long_to_price_display(get_cash_balance(acct), cashbuf);
+	long_to_price_display(total_value + get_cash_balance(acct), acctbuf);
 
 	fprintf(stdout, "\n                 Total Value of Securities: %18s\n", valuebuf);
 	fprintf(stdout, "                    Cash Balance Remaining: %18s\n", cashbuf);
@@ -588,7 +610,7 @@ void emit_order(struct order_item *my_order)
 
 	/* Print confirmation */
 	printf("++++++++++++++++++STRATMASTER CONFIRMATION+++++++++++++++++\n");
-	printf("[%s] YOU %s: %d SHARES OF %s AT %s %s\n", buf, order_type, my_order->ord->amt, 
+	printf("[%s] YOU %s: %'d SHARES OF %s AT %s %s\n", buf, order_type, my_order->ord->amt, 
 			my_order->ord->sec.sym, curr_type, my_order->ord->pr.p);
 	printf(" >>>>>> ORDER PLACED BY %s\n", my_order->strat);
 	printf("++++++++++++++++++END CONFIRMATION+++++++++++++++++++++++++\n\n");
