@@ -118,8 +118,8 @@ ast_statement *statement;
 
 
 %%
-program		: { PRINTI(("STARTING PARSE\n")); parent = NULL; top = symbol_table_create(parent); stack = malloc(sizeof(Stack));Stack_Init(stack); } 
-		use_list process_list				{ $$=$3; PRINTI(("ENDING PARSE\n"));  free(stack);print_ast($$);print_symtab(top);root = $$;}
+program		: { PRINTI(("STARTING PARSE\n")); parent = NULL; top = symbol_table_create(parent); /*stack = malloc(sizeof(Stack));Stack_Init(stack);*/ } 
+		use_list process_list				{ $$=$3; PRINTI(("ENDING PARSE\n")); /* free(stack);print_ast($$); */ print_symtab(top);root = $$;}
 		;
 		
 use_list	: USE  variable_declaration		{ }	
@@ -129,7 +129,7 @@ use_list	: USE  variable_declaration		{ }
 process_list	: strategy_list 			{$$ = create_program(NULL, $1, top);}
 	     	| function_list strategy_list		{ }
 		| algorithm_list strategy_list 		{$$ = create_program($1, $2, top);}
-		| function_list algorithm_list strategy_list	{ }
+		| function_list algorithm_list strategy_list	{ $$ = create_program($2, $3, top); }
 		;	     	
 
 function_list	: function_definition			{ }
@@ -147,7 +147,7 @@ strategy_list 	: strategy_definition				{ $$ = create_strategy_list($1); }
 function_definition : function_header compound_statement
 		;
 
-function_header : FUNCTION IDENTIFIER '(' parameter_list ')' func_return	{ }
+function_header : FUNCTION IDENTIFIER  { symbol_table_put_value(top, FUNC_SYM, $2, NULL); }      '(' parameter_list ')' func_return	
 		;
 
 func_return	: RETURNS type_specifier
@@ -158,27 +158,27 @@ algorithm_definition : algorithm_header compound_statement     { $$ = create_alg
 								   symbol_table_put_value(top, ALGORITHM_T, $$->name, $$); }
 		;		
 
-algorithm_header: ALGORITHM IDENTIFIER          { if (symbol_table_get_value(top, ALGORITHM_T, $2)) 
-						strat_error_msg("variable name already exist", 1, yylineno); 
+algorithm_header: ALGORITHM IDENTIFIER          { /* if (symbol_table_get_value(top, ALGORITHM_T, $2)) 
+						        strat_error_msg("variable name already exist", 1, yylineno); */ 
 						parent = top; top = symbol_table_create(parent); }
 	     	'(' parameter_list ')'		{ $$ = create_algorithm_header($<str>2, $5); }
 		;
 
 parameter_list	: type_specifier IDENTIFIER				{ $$ = create_parameter_list($1,0,$<str>2);
 									if (symbol_table_put_value(top, $1, $<str>2, (void*)0) != 0)
-									strat_error_msg("Symbol Already exist", 1, yylineno);}
+									 /* strat_error_msg("Symbol Already exist", 1, yylineno) */;}
 	       	| type_specifier '#' IDENTIFIER				{ $$ = create_parameter_list($1,1, $<str>3);
 									if (symbol_table_put_value(top, $1, $<str>3, (void*)0) != 0)
-									strat_error_msg("Symbol Already exist", 1, yylineno);} 
+									/* strat_error_msg("Symbol Already exist", 1, yylineno) */;} 
 		| parameter_list ',' type_specifier '#' IDENTIFIER	{ $$ = add_parameter_list($1,$3,1, $<str>5);
 									if (symbol_table_put_value(top, $3, $<str>5, (void*)0) != 0)
-									strat_error_msg("Symbol Already exist", 1, yylineno); }
+									/* strat_error_msg("Symbol Already exist", 1, yylineno) */; }
 
 		| /* empty */						{ }
 		;
 
-strategy_definition : STRATEGY IDENTIFIER '{' { if (symbol_table_get_value(top, STRATEGY_T, $2)) 
-						strat_error_msg("variable name already exist", 1, yylineno);
+strategy_definition : STRATEGY IDENTIFIER '{' { /* if (symbol_table_get_value(top, STRATEGY_T, $2)) 
+						strat_error_msg("variable name already exist", 1, yylineno);*/
 						parent = top; 
 		    				top = symbol_table_create(parent);  }    
 		      strategy_body '}'	      {$$ = create_strategy($<str>2, $5, top);
@@ -201,7 +201,7 @@ process_statement_list : process_statement   { $$ = create_process_statement_lis
 		;
 
 process_statement : WHEN '(' expression ')' '{' process_body '}' UNTIL '(' expression ')' { $$ = create_process_statement($3, $6, $10); } 
-		| WHEN '(' expression ')' '{' process_body '}'				{  if  (Stack_Top(stack) != BOOLEAN_T) 						strat_error_msg("invalid operation WHEN, the type in WHEN is not boolean", 1,yylineno);
+		| WHEN '(' expression ')' '{' process_body '}'				{  /* if  (Stack_Top(stack) != BOOLEAN_T)	strat_error_msg("invalid operation WHEN, the type in WHEN is not boolean", 1,yylineno);*/
 											$$ = create_process_statement($3,$6,NULL);}
 		;
 
@@ -226,23 +226,23 @@ order_item	: SECURITY '(' sec_expr ')' '.' AMOUNT '(' int_expr ')''.' PRICE '(' 
 
 sec_expr	: security				{ $$ = $1; }
 	 	| IDENTIFIER				{ struct symbol_value *val = symbol_table_get_value(top, SECURITY_T, $1);	
-							if (!val)strat_error_msg("security not found", 1, yylineno);		
-							if (val -> type_specifier != SECURITY_T)strat_error_msg("Type access error", 1, yylineno);
+							/*if (!val)strat_error_msg("security not found", 1, yylineno);		
+							if (val -> type_specifier != SECURITY_T)strat_error_msg("Type access error", 1, yylineno);*/
 $$ = (ast_security *)val->nodePtr; } 
 		;
 
 int_expr	: INTEGER				{ $$ = create_integer_const($1); }
 	 	| IDENTIFIER				{ struct symbol_value *val = symbol_table_get_value(top, INT_T, $1);
-							if (!val)strat_error_msg("int not found", 1, yylineno);		
-							if (val -> type_specifier != INT_T)strat_error_msg("Type access error", 1, yylineno);
+							/* if (!val)strat_error_msg("int not found", 1, yylineno);		
+							if (val -> type_specifier != INT_T)strat_error_msg("Type access error", 1, yylineno);*/
 $$ = (ast_exp *)val->nodePtr; } 
 		;
 
 curr_expr	: PRICESTRING				{ $$ = create_ast_currency(USD_T, $<str>1); }
 		| currency				{ $$ = $1; }
 		| IDENTIFIER				{ struct symbol_value *val = symbol_table_get_value(top, CURRENCY_T, $1);
-							if (!val)strat_error_msg("price  not found", 1, yylineno);		
-							if (val -> type_specifier != CURRENCY_T)strat_error_msg("Type access error", 1, yylineno);
+							/* if (!val)strat_error_msg("price  not found", 1, yylineno);		
+							if (val -> type_specifier != CURRENCY_T)strat_error_msg("Type access error", 1, yylineno);*/
 $$ = (ast_currency *)val->nodePtr; }
 		;
 
@@ -316,20 +316,20 @@ expression	: assignment_expression				{ $$ = $1; }
 		;
 
 assignment_expression : logical_OR_expression 			{ $$ = $1; }
-            	| unary_expression '=' logical_OR_expression	{ semantic_check(OP_ASSIGN,2);$$ = create_opr(OP_ASSIGN, 2, $1, $3); }
+            	| unary_expression '=' logical_OR_expression	{/* semantic_check(OP_ASSIGN,2); */ $$ = create_opr(OP_ASSIGN, 2, $1, $3); }
 		;
 
 logical_OR_expression :  logical_AND_expression 		{ $$ = $1; }
-            	| logical_OR_expression OR logical_AND_expression { semantic_check(OP_OR,2);$$ = create_opr(OP_OR, 2, $1, $3); }
+            	| logical_OR_expression OR logical_AND_expression { /* semantic_check(OP_OR,2); */$$ = create_opr(OP_OR, 2, $1, $3); }
 		;
 
 logical_AND_expression : equality_expression 				{ $$ = $1;}
-           	| logical_AND_expression AND equality_expression { semantic_check(OP_AND,2);$$ = create_opr(OP_AND, 2, $1, $3); }
+           	| logical_AND_expression AND equality_expression { /* semantic_check(OP_AND,2); */ $$ = create_opr(OP_AND, 2, $1, $3); }
 		;
 
 equality_expression : relation_expression 				{ $$ = $1;}
-		| equality_expression IS relation_expression		{ semantic_check(OP_IS,2);$$ = create_opr(OP_IS, 2, $1, $3);}
-		| equality_expression ISNOT relation_expression		{ semantic_check(OP_ISNOT,2);$$ = create_opr(OP_ISNOT, 2, $1, $3); }
+		| equality_expression IS relation_expression		{ /*semantic_check(OP_IS,2); */  $$ = create_opr(OP_IS, 2, $1, $3);}
+		| equality_expression ISNOT relation_expression		{ /* semantic_check(OP_ISNOT,2); */ $$ = create_opr(OP_ISNOT, 2, $1, $3); }
 		;
 
 relation_expression :  additive_expression 				{ $$ = $1;}
@@ -340,13 +340,13 @@ relation_expression :  additive_expression 				{ $$ = $1;}
 		;
 
 additive_expression : multiplicative_expression				{ $$ = $1; }
-        	| additive_expression '+' multiplicative_expression     { semantic_check(OP_ADD,2);$$= create_opr(OP_ADD, 2, $1, $3);}
-	        | additive_expression '-' multiplicative_expression	{ semantic_check(OP_SUB,2);$$ = create_opr(OP_SUB, 2, $1, $3); }
+        	| additive_expression '+' multiplicative_expression     { /* semantic_check(OP_ADD,2); */$$= create_opr(OP_ADD, 2, $1, $3);}
+	        | additive_expression '-' multiplicative_expression	{ /* semantic_check(OP_SUB,2); */ $$ = create_opr(OP_SUB, 2, $1, $3); }
 		;
 
 multiplicative_expression : unary_expression { $$ = $1; }
-	        | multiplicative_expression '*' unary_expression	{ semantic_check(OP_MULT,2);$$ = create_opr(OP_MULT, 2, $1, $3); }
-        	| multiplicative_expression '/' unary_expression	{ semantic_check(OP_DIV,2);$$ = create_opr(OP_DIV, 2, $1, $3); }
+	        | multiplicative_expression '*' unary_expression	{ /* semantic_check(OP_MULT,2); */ $$ = create_opr(OP_MULT, 2, $1, $3); }
+        	| multiplicative_expression '/' unary_expression	{ /* semantic_check(OP_DIV,2); */ $$ = create_opr(OP_DIV, 2, $1, $3); }
 		;
 	
 unary_expression : postfix_expression { $$ = $1;}
@@ -368,26 +368,26 @@ argument_expression_list : assignment_expression   { $$ = create_argument_expres
 		;
 
 primary_expression : type_name		{ $$ = $1;}
-		| INTEGER		{ Stack_Push(stack,INT_T);$$ = create_integer_const($1);}
-		| FLOATPT		{ Stack_Push(stack,DOUBLE_T);$$ = create_double_const($1); }
-		| PRICESTRING		{ Stack_Push(stack,DOUBLE_T);$$ = create_price_const($1); }
-		| security		{ Stack_Push(stack,SECURITY_T);$$ = create_security_const($1); }
-		| currency		{ }
-		| position		{ }
-		| TRUE_S		{ Stack_Push(stack,BOOLEAN_T);$$ = create_boolean_const(TRUE_T);  }
-		| FALSE_S		{ Stack_Push(stack,BOOLEAN_T);$$ = create_boolean_const(FALSE_T); }
+		| INTEGER		{ /* Stack_Push(stack,INT_T); */ $$ = create_integer_const($1);}
+		| FLOATPT		{ /* Stack_Push(stack,DOUBLE_T); */  $$ = create_double_const($1); }
+		| PRICESTRING		{ /* Stack_Push(stack,DOUBLE_T); */  $$ = create_price_const($1); }
+		| security		{ /* Stack_Push(stack,SECURITY_T); */  $$ = create_security_const($1); }
+		| currency		{ $$ = create_currency_const($1);  }
+		| position		{ $$ = create_position_const($1); }
+		| TRUE_S		{ /* Stack_Push(stack,BOOLEAN_T); */ $$ = create_boolean_const(TRUE_T);  }
+		| FALSE_S		{ /* Stack_Push(stack,BOOLEAN_T);  */ $$ = create_boolean_const(FALSE_T); }
 		| '(' expression ')'	{ }
 		;
 
 type_name	: IDENTIFIER		        { struct symbol_value *val = symbol_table_get_value(top, typeID, $1);
-						if (!val)strat_error_msg("Identifier not found", 1, yylineno);
-						Stack_Push(stack, val -> type_specifier); //semantic check
+						/* if (!val)strat_error_msg("Identifier not found", 1, yylineno);
+						Stack_Push(stack, val -> type_specifier); */ //semantic check
 						$$ = create_id($1, top);}
 	  	| type_name '.' IDENTIFIER	{ }
 		| type_name '.' attribute	{ $$ = create_opr(OP_ATTR, 2, $1, $3);}
 		;
 
-position 	: POS '(' IDENTIFIER ')'	{  }
+position 	: POS '(' sec_expr ')'		{ $$ = create_ast_position($3, 0, NULL); }
 	  	;
 
 security	: security_type '(' IDENTIFIER ')' { $$ = create_ast_security($<int_val>1, $<str>3); }
@@ -399,7 +399,7 @@ currency	: currency_type '(' PRICESTRING ')'    { $$ = create_ast_currency($<int
 attribute	: SEC			{ /* semantic_check(SEC_T,1); */ $$ = create_attr(SEC_T);}
 	  	| AMT			{ /* semantic_check(AMT_T,1); */ $$ = create_attr(AMT_T);}
 		| PRC			{ /* semantic_check(PRC_T,1); */ $$ = create_attr(PRC_T);}
-		| POS			{ /* semantic_check(POS_T,1); */ $$ = create_attr(POS_T);}
+		| position		{ /* semantic_check(POS_T,1); */ $$ = create_attr(POS_T);}
 		| AVAIL_CASH		{ /* semantic_check(AVAIL_CASH_T,1); */ $$ = create_attr(AVAIL_CASH_T);}
 		| NEXT			{ /* semantic_check(NEXT_T,1); */ $$ = create_attr(NEXT_T);}
 		;

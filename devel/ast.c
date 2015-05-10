@@ -429,7 +429,12 @@ create_ast_position(ast_security *astsec, int amt, ast_currency *astpr)
 		die("malloc failed in create_ast_position()");
 	}
 
-	position_node->pos = create_position(astsec->sec, amt, astpr->curr);
+	if(astpr == NULL)
+	{		
+		position_node->pos = create_position(astsec->sec, amt, NULL);
+	}
+	else
+		position_node->pos = create_position(astsec->sec, amt, astpr->curr);
 
 	PRINT(("%s\n", __func__));
 	return position_node;
@@ -1167,5 +1172,39 @@ create_security_const(ast_security *security)
 	return p;
 }
 
+ast_exp *
+create_currency_const(ast_currency *currency)
+{
+	ast_exp *p;
+	p = malloc(sizeof(ast_exp));
+	if (!p) {
+		printf("out of memory in %s\n", __func__);
+		return NULL;
+	}
 
+	p->type = typeCurrencyConst;
+//	p->curr  = malloc(sizeof(struct security));
+//	p->security.sec->sec_t = 0;
+//	strcpy(p->security.sec->sym, security->sec->sym);
+
+    	PRINT(("%s\n", __func__));
+	return p;
+}
+
+ast_exp *
+create_position_const(ast_position *position)
+{
+	ast_exp *p;
+	p = malloc(sizeof(ast_exp));
+	if (!p) {
+		printf("out of memory in %s\n", __func__);
+		return NULL;
+	}
+
+	p->type = typePos;
+	p->position  = *position;
+
+    	PRINT(("%s\n", __func__));
+	return p;
+}
 

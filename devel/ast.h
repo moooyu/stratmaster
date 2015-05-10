@@ -4,7 +4,7 @@
 #include "symtab.h"
 #define NAMEBUF    32      /* Max size of an identifier or name */
 
-typedef enum {typeBooleanConst, typeIntegerConst, typeDoubleConst, typePriceConst, typeOper, typeID, typeKeyword, typeArgulist, typeAttr, typeSec} nodeType;
+typedef enum {typeBooleanConst, typeIntegerConst, typeDoubleConst, typePriceConst, typeOper, typeID, typeKeyword, typeArgulist, typeAttr, typeSec, typePos, typeCurrencyConst} nodeType;
 typedef enum {expression_ST, compound_ST, selection_ST, iteration_ST, set_ST} stmtType;
 
 typedef struct{
@@ -34,6 +34,7 @@ typedef struct {
 		struct integer_object* int_value;
 		struct double_object* double_value;
 		struct price_object *price_value;
+		struct currency *curr_value;
 	};
 } ast_const;
 
@@ -72,6 +73,7 @@ typedef struct ast_exp{
 		ast_str id;
 		ast_attr attr;
 		ast_security security;
+		ast_position position;
 		ast_argument_expression_list argu_list;
 	};
 } ast_exp;
@@ -250,7 +252,13 @@ ast_exp *
 create_price_const(char *value);
 
 ast_exp *
+create_currency_const(ast_currency *currency);
+
+ast_exp *
 create_security_const(ast_security *security);
+
+ast_exp *
+create_position_const(ast_position *position);
 
 ast_statement*
 create_selection_statement(ast_exp *exp, ast_statement *statement);
@@ -393,6 +401,7 @@ void ex_process_statement(ast_process_statement * process_statement);
 void *algorithm_handler(void *arg);
 
 //#define DEBUG 1
+
 
 #ifdef DEBUG
 #define PRINT(x)  do { if (DEBUG) dbg_printf x; } while (0)

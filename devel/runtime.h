@@ -76,6 +76,7 @@ struct position {
 };
 
 struct account {
+	pthread_mutex_t lock;
 	struct position *positions;          /* list of all positions */
 	struct currency avail_cash;          /* cash balance: what is available cash to buy securities */
 	long   cash_bal;                     /* cash balance: as a long */
@@ -183,5 +184,5 @@ void order_queue_init(struct queue *q);
 void queue_destroy(struct queue *q);
 void queue_put_order(struct queue *q, struct order *ord_in, const char *strat);
 struct order_item *queue_get_order(struct queue *q);
-
+long get_moving_avg(const char *secname, int days, const char *d);
 #endif /*   _RUNTIME_H_  */

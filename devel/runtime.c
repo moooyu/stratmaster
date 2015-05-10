@@ -248,10 +248,14 @@ struct position *create_position(struct security *s, int amt, struct currency *p
 	struct position *new_pos = (struct position *)malloc(sizeof(struct position));
 	if( new_pos == NULL )
 		die("error mallocing new position");
+
 	memcpy((void*)&(new_pos->sec), (void*)s, sizeof(struct security));
 	new_pos->total_shares = amt;
-	new_pos->total_cost = amt * price_to_long(p->p);
-	new_pos-> next = NULL;
+	if( p == NULL )
+		new_pos->total_cost = 0L;
+	else
+		new_pos->total_cost = amt * price_to_long(p->p);
+	new_pos->next = NULL;
 
 	return new_pos;
 }
@@ -408,7 +412,7 @@ void subtract_position(struct account *acct, struct order *order)
 
 	char buf[NAMEBUF];
 	memset(buf, 0, NAMEBUF);
-	long_to_price(proceeds, buf);
+	long_to_price_display(proceeds, buf);
 	fprintf(stdout, ">>>> Selling Position: %'d shares of %s at %s PROCEEDS: %12s\n", order->amt, order->sec.sym, order->pr.p, buf);
 }
 
@@ -523,6 +527,92 @@ struct data *create_data_source(const char *dfname)
 
 	return new_data_source;
 }
+
+
+long get_moving_avg(const char *secname, int days, const char *d)
+{
+	long movavg = 0L;
+	char buf[IOBUFSIZE];
+	memset(buf, 0, IOBUFSIZE);
+	char fname[NAMEBUF];
+	memset(fname, 0, NAMEBUF);
+	char pricebuf[NAMEBUF];
+	memset(pricebuf, 0, NAMEBUF);
+	strcpy(fname, "../data/");
+	strcat(fname, secname);
+	char *ext = ".dat";
+	strcat(fname, ext);
+//	fprintf(stderr, "Mov avg file name: %s\n", fname);
+	/* Open data file for reading */
+	FILE *fp = fopen(fname, "r");
+	if( fp == NULL )
+		die("error opening data file");
+
+	char *token_separators = "\t \n";
+	char *ticker;
+	char *date;
+	char *price;
+	char *bk;
+	
+	long sum = 0L;
+	int date_found = 0;
+	int counter = 0;
+
+	//read in file past the first days
+	while( counter < days && fgets(buf, sizeof(buf), fp) != NULL )
+	{	
+		counter++;	
+	}	
+
+//fprintf(stderr, "counter = %d\n", counter);
+	counter = 0;
+	memset(buf, 0, IOBUFSIZE);
+//fprintf(stderr, "days = %d\n", days);
+	while( counter < days && fgets(buf, sizeof(buf), fp) != NULL )
+	{	
+		ticker = strtok_r(buf, token_separators, &bk);
+		date   = strtok_r(NULL, token_separators, &bk);
+		price  = strtok_r(NULL, token_separators, &bk);
+//		fprintf(stderr, "movavg: ticker %s\n", ticker);
+//		fprintf(stderr, "movavg: date %s\n", date);
+//		fprintf(stderr, "movavg: price %s\n", price);
+
+		if( !date_found )
+		{
+			if( strcmp(d, date) == 0 )
+			{
+				sprintf(pricebuf, "%s", price);
+				date_found = 1;
+				sum += price_to_long(price);
+				counter++;
+			}
+		}
+		
+		if( date_found )
+		{
+			sprintf(pricebuf, "%s", price);
+			sum += price_to_long(price);
+			counter++;	
+		}
+		memset(pricebuf, 0, NAMEBUF);
+		memset(buf, 0, IOBUFSIZE);
+	}
+
+	//Check if we reached EOF
+	if( feof(fp) > 0 )
+	{
+		movavg = -1;
+	}
+	else
+	{
+		movavg = sum / days;
+	}
+//fprintf(stderr, "movavg = %ld\n", movavg);
+	if(fp)
+		fclose(fp);
+	return movavg;
+}
+
 
 
 /*
@@ -806,6 +896,8 @@ char *node_type_tostring(int t)
 		case typeID: str = "ID"; break;
 		case typeKeyword: str = "KEYWORD"; break;
 		case typeArgulist: str = "ARGUMENT LIST"; break;
+		case typePos: str = "POSITION"; break;
+		case typeCurrencyConst: str = "CURRENCY"; break;
 		default: str = "UNKNOWN EXP NODE TYPE";
 	}
 
