@@ -372,8 +372,8 @@ primary_expression : type_name		{ $$ = $1;}
 		| FLOATPT		{ /* Stack_Push(stack,DOUBLE_T); */  $$ = create_double_const($1); }
 		| PRICESTRING		{ /* Stack_Push(stack,DOUBLE_T); */  $$ = create_price_const($1); }
 		| security		{ /* Stack_Push(stack,SECURITY_T); */  $$ = create_security_const($1); }
-		| currency		{ $$ = create_currency_const($1);  }
-		| position		{ $$ = create_position_const($1); }
+		| currency		{ /* $$ = create_currency_const($1); */  }
+		| position		{ /* $$ = create_position_const($1); */ }
 		| TRUE_S		{ /* Stack_Push(stack,BOOLEAN_T); */ $$ = create_boolean_const(TRUE_T);  }
 		| FALSE_S		{ /* Stack_Push(stack,BOOLEAN_T);  */ $$ = create_boolean_const(FALSE_T); }
 		| '(' expression ')'	{ }

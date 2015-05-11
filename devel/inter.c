@@ -200,7 +200,7 @@ void *strategy_order_handler(void *arg)
 		{
 			case BUY_ORDER:
 				if( can_add_position(ac_master, temp_order) < 0 )
-					fprintf(stderr, "ERROR: cannot add position\n");
+					fprintf(stderr, "ERROR: %s: cannot add position\n", temp_order->sec.sym);
 				else
 				{
 					pthread_mutex_lock(&ac_master->lock);
@@ -212,7 +212,7 @@ void *strategy_order_handler(void *arg)
 
 			case SELL_ORDER:
 				if( can_sell_position(ac_master, temp_order) < 0 )
-					fprintf(stderr, "ERROR: cannot sell position\n");
+					fprintf(stderr, "ERROR: %s: cannot sell position\n", temp_order->sec.sym);
 				else
 				{
 					pthread_mutex_lock(&ac_master->lock);	
@@ -354,8 +354,8 @@ void *process_handler(void *arg)
 	algo_id = args->procst->expression->oper.op1->oper.op1->id.value;
 
 	do {
+
 		if ( ex_exp(args->procst->expression) ) {
-			
 			/* algo_data is created only after the first call to algo */
 			algo_data = g_hash_table_lookup(algo_map, algo_id);
 			//Check that ALGORITHM has a result for us AND is still alive
@@ -371,6 +371,7 @@ void *process_handler(void *arg)
 				pthread_mutex_unlock(&algo_data->mutex);
 			}
 		}
+
 	} while ( !algo_data->is_dead && (args->procst->until_exp != NULL) && !ex_exp(args->procst->until_exp) );
 	
 	terminate_algo_thread(algo_data);
@@ -473,7 +474,7 @@ void *algorithm_handler(void *arg)
 	 *   Sleep interval in microseconds.
 	 *   This is 1 sec per year of data.
 	 */ 
-	unsigned int interval = 5000;
+	unsigned int interval = 2760;
 	
 /*	struct security *next_sec = create_security(EQTY, "TEST");
 	struct security *test_sec = create_security(EQTY, "ZBRA");
@@ -679,10 +680,10 @@ void* ex_exp(ast_exp *p)
 			PRINTI(("--------------------------> This exp is PriceConst: %s\n", p->con.price_value->price ));
 			ret = (void*)p->con.price_value->price;
 			break;
-		case typeCurrencyConst:
+	/*	case typeCurrencyConst:
 			PRINTI(("--------------------------> This exp is CurrencyConst: %s\n", p->con.curr_value->p ));
 			ret = (void*)p->con.curr_value->p;
-			break;
+			break;  */
 		case typeKeyword:
 			PRINTI(("--------------------------> This exp is KEYword\n"));
 			break;
@@ -690,14 +691,15 @@ void* ex_exp(ast_exp *p)
                         PRINTI(("--------------------------> This exp is Security: %s\n", p->security.sec->sym));
                         ret = (void*)p->security.sec->sym;
                         break;
-		case typePos:
+	/*	case typePos:
                         PRINTI(("--------------------------> This exp is Position: %s\n", p->position.pos->sec.sym));
                         ret = (void*)p->position.pos->sec.sym;
-                        break;
+                        break; */
 		case typeOper:
 			switch(p->oper.oper) {
 
 				case OP_AND:
+					PRINTI(("--------------------------> Operator AND\n"));
 					if (ex_exp(p->oper.op1) && (ex_exp(p->oper.op2))) {
 						ret = (void*)(intptr_t)1;
 						break;
