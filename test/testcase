@@ -1,791 +1,393 @@
-/*<1>empty Algo*/
-/*<2>empty Strat*/
-
-
-
-
-
-
-
-/*<1>empty Algo*/
-/*still core dump, when unexpected error*/
+/*<1>Only Strat*/
 USE ACCOUNT ac_master;
-ALGORITHM al()
-{
-}
-
 STRATEGY hello
 {
-BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.00);  } 
+SELL{ WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.00);  } 
 }
 
-/*<2>empty Strat*/
-/*also cause core dump*/
+/*<2>white space*/
 USE ACCOUNT ac_master;
-ALGORITHM al(CURRENCY hello) /*what types are accepted here!*/
-{
-}
-
-STRATEGY hello
-{
-/*BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }*/
-}
-
-/*<2>empty Algo*/
-USE ACCOUNT ac_master;
-ALGORITHM al()
-{
-}
-
-STRATEGY hello
-{
-	WHEN ( al() IS TRUE )
-	{
-		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
-	}
-}
-
-/*<2>Only Strat*/
-USE ACCOUNT myAccount;
-STRATEGY hello
-{
-BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.00);  } 
-SELL{ WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.00);  } 
-}
-/*<3>white space*/
-USE ACCOUNT myAccount;
 STRATEGY hello          
 {			
-BUY 	{ WHAT: EQTY(	apple)	.AMOUNT(	85	).PRICE(22.44);  } 
-SELL	{ WHAT: EQTY(	apple).AMOUNT(	85	)	.PRICE(22.44);  } 
-}			
-/*<3>long name*/
-USE ACCOUNT myAccount;
-STRATEGY helloworld_to_all_of_my_team_this_is_really_a_long_name_zzzzzzzzzzzzzzz
-{
-BUY { WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
-SELL{ WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
-}
-/*<4>'_' in security name*/
-USE ACCOUNT myAccount;
+BUY { WHAT: SECURITY(    EQTY(	ZBRA))	.AMOUNT(85).PRICE(22.00);  } 
+}		
+
+/*Header test*/
+/*<3>Missing account*/
+STRATEGY hello          
+{			
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.00);  } 
+}		
+
+/*<4>Account not found*/
+USE ACCOUNT hi;
+STRATEGY hello          
+{			
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.00);  } 
+}		
+
+/*<5>USE DATAFEED*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_ZBRA;
+STRATEGY hello          
+{			
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.00);  } 
+}		
+
+/*<6>DATAFEED NOT FOUND*/
+USE ACCOUNT ac_master;
+USE DATAFEED somedata;
+STRATEGY hello          
+{			
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.00);  } 
+}		
+
+/*<7>Multiple account*/
+USE ACCOUNT ac_master;
+USE ACCOUNT ac_master1;
+USE DATAFEED df_ZBRA;
+STRATEGY hello          
+{			
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.00);  } 
+}		
+
+/*<8>Multiple datafeed*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_ZBRA;
+USE DATAFEED df_ZBRA1;
+STRATEGY hello          
+{			
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.00);  } 
+}		
+
+/*<9>Wrong Account*/
+USE ACCOUNT ac_master1;
+USE DATAFEED df_ZBRA;
+STRATEGY hello          
+{			
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.00);  } 
+}		
+
+/*<10>empty strategy*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_ZBRA;
+STRATEGY hello          
+{			
+
+}		
+
+/*<11>long name*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_ZBRA;
+STRATEGY helloworld_to_all_of_my_team_this_is_really_a_long_name_zzzzzzzzzzzzzzz         
+{			
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.00);  } 
+}		
+
+
+/*<12>'_' identifier*/
+USE ACCOUNT ac_master;
 STRATEGY helloworld
 {
-BUY { WHAT: EQTY(AA_PL).AMOUNT(85).PRICE(22.44);  } 
-SELL{ WHAT: EQTY(AA_PL).AMOUNT(85).PRICE(22.44);  } 
+BUY { WHAT: SECURITY(EQTY(AA_PL)).AMOUNT(85).PRICE(22.44);  } 
+SELL{ WHAT: SECURITY(EQTY(AA_PL)).AMOUNT(85).PRICE(22.44);  } 
 }
-/*<5>One line Strat*/
-USE ACCOUNT myAccount;
-STRATEGY helloworld{BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } SELL{ WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } }
 
+/*<13>One line Strat*/
+USE ACCOUNT ac_master;
+STRATEGY helloworld{BUY { WHAT: SECURITY(EQTY(AAPL)).AMOUNT(85).PRICE(22.44);  } SELL{ WHAT: SECURITY(EQTY(AAPL)).AMOUNT(85).PRICE(22.44);  } }
 
-/*<6> comments*/
-USE ACCOUNT my_Account;
+/*<14> comments*/
+USE ACCOUNT ac_master;
 STRATEGY hello
 {/*hello from comment*/
-BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.00);  } 
+BUY { WHAT: SECURITY(EQTY(/*hello from comment*/AAPL)).AMOUNT(85).PRICE(22.00);  } 
 /*
 SELL{ WHAT: EQTY(AA).AMOUNT(85).PRICE(22.00);  } 
 */
 }
-/*<7>Multiple account*/
-USE ACCOUNT myAccount;
-USE ACCOUNT myhelloAccount;
-STRATEGY hello
-{
-BUY { WHAT: EQTY(aapl).AMOUNT(85).PRICE(22.44);  } 
-SELL{ WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
-}
 
-/*<8>redundant Algo*/
+/*<15>Multiple Strategy*/
 USE ACCOUNT ac_master;
-ALGORITHM al()
-{
-}
-
-ALGORITHM al1()
-{
-}
-
 STRATEGY hello
 {
-	WHEN ( al() IS TRUE )
-	{
-		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
-	}
+BUY { WHAT: SECURITY(EQTY(AAPL)).AMOUNT(85).PRICE(22.44);  }
+SELL { WHAT: SECURITY(EQTY(AAPL)).AMOUNT(85).PRICE(22.44);  }
 }
 
-/*<9>empty when*/
-USE ACCOUNT ac_master;
-ALGORITHM al()
-{
-}
-
-STRATEGY hello
-{
-	WHEN ( al() IS TRUE )
-	{
-	}
-}
-
-/*<10>Numbers in account*/
-USE ACCOUNT acount123;
-USE ACCOUNT 123acount;
-STRATEGY hello
-{
-BUY { WHAT: EQTY(aapl).AMOUNT(85).PRICE(22.44);  } 
-SELL{ WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
-}
-
-/*<11>account declaration overload*/
-USE ACCOUNT coun;
-USE ACCOUNT coun;
-STRATEGY hello
-{
-BUY { WHAT: EQTY(aapl).AMOUNT(85).PRICE(22.44);  } 
-SELL{ WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
-}
-
-/*<12>Strat Name Overload*/
-USE ACCOUNT coun;
-USE ACCOUNT coun;
-STRATEGY hello
-{
-BUY { WHAT: EQTY(aapl).AMOUNT(85).PRICE(22.44);  } 
-SELL{ WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
-}
-/*<13>'\n' in statement*/
-USE ACCOUNT ac_master;
-ALGORITHM al()
-{
-}
-
-STRATEGY hello
-{
-	WHEN ( al() IS TRUE )
-	{
-		BUY { WHAT : EQTY(hi).AMOUNT(112
-		).PRICE(99.99); }
-	}
-}
-/*<14>security name is number*/
-USE ACCOUNT ac_master;
-ALGORITHM al()
-{
-}
-
-STRATEGY hello
-{
-	WHEN ( al() IS TRUE )
-	{
-		BUY { WHAT : EQTY(3221).AMOUNT(112).PRICE(99.99); }
-	}
-}
-
-/*<15>Algo Name Overload*/
-USE ACCOUNT ac_master;
-ALGORITHM al()
-{
-}
-
-
-ALGORITHM al()
-{
-}
-
-STRATEGY hello
-{
-	WHEN ( al() IS TRUE )
-	{
-		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
-	}
-}
-
-/*<15> FALSE keyword*/
-USE ACCOUNT ac_master;
-ALGORITHM al()
-{
-}
-
-STRATEGY hello
-{
-	WHEN ( al() IS FALSE )
-	{
-		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
-	}
-}
-/*<16> account decleration after algo*/
-USE ACCOUNT ac_master;
-ALGORITHM al()
-{
-}
-USE ACCOUNT Hello;
-STRATEGY hello
-{
-	WHEN ( al() IS TRUE )
-	{
-		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
-	}
-}
-
-/*<17> terminal use as nonterminal*/
-USE ACCOUNT ACCOUNT;
-ALGORITHM ALGORITHM()
-{
-}
-STRATEGY STRATEGY
-{
-	WHEN ( ALGORITHM() IS TRUE )
-	{
-		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
-	}
-}
-
-/*<18> name conflict*/
-USE ACCOUNT ac;
-ALGORITHM ac()
-{
-}
-STRATEGY ac
-{
-	WHEN ( ac() IS TRUE )
-	{
-		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
-	}
-}
-/*<19> empty strat*/
-USE ACCOUNT ac;
-ALGORITHM al()
-{
-}
-STRATEGY st
-{
-}
-/*<20> empty when*/
-USE ACCOUNT ac;
-ALGORITHM al()
-{
-}
-STRATEGY st
-{
-	WHEN ( al() IS TRUE )
-	{
-	}
-}
-
-/*<21> empty When parameter*/
-USE ACCOUNT ac;
-ALGORITHM al()
-{
-}
-STRATEGY st
-{
-	WHEN ( )
-	{
-	}
-}
-
-
-
-/*<22> two strat using same algo*/
-USE ACCOUNT myAccount;
-USE ACCOUNT ac_master;
-ALGORITHM al()
-{
-}
-
-STRATEGY hello
-{
-	WHEN ( al() IS TRUE )
-	{
-		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
-	}
-}
 STRATEGY hello1
 {
-	WHEN ( al() IS TRUE )
-	{
-		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
-	}
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+SELL { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
 }
 
-/*<22> simple algo*/
-USE ACCOUNT myAccount;
-
-ALGORITHM my_algo(DATAFEED some_data_feed PRICE some_price PRICE some_other_price)
-{
-	PRICE abc;
-	VOID cba;
-	SET {id1 = id2}
-	SET {id3 = id4}
-	IF:
-	{
-		id5 = id6,
-		id7,
-		id8 = id9
-			
-	} 
-
-}
-
-STRATEGY hello_with_ast
-{ 
-
-}
-
-/*<25> Data pass through */
-
-
+/*<16>statment in Strategy*/
 USE ACCOUNT ac_master;
-
-ALGORITHM al(PRICE #zbra_price)
+STRATEGY hello
 {
-	SET {zbra_price = 200 }
-	IF:
-	{
-		TRUE
-	}
+CURRENCY p;
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+/*<17>assignment statment*/
+USE ACCOUNT ac_master;
+STRATEGY hello
+{
+CURRENCY p;
+p = 20;
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+/*<18>assignment statment*/
+USE ACCOUNT ac_master;
+STRATEGY hello
+{
+CURRENCY p;
+p = 20;
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+/*<19>empty Algo*/
+USE ACCOUNT ac_master;
+ALGORITHM al(CURRENCY zbra)
+{
 }
 
 STRATEGY hello
 {
-	PRICE zbra_price;
-
-	WHEN ( al(#zbra_price) IS TRUE ) 
-	{
-		 BUY { WHAT : EQTY(ZBRA).AMOUNT(100).PRICE(zbra_price); }
-	}
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
 }
 
-/*<26> Data pass through 2 */
-
-
+/*<20>Only Algorithm*/
 USE ACCOUNT ac_master;
-
-ALGORITHM al(PRICE #zbra_price)
-{
-	SET {zbra_price = 200 }
-	IF:
-	{
-		TRUE
-	}
-}
-
-STRATEGY hello
-{
-	PRICE zbra_price;
-
-	WHEN ( al(#zbra_price) IS TRUE ) 
-	{
-		 BUY { WHAT : EQTY(ZBRA).AMOUNT(100).PRICE(hello223); }
-	}
-}
-
-/*<26> Only Price */
-
-USE ACCOUNT ac_master;
-
-STRATEGY hello
-{
-	PRICE zbra_price;
-
-}
-
-/*<27> Price with WHEN*/
-
-USE ACCOUNT ac_master;
-
-ALGORITHM al(/*DATAFEED some_feed, */PRICE # zbra_price,PRICE # cat_price, PRICE # rabbit_price)
-{
-
-}
-
-STRATEGY hello
-{
-	PRICE zbra_price;
-	PRICE cat_price;
-	WHEN ( al(#zbra_price, #cat_price) IS TRUE ) 
-	{
-		BUY { WHAT : EQTY(hi0).AMOUNT(100).PRICE(10.00); }
- 		BUY { WHAT : EQTY(hi1).AMOUNT(101).PRICE(10.01); }
-		BUY { WHAT : EQTY(hi2).AMOUNT(102).PRICE(10.02); }
-	}
-}
-
-/*<28> Price with WHEN*/
-
-USE ACCOUNT ac_master;
-
-ALGORITHM al(/*DATAFEED some_feed, */PRICE # zbra_price,PRICE # cat_price, PRICE # rabbit_price)
-{
-
-}
-
-STRATEGY hello
-{
-	PRICE zbra_price;
-	PRICE cat_price;
-	WHEN ( al(#zbra_price, #cat_price) IS TRUE ) 
-	{
-		BUY { WHAT : EQTY(hi0).AMOUNT(100).PRICE(10.00); }
- 		BUY { WHAT : EQTY(hi1).AMOUNT(101).PRICE(10.01); }
-		BUY { WHAT : EQTY(hi2).AMOUNT(102).PRICE(10.02); }
-	}
-}
-
-/*<29> Algo parse*/
-
-USE ACCOUNT ac_MASTER
-USE DATABASE some_dataBASE
-USE DATAFEED some_dataBASE1
-ALGORITHM my_algo(DATAFEED some_data_feed PRICE hi)
-{
-	PRICE hihi;
-	PRICE bee;
-	SET {id1 = id2}
-	SET {id1 = id2}
-     	SET {id1 = id2}
-	IF :
-	{
-		TRUE
-	}
-}
-STRATEGY hello
-{
-	
-}
-
-/*<31> empty Algo not used*/
-USE ACCOUNT ac_MASTER
-
-ALGORITHM my_algo(DATAFEED some_data_feed PRICE some_price PRICE some_other_price)
-{
-	PRICE abc;
-	VOID cba;
-	SET {id1 = id2}
-	SET {id3 = id4}
-	IF:
-	{
-		id5 = id6,
-		id7,
-		id8 = id9
-			
-	} 
-
-}
-
-STRATEGY hello
-{
-	
-}
-/*<32>Set statement work*/
-USE ACCOUNT ac_master;
-USE DATAFEED df_quotes;
-
-ALGORITHM al()
-{
-    SET  { buy_price = TRUE }
-    IF:
-    {
-         TRUE
-    }
-}
-
-STRATEGY my_buy_strat
-{
-
-}
-
-/*<33> SET statement*/
-USE ACCOUNT ac_master;
-USE DATAFEED df_quotes;
-
-ALGORITHM al()
-{
-    SET  { buy_price = 112 }
-    IF:
-    {
-         TRUE
-    }
-}
-
-STRATEGY my_buy_strat
-{
-
-}
-/*<34> SET statement*/
-USE ACCOUNT ac_master;
-USE DATAFEED df_quotes;
-
-ALGORITHM al()
-{
-    SET  { buy_price = id2 }
-    IF:
-    {
-         TRUE
-    }
-}
-
-STRATEGY my_buy_strat
-{
-
-}
-
-/*<35> FALSE*/
-USE ACCOUNT ac_master;
-USE DATAFEED df_quotes;
-
-ALGORITHM al()
-{
-    SET  { buy_price = 22.22 }
-    IF:
-    {
-         FALSE
-    }
-}
-
-STRATEGY my_buy_strat
-{
-
-}
-/*<36> PRICE IN ALGO*/
-USE ACCOUNT ac_master;
-USE DATAFEED df_quotes;
-
-ALGORITHM al()
-{
-    PRICE buy_price;
-    SET  { buy_price = 22.22 }
-    IF:
-    {
-         FALSE
-    }
-}
-
-STRATEGY my_buy_strat
-{
-
-}
-
-/*<37> PRICE IN ALGO*/
-USE ACCOUNT ac_master;
-USE DATAFEED df_quotes;
-
-ALGORITHM al()
-{
-    PRICE buy_price;
-    SET  { buy_price = 22.22 }
-    IF:
-    {
-	 PRICE buy_price;
-         TRUE
-    }
-}
-
-STRATEGY my_buy_strat
-{
-
-}
-
-/*<38> define twice*/
-USE ACCOUNT ac_master;
-USE DATAFEED df_quotes;
-
-ALGORITHM al(PRICE #buy_price)
-{
-    PRICE buy_price;
-    SET  { buy_price = 22.22 }
-    IF:
-    {
-	 PRICE buy_price;
-         TRUE
-    }
-}
-/*<39> not set*/
-USE ACCOUNT ac_master;
-USE DATAFEED df_quotes;
-
-ALGORITHM al(PRICE #buy_price)
-{
-    IF:
-    {
-
-         TRUE
-    }
-}
-
-STRATEGY my_buy_strat
-{
-	WHEN(){}
-	UNTIL()
-}
-/*<40> when until*/
-USE ACCOUNT ac_master;
-USE DATAFEED df_quotes;
-
-ALGORITHM al(PRICE #buy_price)
+ALGORITHM al(CURRENCY zbra)
 {
 }
 
-STRATEGY my_buy_strat
-{
-	WHEN(){}
-	UNTIL()
-}
-/*<59> empty Algo not used*/
-USE ACCOUNT ac_MASTER
-USE DATAFEED df_QUITES
-USE DATABASE db_PRICES
-
-ALGORITHM my_algo(DATAFEED some_data_feed PRICE some_price PRICE some_other_price)
-{
-	PRICE abc;
-	VOID cba;
-	SET {id1 = id2}
-	SET {id3 = id4}
-	IF:
-	{
-		id5 = id6,
-		id7,
-		id8 = id9
-			
-	} 
-
-}
-
-
-STRATEGY hello_with_ast
-{ 
-   	BUY { WHAT: EQTY(XYZ).AMOUNT(85).PRICE(129.99);  } 
-   	SELL { WHAT: EQTY(JOJO).AMOUNT(432).PRICE(29.01); }
-	WHEN (id1 = id2) 
-	{ 
-		BUY 
-		{ 
-			WHAT: EQTY(XYZ).AMOUNT(85).PRICE(129.99);  
-		}
-	}
-	WHEN (id) 
-	{ 
-		BUY 
-		{ 
-			WHAT: EQTY(XYZ).AMOUNT(85).PRICE(129.99);
-		}
-	} 
-	UNTIL(ida = idb)
-}
-
-
-
-
-
-
-/*<60> strategy name == account name*/
-USE ACCOUNT myAccount;
-STRATEGY myAccount
-{
-BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
-SELL{ WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
-}
-STRATEGY hello_with_ast
-{ 
-   	BUY { WHAT: EQTY(XYZ).AMOUNT(85).PRICE(129.99);  } 
-   	SELL { WHAT: EQTY(JOJO).AMOUNT(432).PRICE(29.01); }
-	WHEN (id1 = id2) 
-	{ 
-		BUY 
-		{ 
-			WHAT: EQTY(XYZ).AMOUNT(85).PRICE(129.99);  
-		}
-	}
-	WHEN (id) 
-	{ 
-		BUY 
-		{ 
-			WHAT: EQTY(XYZ).AMOUNT(85).PRICE(129.99);
-		}
-	} 
-	UNTIL(ida = idb)
-}
-
-/*<61> keyword in nonterminal */
-/*line 6: syntax error*/
-USE ACCOUNT myAccount;
-STRATEGY eBUY
-{
-BUY { WHAT: EQTY(EQTY).AMOUNT(85).PRICE(22.44);  } 
-SELL{ WHAT: EQTY(EQTY).AMOUNT(85).PRICE(22.44);  } 
-}
-
-/*<62> Nonsense statement*/
-/*line 6: syntax error*/
-USE ACCOUNT myAccount;
-STRATEGY hello
-{
-DDDD
-BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
-SELL{ WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
-}
-/*<63> Nonesense Statement*/
-/*line 7: syntax error*/
-USE ACCOUNT myAccount;
-STRATEGY hello
-{
-BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
-{}
-SELL{ WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.44);  } 
-}
-/*<64> Numerical error */
-/*line 6: syntax error*/
-USE ACCOUNT myAccount;
-STRATEGY hello
-{
-BUY { WHAT: EQTY(apple).AMOUNT(85.5322).PRICE(22.44);  } 
-SELL{ WHAT: EQTY(apple).AMOUNT(85.5322).PRICE(22.44);  } 
-}
-/*<65> Nonterminal name error*/
-/*line 6: syntax error*/
-USE ACCOUNT myhello.Account;
-USE STRATEGY hel.lo
-{
-BUY { WHAT: EQTY(a.apl).AMOUNT(85).PRICE(22.44);  } 
-SELL{ WHAT: EQTY(apple).AMOUNT(85).PRICE(22.44);  } 
-}
-
-/*<66>Algo Not Found*/
-/*semantic error*/
-STRATEGY hello
-{
-	WHEN ( al() IS TRUE )
-	{
-		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
-	}
-}
-/*<67>No Strat*/
+/*<21>empty Algo parameter*/
 USE ACCOUNT ac_master;
 ALGORITHM al()
 {
 }
-/*<68>strat before algo*/
+STRATEGY hello
+{
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+
+/*<22>Multiple algo*/
 USE ACCOUNT ac_master;
+ALGORITHM al(CURRENCY zbra)
+{
+}
+ALGORITHM al1(CURRENCY zbra1)
+{
+}
+STRATEGY hello
+{
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+
+/*<23>expr,expr;*/
+/*also cause core dump*/
+USE ACCOUNT ac_master;
+ALGORITHM al(CURRENCY S) /*what types are accepted here!*/
+{
+	CURRENCY x;
+	x = 10,x<50;
+}
+STRATEGY hello
+{
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+
+/*<24> Grammer error, We cannot have a algo with only variable decleration*/
+/*also cause core dump*/
+USE ACCOUNT ac_master;
+ALGORITHM al(CURRENCY S) /*what types are accepted here!*/
+{
+	CURRENCY ST;
+}
 
 STRATEGY hello
 {
-	WHEN ( al() IS TRUE )
-	{
-		BUY { WHAT : EQTY(hi).AMOUNT(100).PRICE(99.99); }
-	}
-}
-ALGORITHM al()
-{
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
 }
 
-/*<69> unclosed comments*/
-/*line 5: error*/
-USE ACCOUNT my_Account;
-STRATEGY hello
-{hello from comment*/
-BUY { WHAT: EQTY(AAPL).AMOUNT(85).PRICE(22.00);  } 
-/*
-SELL{ WHAT: EQTY(AA).AMOUNT(85).PRICE(22.00);  } 
-*/
+
+/*<25> Semantic check duplicate name*/
+USE ACCOUNT ac_master;
+ALGORITHM al(CURRENCY S) /*what types are accepted here!*/
+{
+	CURRENCY S;
 }
+
+STRATEGY hello
+{
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+
+/*<26> Semantic check reference before declare*/
+USE ACCOUNT ac_master;
+ALGORITHM al(CURRENCY S) /*what types are accepted here!*/
+{
+	CURRENCY S1;
+	S2 = 1;
+}
+
+STRATEGY hello
+{
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+/*<27> Assignment semantic check*/
+USE ACCOUNT ac_master;
+ALGORITHM al(CURRENCY S) /*what types are accepted here!*/
+{
+	DOUBLE S1;
+	S1 = 1;
+}
+
+STRATEGY hello
+{
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+/*<28> Assignment semantic check*/
+USE ACCOUNT ac_master;
+ALGORITHM al(CURRENCY S) /*what types are accepted here!*/
+{
+	INT S1;
+	S1 = 1.1;
+}
+
+STRATEGY hello
+{
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+
+/*<29>semantic check*/
+USE ACCOUNT ac_master;
+ALGORITHM al(CURRENCY S) /*what types are accepted here!*/
+{
+	ACCOUNT S1;
+	S1 < 1.1;
+}
+
+STRATEGY hello
+{
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+/*<30>semantic check*/
+USE ACCOUNT ac_master;
+ALGORITHM al(CURRENCY S) /*what types are accepted here!*/
+{
+	ACCOUNT S1;
+	S1 < 1.1;
+}
+
+STRATEGY hello
+{
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+
+
+/*<31>semantic check*/
+USE ACCOUNT ac_master;
+ALGORITHM al(CURRENCY S) /*what types are accepted here!*/
+{
+	ACCOUNT S1;
+	S1 OR 1;
+}
+
+STRATEGY hello
+{
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+/*<32>semantic check*/
+USE ACCOUNT ac_master;
+ALGORITHM al(CURRENCY S) /*what types are accepted here!*/
+{
+	TRUE IS NOT TRUE;
+}
+
+STRATEGY hello
+{
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+/*<33>semantic check*/
+USE ACCOUNT ac_master;
+ALGORITHM al(CURRENCY S) /*what types are accepted here!*/
+{
+	#S;
+}
+
+STRATEGY hello
+{
+BUY { WHAT: SECURITY(EQTY(ZBRA)).AMOUNT(85).PRICE(22.44);  }
+}
+
+
+
+/*<34>SET IF*/
+USE ACCOUNT ac_master;
+USE DATAFEED df_ZBRA;
+
+ALGORITHM al_Buy_Something(DATAFEED quotes, CURRENCY #buy_price)
+{
+    SET  { buy_price = quotes.NEXT.PRC }
+    IF:
+    {
+         quotes.NEXT.SEC IS EQTY(ZBRA)
+         AND
+         quotes.NEXT.PRC < 90.00
+    }
+}
+
+
+STRATEGY my_buy_strat2
+{
+
+         BUY  {  WHAT : SECURITY( EQTY(ZBRA) ).AMOUNT(100).PRICE(11.11);}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
