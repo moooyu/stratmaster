@@ -1,5 +1,5 @@
-/*  StratMaster: Simple Algorithm
- *  Conforms to revised grammar [VM]
+/*  StratMaster Demo: 
+ *  Moving Average Criss-cross
  */
 
 USE ACCOUNT ac_master;

@@ -1,0 +1,58 @@
+/*  StratMaster: Simple Algorithm
+ *  Conforms to revised grammar [VM]
+ */
+
+USE ACCOUNT ac_master;
+USE DATAFEED df_1yrquotes;
+
+ALGORITHM al_low(DATAFEED quotes, SECURITY #buy_tgt, CURRENCY #pr)
+{
+    SET  { buy_tgt = quotes.NEXT.SEC,
+           pr = quotes.NEXT.PRC  }
+    IF:
+    {
+         quotes.NEXT.PRC < 10.00
+    }
+}
+
+
+ALGORITHM al_high(DATAFEED quotes, SECURITY #sell_tgt, CURRENCY #pr)
+{
+    SET  { sell_tgt = quotes.NEXT.SEC,
+           pr = quotes.NEXT.PRC  }
+    IF:
+    {
+         quotes.NEXT.PRC > 15.00
+    }
+}
+
+
+STRATEGY my_buy_strat
+{
+    SECURITY buy_sec;
+    CURRENCY buy_prc;
+
+    WHEN( al_low(df_1yrquotes, #buy_sec, #buy_prc) IS TRUE )
+    {
+         BUY  {  WHAT : SECURITY( buy_sec ).AMOUNT(10000).PRICE( buy_prc );}
+    }
+    UNTIL( ac_master.AVAIL_CASH < 5000000.00)
+
+}
+
+
+STRATEGY my_sell_strat
+{
+    SECURITY sell_sec;
+    CURRENCY sell_prc;
+
+    WHEN( al_high(df_1yrquotes, #sell_sec, #sell_prc) IS TRUE )
+    {
+         SELL {  WHAT : SECURITY( sell_sec ).AMOUNT(10000).PRICE( sell_prc );}
+    }
+    UNTIL( ac_master.AVAIL_CASH > 200000000.00)
+
+}
+
+
+

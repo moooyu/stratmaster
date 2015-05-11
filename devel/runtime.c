@@ -81,12 +81,9 @@ void long_to_price_display(long value, char *buf)
 
 	long dollars = value / 100L;
 	long cents   = value - (dollars * 100L);
-	//fprintf(stderr, "DOLLARS = %ld CENTS = %02ld\n", dollars, cents);	
 	sprintf(resultbuf, "%'ld.", dollars);
 	sprintf(tempbuf, "%02ld", cents);
         strcat(resultbuf, tempbuf);
-
-	//fprintf(stderr, "DOLLARS = %s CENTS = %s\n", resultbuf, tempbuf);
 	copy_name(buf, resultbuf);
 }
 
@@ -103,12 +100,9 @@ void long_to_price(long value, char *buf)
 
 	long dollars = value / 100L;
 	long cents   = value - (dollars * 100L);
-	//fprintf(stderr, "DOLLARS = %ld CENTS = %02ld\n", dollars, cents);	
 	sprintf(resultbuf, "%ld.", dollars);
 	sprintf(tempbuf, "%02ld", cents);
         strcat(resultbuf, tempbuf);
-
-	//fprintf(stderr, "DOLLARS = %s CENTS = %s\n", resultbuf, tempbuf);
 	copy_name(buf, resultbuf);
 }
 

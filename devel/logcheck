@@ -1,0 +1,6 @@
+#/bin/bash
+
+awk ' BEGIN {n = 0; sum = 0 } /BOUGHT/ {n = n+1; sum = sum + $11} END {print "Number of Buy Orders : " n " Average Purchase Price: "  (sum / n) } ' $1
+awk ' BEGIN {n = 0; sum = 0 } /SOLD/ {n = n+1; sum = sum + $11} END {  print "Number of Sell Orders: " n " Average Sale Price    : "  (sum / n) } ' $1
+
+

@@ -3,7 +3,7 @@
  */
 
 USE ACCOUNT ac_master;
-USE DATAFEED df_allquotes;
+USE DATAFEED df_1yrquotes;
 
 
 ALGORITHM al_low(DATAFEED quotes, SECURITY #buy_tgt, CURRENCY #pr)
@@ -22,10 +22,10 @@ STRATEGY my_buy_strat
     SECURITY buy_sec;
     CURRENCY buy_prc;
 
-    WHEN( al_low(df_allquotes, #buy_sec, #buy_prc) IS TRUE )
+    WHEN( al_low(df_1yrquotes, #buy_sec, #buy_prc) IS TRUE )
     {
          BUY  {  WHAT : SECURITY( buy_sec ).AMOUNT(10000).PRICE( buy_prc );}
     }
-    UNTIL( ac_master.AVAIL_CASH < 95000000.00)
+    UNTIL( ac_master.AVAIL_CASH < 50000000.00)
 
 }
